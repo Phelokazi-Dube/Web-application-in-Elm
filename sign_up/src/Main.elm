@@ -1,5 +1,6 @@
 module Main exposing (..)
-
+import Browser
+import Auth
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
@@ -14,13 +15,15 @@ type alias Model =
 
 -- type Mode = Login | SignUp
 
-init : Model
-init =
-  { username = ""
-  , password = ""
-  , confirmPassword = ""
-  , mode = Login
-  }
+init : () -> ( Model, Cmd Msg )
+init flags =
+  ( { username = ""
+    , password = ""
+    , confirmPassword = ""
+    , mode = Login
+    }
+  , Cmd.none
+  )
 
 type Mode = Login | SignUp
 
@@ -30,20 +33,28 @@ type Msg
   | LoginMsg
   | SignUpMsg
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     UpdateUsername username ->
-      { model | username = username }
+      ( { model | username = username }
+      , Cmd.none
+      )
 
     UpdatePassword password ->
-      { model | password = password }
+      ( { model | password = password }
+      , Cmd.none
+      )
 
     LoginMsg ->
-      { model | mode = Login }
+      ( { model | mode = Login }
+      , Auth.signIn ()
+      )
 
     SignUpMsg ->
-      { model | mode = SignUp }
+      ( { model | mode = SignUp }
+      , Cmd.none
+      )
 
 view : Model -> Html Msg
 view model =
@@ -57,3 +68,12 @@ view model =
         SignUp ->
           button [ onClick SignUpMsg ] [ text "Sign Up" ]
     ]
+
+
+main =
+  Browser.element
+    { init = init
+    , view = view
+    , update = update
+    , subscriptions = \_ -> Sub.none
+    }
