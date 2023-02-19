@@ -3,7 +3,7 @@ BEFORE this is loaded, I must load api.js.
 AFTER this is loaded, I must load gsi/client.
 */
 
-const CLIENT_ID = 'SOME CLIENT ID HERE';
+const CLIENT_ID = '1083959778576-iakboe5jsa216o17klhtqeenqg1vec92.apps.googleusercontent.com'; 
 var allReady = false;
 var popup_error = false;
 const initialTokenClientConfig = {
