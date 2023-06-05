@@ -58,16 +58,28 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  div []
-    [ input [ type_ "text", placeholder "Username", onInput UpdateUsername ] []
-    , input [ type_ "password", placeholder "Password", onInput UpdatePassword ] []
-    , case model.mode of
-        Login ->
-          button [ onClick LoginMsg ] [ text "Login" ]
+  div [class "container"]
+    [ div [class "row"]
+        [ div [class "col-md-6 col-md-offset-3"]
+            [ h1 [class "text-center"] [text "Account"]
+            , div [class "form-group"]
+                [ label [class "control-label"] [text "Username"]
+                , input [class "form-control", type_ "text", placeholder "Username", onInput UpdateUsername] []
+                ]
+            , div [class "form-group"]
+                [ label [class "control-label"] [text "Password"]
+                , input [class "form-control", type_ "password", placeholder "Password", onInput UpdatePassword] []
+                ]
+            , case model.mode of
+                Login ->
+                  button [class "btn btn-primary btn-block", onClick LoginMsg] [text "Login"]
 
-        SignUp ->
-          button [ onClick SignUpMsg ] [ text "Sign Up" ]
+                SignUp ->
+                  button [class "btn btn-primary btn-block", onClick SignUpMsg] [text "Sign Up"]
+            ]
+        ]
     ]
+
 
 
 main =
