@@ -1,10 +1,12 @@
 module Main exposing (..)
+
 import Browser
 import Auth
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import Html.Events exposing (onClick)
+
 
 type alias Model =
   { username : String
@@ -13,9 +15,11 @@ type alias Model =
   , mode : Mode
   }
 
--- type Mode = Login | SignUp
 
-init : () -> ( Model, Cmd Msg )
+type Mode = Login | SignUp
+
+
+init : () -> (Model, Cmd Msg)
 init flags =
   ( { username = ""
     , password = ""
@@ -25,7 +29,6 @@ init flags =
   , Cmd.none
   )
 
-type Mode = Login | SignUp
 
 type Msg
   = UpdateUsername String
@@ -33,40 +36,45 @@ type Msg
   | LoginMsg
   | SignUpMsg
 
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     UpdateUsername username ->
-      ( { model | username = username }
-      , Cmd.none
-      )
+      ( { model | username = username }, Cmd.none )
 
     UpdatePassword password ->
-      ( { model | password = password }
-      , Cmd.none
-      )
+      ( { model | password = password }, Cmd.none )
 
     LoginMsg ->
-      ( { model | mode = Login }
-      , Auth.signIn ()
-      )
+      ( { model | mode = Login }, Auth.signIn () )
 
     SignUpMsg ->
-      ( { model | mode = SignUp }
-      , Cmd.none
-      )
+      ( { model | mode = SignUp }, Cmd.none )
+
 
 view : Model -> Html Msg
 view model =
-  div []
-    [ input [ type_ "text", placeholder "Username", onInput UpdateUsername ] []
-    , input [ type_ "password", placeholder "Password", onInput UpdatePassword ] []
-    , case model.mode of
-        Login ->
-          button [ onClick LoginMsg ] [ text "Login" ]
+  div [class "container"]
+    [ div [class "row"]
+        [ div [class "col-md-6 col-md-offset-3"]
+            [ h1 [class "text-center"] [text "Account"]
+            , div [class "form-group"]
+                [ label [class "control-label"] [text "Username"]
+                , input [class "form-control", type_ "text", placeholder "Username", onInput UpdateUsername] []
+                ]
+            , div [class "form-group"]
+                [ label [class "control-label"] [text "Password"]
+                , input [class "form-control", type_ "password", placeholder "Password", onInput UpdatePassword] []
+                ]
+            , case model.mode of
+                Login ->
+                  button [class "btn btn-primary btn-block", onClick LoginMsg] [text "Login"]
 
-        SignUp ->
-          button [ onClick SignUpMsg ] [ text "Sign Up" ]
+                SignUp ->
+                  button [class "btn btn-primary btn-block", onClick SignUpMsg] [text "Sign Up"]
+            ]
+        ]
     ]
 
 
