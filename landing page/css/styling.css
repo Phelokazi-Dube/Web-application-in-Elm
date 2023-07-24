@@ -128,10 +128,15 @@ a {
     width: 100%;
     background-position: center;
     background-size: cover;
-    background-image: url(images/Mass_rearing.png);
+    /* background-image: url(images/Mass_rearing.png); */
     height: 100vh;
     background-attachment: fixed;
     min-width: 100%;
+}
+.body{
+    height: 9rem;
+    background-color: var(--colour-primary);
+
 }
 
 .search {
@@ -173,3 +178,4 @@ div.search input.srch {
     cursor: pointer;
     float: right;
 }
+

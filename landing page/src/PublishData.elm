@@ -1,9 +1,12 @@
 module PublishData exposing (..)
 
-import Browser exposing (sandbox)
-import Html exposing (Html, div, nav, ul, li, a, input, button, text, h2, p)
+import Browser exposing (..)
+import Html exposing (Html, div, nav, ul, li, a, input, button, text, h2, p, node, h1, br)
 import Html.Attributes exposing (class, href, type_, name, placeholder)
-
+import Html.Events exposing (onClick)
+import Browser.Navigation exposing (load)
+import Html.Attributes exposing (..)
+import Html exposing (..)
 
 -- Model
 type alias Model =
@@ -21,13 +24,17 @@ init =
 type Msg
     -- Define your message types here
     = NoOp
+    | GoToMain
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         NoOp ->
-            model
+            (model, Cmd.none)
+        GoToMain ->
+            -- Handle the navigation to the "Main" page here
+            (model, load "http://localhost:8000/../../sign_up/index.html" |> Cmd.map (always NoOp))
 
 
 subscriptions : Model -> Sub Msg
@@ -39,7 +46,12 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div [ class "main" ]
-        [ nav [ class "navbar" ]
+        [ node "link" 
+            [ attribute "rel" "stylesheet"
+            , attribute "href" "/css/yhoo.css"
+            ] 
+            []
+        , nav [ class "navbar" ]
             [ div [ class "logo" ]
                 [ h2 [] [ text "CBC" ]
                 ]
@@ -82,19 +94,24 @@ view model =
                 ]
             ]
         , div [ class "body" ]
-            [ p []
-                [ text "Login to our data portal to describe and submit your data. A CBC Data Curator will review the submission and respond ASAP. "
-                , a [ href "#" ] [ text "Login" ]
+            [ h1 [] [ text "For Users" ]
+            , p []
+                [ text "Welcome to the CBC Portal, please login to describe and submit your data."
+                , br [] []
+                , text "A CBC Data Curator will review your submission and respond ASAP. "
+                , b [] [ a [ href "#", onClick GoToMain ] [ text "Login" ] ]
                 , text " to get started."
                 ]
             ]
         ]
+    
 
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = init
+    Browser.element
+        { init = \_ -> (init, Cmd.none)
         , update = update
         , view = view
+        , subscriptions = subscriptions
         }

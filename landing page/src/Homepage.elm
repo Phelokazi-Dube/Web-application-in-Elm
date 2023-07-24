@@ -1,8 +1,11 @@
 module Homepage exposing (..)
 
-import Browser exposing (sandbox)
-import Html exposing (Html, div, nav, ul, li, a, input, button, text, h2)
-import Html.Attributes exposing (class, href, type_, name, placeholder)
+import Browser
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
+import Browser.Navigation exposing (load)
+import Html.Attributes exposing (attribute)
 
 
 -- Model
@@ -21,13 +24,17 @@ init =
 type Msg
     -- Define your message types here
     = NoOp
+    | LoadPage
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         NoOp ->
-            model
+            (model, Cmd.none)
+
+        LoadPage ->
+            (model, load "http://localhost:8000/landing%20page/src/PublishData.elm" |> Cmd.map (always NoOp)) -- Use `Cmd.map` to transform the result of `load` to `NoOp`
 
 
 subscriptions : Model -> Sub Msg
@@ -38,8 +45,13 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "main" ]
-        [ nav [ class "navbar" ]
+    div [ class "main", style "background-image" "url(/css/images/Mass_rearing.png)" ]
+        [ node "link"
+            [ attribute "rel" "stylesheet"
+            , attribute "href" "/css/styling.css"
+            ]
+            []
+        , nav [ class "navbar" ]
             [ div [ class "logo" ]
                 [ h2 [] [ text "CBC" ]
                 ]
@@ -57,7 +69,7 @@ view model =
                             [ a [ href "#" ] [ text "Get Data" ]
                             ]
                         , li []
-                            [ a [ href "#" ] [ text "Publish Data" ]
+                            [ a [ href "#", onClick LoadPage ] [ text "Publish Data" ] -- Add onClick event handler
                             ]
                         ]
                     ]
@@ -86,8 +98,9 @@ view model =
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = init
+    Browser.element
+        { init = \_ -> (init, Cmd.none)
         , update = update
         , view = view
+        , subscriptions = subscriptions
         }
