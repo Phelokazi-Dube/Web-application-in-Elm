@@ -56,9 +56,19 @@ update msg model =
 view : Model -> Html Msg
 view model =
   div [class "container"]
-    [ div [class "row"]
-        [ div [class "col-md-6 col-md-offset-3"]
-            [ h1 [class "text-center"] [text "Account"]
+    
+    [ node "link" 
+            [ attribute "rel" "stylesheet"
+            , attribute "href" "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+            ] 
+            []
+      ,div [class "row"]
+        [ div [ class "col-md-6 col-md-offset-3" ]
+            [ h1 [ class "text-center" ]
+                [ text "Google Account  "
+                , node "ion-icon" 
+                [ class "bi bi-google teal-color", attribute "name" "logo-google" ] []
+                ]
             , div [class "form-group"]
                 [ label [class "control-label"] [text "Username"]
                 , input [class "form-control", type_ "text", placeholder "Username", onInput UpdateUsername] []

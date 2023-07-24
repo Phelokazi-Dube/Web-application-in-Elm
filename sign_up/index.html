@@ -7,6 +7,12 @@
   <script src="build/main.js"></script>
   <link rel="stylesheet" 
           href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" 
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        .teal-color {
+        color:rgb(19, 84, 125);
+          }
   </style>
 </head>
 
@@ -27,7 +33,20 @@
   app.ports.signIn.subscribe(() => {
     console.log("Received click.");
     authenticate(true);
-  }); 
+  });
+  
+  window.google.accounts.id.initialize({
+    client_id: 'GOOGLE_CLIENT_ID',
+    ux_mode: 'redirect', // This sets the redirect mode
+    redirect_uri: 'http://localhost:8000', // Replace this with your actual redirect URI if you're not using elm reactor
+  });
+
+  function authenticate(immediate) {
+    window.google.accounts.id.prompt({
+      auto_select: immediate,
+      prompt_parent_id: 'myapp',
+    });
+  }
   </script>
 </body>
 </html>
