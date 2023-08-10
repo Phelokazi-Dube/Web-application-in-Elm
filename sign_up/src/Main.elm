@@ -7,100 +7,74 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import Html.Events exposing (onClick)
 
+-- elm make .\src\Main.elm --output=build/main.js
+-- npx serve -l 8000
 
 type alias Model =
-  { username : String
-  , password : String
-  , confirmPassword : String
-  , mode : Mode
+  { mode : Mode
   }
 
 
-type Mode = Login | SignUp | LoggedIn
+type Mode = Login | LoggedIn
 
 
 init : () -> (Model, Cmd Msg)
 init flags =
-  ( { username = ""
-    , password = ""
-    , confirmPassword = ""
-    , mode = Login
+  ( { mode = Login
     }
   , Cmd.none
   )
 
 
 type Msg
-  = UpdateUsername String
-  | UpdatePassword String
-  | LoginMsg
-  | SignUpMsg
+  = LoginMsg
   | LoginSuccessful
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    UpdateUsername username ->
-      ( { model | username = username }, Cmd.none )
-
-    UpdatePassword password ->
-      ( { model | password = password }, Cmd.none )
-
     LoginMsg ->
       ( { model | mode = Login }, Auth.signIn () )
-
-    SignUpMsg ->
-      ( { model | mode = SignUp }, Cmd.none )
 
     LoginSuccessful ->
       ( { model | mode = LoggedIn }, Cmd.none )
 
 view : Model -> Html Msg
 view model =
-  div [class "container"]
-    
-    [ node "link" 
-            [ attribute "rel" "stylesheet"
-            , attribute "href" "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
-            ] 
-            []
-      ,div [class "row"]
-        [ div [ class "col-md-6 col-md-offset-3" ]
-            [ h1 [ class "text-center" ]
-                [ text "Google Account  "
-                , node "ion-icon" 
-                [ class "bi bi-google teal-color", attribute "name" "logo-google" ] []
-                ]
-            , div [class "form-group"]
-                [ label [class "control-label"] [text "Username"]
-                , input [class "form-control", type_ "text", placeholder "Username", onInput UpdateUsername] []
-                ]
-            , div [class "form-group"]
-                [ label [class "control-label"] [text "Password"]
-                , input [class "form-control", type_ "password", placeholder "Password", onInput UpdatePassword] []
-                ]
-            , case model.mode of
-                Login ->
-                  button [class "btn btn-primary btn-block", onClick LoginMsg] [text "Login"]
-
-                SignUp ->
-                  button [class "btn btn-primary btn-block", onClick SignUpMsg] [text "Sign Up"]
-
-                LoggedIn ->
-                  div [] [text "The user is logged in"]
+  case model.mode of
+    Login ->
+      div
+        [class "container"]
+        [ div
+          [class "row"]
+          [ div
+            [ class "col-md-6 col-md-offset-3" ]
+            [ h1
+              [ class "text-center" ]
+              [ button
+                  [ class "btn btn-primary btn-block"
+                  , onClick LoginMsg
+                  ]
+                  [ text "Login with Google  "
+                  , node "ion-icon" 
+                    [ class "bi bi-google teal-color", attribute "name" "logo-google" ]
+                    []
+                  ]
+              ]
             ]
+          ]
         ]
-    ]
+    LoggedIn ->
+      div [] [text "The user is logged in"]
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
   Auth.signedIn
     (\valueFromJavaScript ->
-      case valueFromJavaScript of
-        True ->
-          LoginSuccessful
-        False ->
-          LoginMsg
+      if valueFromJavaScript then
+        LoginSuccessful
+      else
+        LoginMsg
     )
 
 main =
