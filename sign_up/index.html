@@ -18,35 +18,11 @@
 
 <body>
   <div id="myapp"></div>
-
   <script src="https://apis.google.com/js/api.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" defer></script>
   <script src="googleme.js" defer></script>
 </script>
 
 
-  <script defer>
-  const app = Elm.Main.init({
-    node: document.getElementById('myapp'),
-    flags: 0 // localStorage.getItem('check')
-  });
-  app.ports.signIn.subscribe(() => {
-    console.log("Received click.");
-    authenticate(true);
-  });
-  
-  window.google.accounts.id.initialize({
-    client_id: 'GOOGLE_CLIENT_ID',
-    ux_mode: 'redirect', // This sets the redirect mode
-    redirect_uri: 'http://localhost:8000', // Replace this with your actual redirect URI if you're not using elm reactor
-  });
-
-  function authenticate(immediate) {
-    window.google.accounts.id.prompt({
-      auto_select: immediate,
-      prompt_parent_id: 'myapp',
-    });
-  }
-  </script>
 </body>
 </html>

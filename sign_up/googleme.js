@@ -1,3 +1,25 @@
+const app = Elm.Main.init({
+  node: document.getElementById('myapp'),
+  flags: 0 // localStorage.getItem('check')
+});
+app.ports.signIn.subscribe(() => {
+  console.log("Received click.");
+  authenticate(true);
+});
+
+window.google.accounts.id.initialize({
+  client_id: '1083959778576-iakboe5jsa216o17klhtqeenqg1vec92.apps.googleusercontent.com',
+  ux_mode: 'redirect', // This sets the redirect mode
+  redirect_uri: 'http://localhost:8000', // Replace this with your actual redirect URI if you're not using elm reactor
+});
+
+function authenticate(immediate) {
+  window.google.accounts.id.prompt({
+    auto_select: immediate,
+    prompt_parent_id: 'myapp',
+  });
+}
+
 /*
 BEFORE this is loaded, I must load api.js.
 AFTER this is loaded, I must load gsi/client.
@@ -21,6 +43,8 @@ const initialTokenClientConfig = {
           callback: function() {
             console.log('GAPI client loaded.  Setting authentication token.');
             gapi.client.setToken({ access_token: response.access_token });
+            allReady = true;
+            app.ports.signedIn.send(true);
             setTimeout(() => {
               console.log(`${new Date(Date.now()).toString()} Token has expired.  Marking re-request as necessary.`);
               allReady = false;

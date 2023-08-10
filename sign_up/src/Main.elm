@@ -16,7 +16,7 @@ type alias Model =
   }
 
 
-type Mode = Login | SignUp
+type Mode = Login | SignUp | LoggedIn
 
 
 init : () -> (Model, Cmd Msg)
@@ -35,7 +35,7 @@ type Msg
   | UpdatePassword String
   | LoginMsg
   | SignUpMsg
-
+  | LoginSuccessful
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -52,6 +52,8 @@ update msg model =
     SignUpMsg ->
       ( { model | mode = SignUp }, Cmd.none )
 
+    LoginSuccessful ->
+      ( { model | mode = LoggedIn }, Cmd.none )
 
 view : Model -> Html Msg
 view model =
@@ -83,16 +85,28 @@ view model =
 
                 SignUp ->
                   button [class "btn btn-primary btn-block", onClick SignUpMsg] [text "Sign Up"]
+
+                LoggedIn ->
+                  div [] [text "The user is logged in"]
             ]
         ]
     ]
 
-
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Auth.signedIn
+    (\valueFromJavaScript ->
+      case valueFromJavaScript of
+        True ->
+          LoginSuccessful
+        False ->
+          LoginMsg
+    )
 
 main =
   Browser.element
     { init = init
     , view = view
     , update = update
-    , subscriptions = \_ -> Sub.none
+    , subscriptions = subscriptions
     }
