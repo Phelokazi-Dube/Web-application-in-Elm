@@ -8,6 +8,6 @@
     "serve": "^14.2.0"
   },
   "scripts": {
-    "start": "npx elm-watch hot"
+    "start": "npx concurrently \"npx elm-watch hot\" \"npx serve\""
   }
 }
