@@ -1,10 +1,28 @@
 {
     "targets": {
-        "My target name": {
+        "Sign-up page": {
             "inputs": [
                 "sign_up/src/Main.elm"
             ],
             "output": "build/sign_up.js"
+        },
+        "Contact": {
+            "inputs": [
+                "landing page/src/Contact.elm"
+            ],
+            "output": "build/contact.js"
+        },
+        "Home": {
+            "inputs": [
+                "landing page/src/Homepage.elm"
+            ],
+            "output": "build/home.js"
+        },
+        "PublishData": {
+            "inputs": [
+                "landing page/src/PublishData.elm"
+            ],
+            "output": "build/publish_data.js"
         }
     }
 }
