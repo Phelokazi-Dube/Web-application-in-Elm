@@ -2,9 +2,9 @@
     "targets": {
         "My target name": {
             "inputs": [
-                "src/Main.elm"
+                "sign_up/src/Main.elm"
             ],
-            "output": "build/main.js"
+            "output": "build/sign_up.js"
         }
     }
 }
