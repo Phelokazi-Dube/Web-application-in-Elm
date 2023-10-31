@@ -1,0 +1,13 @@
+{
+  "devDependencies": {
+    "concurrently": "^8.2.1",
+    "elm": "^0.19.1-5",
+    "elm-test": "^0.19.1-revision12",
+    "elm-watch": "^1.1.2",
+    "nodemon": "^3.0.1",
+    "serve": "^14.2.0"
+  },
+  "scripts": {
+    "start": "npx elm-watch hot"
+  }
+}

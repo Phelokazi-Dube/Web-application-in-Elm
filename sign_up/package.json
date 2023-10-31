@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "elm-watch": "^1.1.2",
-    "serve": "^14.2.0"
-  }
-}
