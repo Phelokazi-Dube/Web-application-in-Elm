@@ -24,18 +24,12 @@ init =
 type Msg
     -- Define your message types here
     = NoOp
-    | GoToMain
-
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         NoOp ->
             (model, Cmd.none)
-        GoToMain ->
-            -- Handle the navigation to the "Main" page here
-            (model, load "http://localhost:8000/../../sign_up/index.html" |> Cmd.map (always NoOp))
-
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -57,16 +51,16 @@ view model =
                 ]
             , ul []
                 [ li []
-                    [ a [ href "#" ] [ text "HOME" ]
+                    [ a [ href "/home" ] [ text "HOME" ]
                     ]
                 , li []
-                    [ a [ href "#" ] [ text "SITES" ]
+                    [ a [ href "/sites" ] [ text "SITES" ]
                     ]
                 , li []
                     [ a [ href "#" ] [ text "DATA" ]
                     , ul []
                         [ li []
-                            [ a [ href "#" ] [ text "Get Data" ]
+                            [ a [ href "/getData" ] [ text "Get Data" ]
                             ]
                         , li []
                             [ a [ href "#" ] [ text "Publish Data" ]
@@ -99,7 +93,7 @@ view model =
                 [ text "Welcome to the CBC Portal, please login to describe and submit your data."
                 , br [] []
                 , text "A CBC Data Curator will review your submission and respond ASAP. "
-                , b [] [ a [ href "#", onClick GoToMain ] [ text "Login" ] ]
+                , b [] [ a [ href "/Login" ] [ text "Login" ] ]
                 , text " to get started."
                 ]
             ]

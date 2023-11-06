@@ -1,0 +1,3 @@
+defmodule Fluffy.Mailer do
+  use Swoosh.Mailer, otp_app: :fluffy
+end

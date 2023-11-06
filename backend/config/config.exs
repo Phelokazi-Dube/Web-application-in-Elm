@@ -7,18 +7,15 @@
 # General application configuration
 import Config
 
-config :backend,
-  ecto_repos: [Backend.Repo]
-
 # Configures the endpoint
-config :backend, BackendWeb.Endpoint,
+config :fluffy, FluffyWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [
-    formats: [html: BackendWeb.ErrorHTML, json: BackendWeb.ErrorJSON],
+    formats: [html: FluffyWeb.ErrorHTML, json: FluffyWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Backend.PubSub,
-  live_view: [signing_salt: "agOcf5zd"]
+  pubsub_server: Fluffy.PubSub,
+  live_view: [signing_salt: "q0XRn+PZ"]
 
 # Configures the mailer
 #
@@ -27,7 +24,7 @@ config :backend, BackendWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :backend, Backend.Mailer, adapter: Swoosh.Adapters.Local
+config :fluffy, Fluffy.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 config :esbuild,
@@ -41,7 +38,7 @@ config :esbuild,
 
 # Configure tailwind (the version is required)
 config :tailwind,
-  version: "3.2.7",
+  version: "3.3.2",
   default: [
     args: ~w(
       --config=tailwind.config.js

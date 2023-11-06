@@ -1,27 +1,15 @@
 import Config
 
-# Configure your database
-#
-# The MIX_TEST_PARTITION environment variable can be used
-# to provide built-in test partitioning in CI environment.
-# Run `mix help test` for more information.
-config :backend, Backend.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "backend_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10
-
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :backend, BackendWeb.Endpoint,
+config :fluffy, FluffyWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
-  secret_key_base: "YeHUnhgqF7WPLcd8QN58xs7YnEupYO1H0Wpse6o6Y0laIoCV3aLMmd495loPrcdv",
+  secret_key_base: "6EwxPQtufZbWe35NrbxnQGSEIKhmaviXuKBW48h4L3cgLCbXtoC7WDyc4QAShPiL",
   server: false
 
 # In test we don't send emails.
-config :backend, Backend.Mailer, adapter: Swoosh.Adapters.Test
+config :fluffy, Fluffy.Mailer,
+  adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

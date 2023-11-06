@@ -1,29 +1,19 @@
 import Config
 
-# Configure your database
-config :backend, Backend.Repo,
-  username: "cbc",
-  password: "0eL#S5PkB95EGdmRHtXm$9pe4hBML9wRSD!",
-  hostname: "localhost",
-  database: "cbc",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
 # The watchers configuration can be used to run external
-# watchers to your application. For example, we use it
-# with esbuild to bundle .js and .css sources.
-config :backend, BackendWeb.Endpoint,
+# watchers to your application. For example, we can use it
+# to bundle .js and .css sources.
+config :fluffy, FluffyWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "Mw/M/yUoHq61h1mKvgNPrifoIpz/yq7sjxvAPXd84zNZZm4zR8Z22ucZ4wI31FrI",
+  secret_key_base: "ArPZDmUpfiJgnLIwkiKPE0fg4xsSn4y3tIVCTEkgQlVF0RuxH8eLYk3c+caAtCs0",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:default, ~w(--watch)]}
@@ -53,17 +43,17 @@ config :backend, BackendWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :backend, BackendWeb.Endpoint,
+config :fluffy, FluffyWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/backend_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/fluffy_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :backend, dev_routes: true
+config :fluffy, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
@@ -77,3 +67,10 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Configure CouchDB connection
+config :fluffy, :couchdb,
+  user: "admin",
+  pass: "@Cc55!LhQA7sr2&u8sLe@$mqS3&NAsepCoTRCd$vhsjOngJ%3fFFxDzeYYQxUda6EF7L7oOFA7bfRFMnZnzW*&r78a@0gouNG8!",
+  server: "localhost:5984",
+  db_name: "cbctryout"

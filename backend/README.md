@@ -1,4 +1,4 @@
-# Backend
+# Fluffy
 
 To start your Phoenix server:
 
