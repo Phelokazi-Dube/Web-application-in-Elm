@@ -17,7 +17,9 @@ defmodule FluffyWeb.Router do
   scope "/", FluffyWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", PageController, :home, private: %{:javascript => "sign_up"}
+    get "/publish", PageController, :home, private: %{:javascript => "publish_data"}
+    get "/home", PageController, :home, private: %{:javascript => "home"}
   end
 
   # Other scopes may use custom stacks.

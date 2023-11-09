@@ -4,3 +4,6 @@ build
 _build/
 deps/
 .elixir_ls/
+/backend/priv/static/js/*.js
+!/backend/priv/static/js/googleme.js
+!/backend/priv/static/js/app.js

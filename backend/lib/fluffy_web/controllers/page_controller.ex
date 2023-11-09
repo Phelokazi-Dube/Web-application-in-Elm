@@ -1,9 +1,8 @@
 defmodule FluffyWeb.PageController do
   use FluffyWeb, :controller
 
-  def home(conn, _params) do
-    # The home page is often custom made,
-    # so skip the default app layout.
-    render(conn, :home, layout: false)
+  def home(conn, params) do
+    # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
+    render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
 end

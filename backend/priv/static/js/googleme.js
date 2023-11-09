@@ -1,15 +1,11 @@
-const module =
-  Elm.Main ?? Elm.PublishData ?? Elm.Homepage ?? Elm.Contact ?? Elm.Sites ?? Elm.Surveys
 const app =
-  module.init({
+  Elm.Main.init({
     node: document.getElementById('myapp')
   });
-if (app.ports && Elm.Main) {
   app.ports.signIn.subscribe(() => {
     console.log("Received click.");
     authenticate(true);
   });
-}
 
 window.google.accounts.id.initialize({
   client_id: '1083959778576-iakboe5jsa216o17klhtqeenqg1vec92.apps.googleusercontent.com',

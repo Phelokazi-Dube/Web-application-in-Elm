@@ -824,11 +824,6 @@ select {
   bottom: -1px;
 }
 
-.inset-y-0 {
-  top: 0px;
-  bottom: 0px;
-}
-
 .-left-4 {
   left: -1rem;
 }
@@ -839,10 +834,6 @@ select {
 
 .left-0 {
   left: 0px;
-}
-
-.left-\[40rem\] {
-  left: 40rem;
 }
 
 .right-0 {
@@ -873,10 +864,6 @@ select {
   top: 1.5rem;
 }
 
-.z-0 {
-  z-index: 0;
-}
-
 .z-50 {
   z-index: 50;
 }
@@ -885,29 +872,9 @@ select {
   margin: -0.75rem;
 }
 
-.-mx-2 {
-  margin-left: -0.5rem;
-  margin-right: -0.5rem;
-}
-
-.-my-0 {
-  margin-top: -0px;
-  margin-bottom: -0px;
-}
-
-.-my-0\.5 {
-  margin-top: -0.125rem;
-  margin-bottom: -0.125rem;
-}
-
 .-my-4 {
   margin-top: -1rem;
   margin-bottom: -1rem;
-}
-
-.mx-auto {
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .ml-1 {
@@ -916,10 +883,6 @@ select {
 
 .ml-2 {
   margin-left: 0.5rem;
-}
-
-.ml-3 {
-  margin-left: 0.75rem;
 }
 
 .ml-4 {
@@ -958,10 +921,6 @@ select {
   margin-top: 0.75rem;
 }
 
-.mt-4 {
-  margin-top: 1rem;
-}
-
 .block {
   display: block;
 }
@@ -970,16 +929,8 @@ select {
   display: flex;
 }
 
-.inline-flex {
-  display: inline-flex;
-}
-
 .table {
   display: table;
-}
-
-.grid {
-  display: grid;
 }
 
 .contents {
@@ -988,10 +939,6 @@ select {
 
 .hidden {
   display: none;
-}
-
-.h-12 {
-  height: 3rem;
 }
 
 .h-3 {
@@ -1004,14 +951,6 @@ select {
 
 .h-5 {
   height: 1.25rem;
-}
-
-.h-6 {
-  height: 1.5rem;
-}
-
-.h-full {
-  height: 100%;
 }
 
 .min-h-\[6rem\] {
@@ -1042,10 +981,6 @@ select {
   width: 1.25rem;
 }
 
-.w-6 {
-  width: 1.5rem;
-}
-
 .w-80 {
   width: 20rem;
 }
@@ -1058,16 +993,8 @@ select {
   width: 100%;
 }
 
-.max-w-2xl {
-  max-width: 42rem;
-}
-
 .max-w-3xl {
   max-width: 48rem;
-}
-
-.max-w-xl {
-  max-width: 36rem;
 }
 
 .flex-none {
@@ -1096,10 +1023,6 @@ select {
 
 .animate-spin {
   animation: spin 1s linear infinite;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
 }
 
 .items-center {
@@ -1132,15 +1055,6 @@ select {
 
 .gap-6 {
   gap: 1.5rem;
-}
-
-.gap-x-6 {
-  -moz-column-gap: 1.5rem;
-       column-gap: 1.5rem;
-}
-
-.gap-y-4 {
-  row-gap: 1rem;
 }
 
 .space-y-8 > :not([hidden]) ~ :not([hidden]) {
@@ -1180,10 +1094,6 @@ select {
   border-radius: 1rem;
 }
 
-.rounded-full {
-  border-radius: 9999px;
-}
-
 .rounded-lg {
   border-radius: 0.5rem;
 }
@@ -1194,10 +1104,6 @@ select {
 
 .border {
   border-width: 1px;
-}
-
-.border-b {
-  border-bottom-width: 1px;
 }
 
 .border-t {
@@ -1214,11 +1120,6 @@ select {
   border-color: rgb(251 113 133 / var(--tw-border-opacity));
 }
 
-.border-zinc-100 {
-  --tw-border-opacity: 1;
-  border-color: rgb(244 244 245 / var(--tw-border-opacity));
-}
-
 .border-zinc-200 {
   --tw-border-opacity: 1;
   border-color: rgb(228 228 231 / var(--tw-border-opacity));
@@ -1227,10 +1128,6 @@ select {
 .border-zinc-300 {
   --tw-border-opacity: 1;
   border-color: rgb(212 212 216 / var(--tw-border-opacity));
-}
-
-.bg-brand\/5 {
-  background-color: rgb(253 79 0 / 0.05);
 }
 
 .bg-emerald-50 {
@@ -1248,16 +1145,6 @@ select {
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
-.bg-zinc-100 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(244 244 245 / var(--tw-bg-opacity));
-}
-
-.bg-zinc-50 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(250 250 250 / var(--tw-bg-opacity));
-}
-
 .bg-zinc-50\/90 {
   background-color: rgb(250 250 250 / 0.9);
 }
@@ -1273,10 +1160,6 @@ select {
 
 .fill-rose-900 {
   fill: #881337;
-}
-
-.fill-zinc-400 {
-  fill: #a1a1aa;
 }
 
 .p-0 {
@@ -1299,11 +1182,6 @@ select {
   padding: 1rem;
 }
 
-.px-2 {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
 .px-3 {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
@@ -1314,44 +1192,9 @@ select {
   padding-right: 1rem;
 }
 
-.px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
-
-.py-0 {
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
-.py-0\.5 {
-  padding-top: 0.125rem;
-  padding-bottom: 0.125rem;
-}
-
-.py-1 {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-}
-
-.py-10 {
-  padding-top: 2.5rem;
-  padding-bottom: 2.5rem;
-}
-
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
-}
-
-.py-20 {
-  padding-top: 5rem;
-  padding-bottom: 5rem;
-}
-
-.py-3 {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
 }
 
 .py-4 {
@@ -1373,19 +1216,6 @@ select {
 
 .text-right {
   text-align: right;
-}
-
-.text-\[0\.8125rem\] {
-  font-size: 0.8125rem;
-}
-
-.text-\[2rem\] {
-  font-size: 2rem;
-}
-
-.text-base {
-  font-size: 1rem;
-  line-height: 1.5rem;
 }
 
 .text-lg {
@@ -1410,10 +1240,6 @@ select {
   font-weight: 600;
 }
 
-.leading-10 {
-  line-height: 2.5rem;
-}
-
 .leading-5 {
   line-height: 1.25rem;
 }
@@ -1422,21 +1248,8 @@ select {
   line-height: 1.5rem;
 }
 
-.leading-7 {
-  line-height: 1.75rem;
-}
-
 .leading-8 {
   line-height: 2rem;
-}
-
-.tracking-tighter {
-  letter-spacing: -0.05em;
-}
-
-.text-brand {
-  --tw-text-opacity: 1;
-  color: rgb(253 79 0 / var(--tw-text-opacity));
 }
 
 .text-emerald-800 {
@@ -1482,11 +1295,6 @@ select {
 .text-zinc-900 {
   --tw-text-opacity: 1;
   color: rgb(24 24 27 / var(--tw-text-opacity));
-}
-
-.antialiased {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .opacity-0 {
@@ -1588,18 +1396,10 @@ select {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
 }
 
-.\[scrollbar-gutter\:stable\] {
-  scrollbar-gutter: stable;
-}
-
 /* This file is for your main application CSS */
 
 .hover\:cursor-pointer:hover {
   cursor: pointer;
-}
-
-.hover\:bg-zinc-200\/80:hover {
-  background-color: rgb(228 228 231 / 0.8);
 }
 
 .hover\:bg-zinc-50:hover {
@@ -1615,11 +1415,6 @@ select {
 .hover\:text-zinc-700:hover {
   --tw-text-opacity: 1;
   color: rgb(63 63 70 / var(--tw-text-opacity));
-}
-
-.hover\:text-zinc-900:hover {
-  --tw-text-opacity: 1;
-  color: rgb(24 24 27 / var(--tw-text-opacity));
 }
 
 .hover\:opacity-40:hover {
@@ -1646,18 +1441,9 @@ select {
   color: rgb(255 255 255 / 0.8);
 }
 
-.group:hover .group-hover\:bg-zinc-100 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(244 244 245 / var(--tw-bg-opacity));
-}
-
 .group:hover .group-hover\:bg-zinc-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(250 250 250 / var(--tw-bg-opacity));
-}
-
-.group:hover .group-hover\:fill-zinc-600 {
-  fill: #52525b;
 }
 
 .group:hover .group-hover\:opacity-70 {
@@ -1705,10 +1491,6 @@ select {
     width: 24rem;
   }
 
-  .sm\:w-auto {
-    width: auto;
-  }
-
   .sm\:w-full {
     width: 100%;
   }
@@ -1728,18 +1510,6 @@ select {
     --tw-scale-x: .95;
     --tw-scale-y: .95;
     transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-  }
-
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sm\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .sm\:flex-col {
-    flex-direction: column;
   }
 
   .sm\:gap-8 {
@@ -1769,21 +1539,6 @@ select {
     padding-right: 0px;
   }
 
-  .sm\:px-6 {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-
-  .sm\:py-28 {
-    padding-top: 7rem;
-    padding-bottom: 7rem;
-  }
-
-  .sm\:py-6 {
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
-  }
-
   .sm\:text-sm {
     font-size: 0.875rem;
     line-height: 1.25rem;
@@ -1792,47 +1547,11 @@ select {
   .sm\:leading-6 {
     line-height: 1.5rem;
   }
-
-  .group:hover .sm\:group-hover\:scale-105 {
-    --tw-scale-x: 1.05;
-    --tw-scale-y: 1.05;
-    transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-  }
 }
 
 @media (min-width: 1024px) {
-  .lg\:mx-0 {
-    margin-left: 0px;
-    margin-right: 0px;
-  }
-
-  .lg\:block {
-    display: block;
-  }
-
-  .lg\:px-8 {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-
   .lg\:py-8 {
     padding-top: 2rem;
     padding-bottom: 2rem;
-  }
-}
-
-@media (min-width: 1280px) {
-  .xl\:left-\[50rem\] {
-    left: 50rem;
-  }
-
-  .xl\:px-28 {
-    padding-left: 7rem;
-    padding-right: 7rem;
-  }
-
-  .xl\:py-32 {
-    padding-top: 8rem;
-    padding-bottom: 8rem;
   }
 }

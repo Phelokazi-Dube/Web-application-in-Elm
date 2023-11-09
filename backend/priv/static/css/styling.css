@@ -54,6 +54,10 @@ a {
     padding-left: 20px;
 }
 
+.teal-color {
+    color:rgb(19, 84, 125);
+}
+
 .btn {
     /* This is for every button */
     width: 100px;
