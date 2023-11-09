@@ -4,25 +4,25 @@
             "inputs": [
                 "sign_up/src/Main.elm"
             ],
-            "output": "backend/priv/static/assets/sign_up.js"
+            "output": "backend/priv/static/js/sign_up.js"
         },
         "Contact": {
             "inputs": [
                 "landing page/src/Contact.elm"
             ],
-            "output": "backend/priv/static/assets/contact.js"
+            "output": "backend/priv/static/js/contact.js"
         },
         "Home": {
             "inputs": [
                 "landing page/src/Homepage.elm"
             ],
-            "output": "backend/priv/static/assets/home.js"
+            "output": "backend/priv/static/js/home.js"
         },
         "PublishData": {
             "inputs": [
                 "landing page/src/PublishData.elm"
             ],
-            "output": "backend/priv/static/assets/publish_data.js"
+            "output": "backend/priv/static/js/publish_data.js"
         }
     }
 }
