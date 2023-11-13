@@ -20,6 +20,9 @@ defmodule FluffyWeb.Router do
     get "/", PageController, :home, private: %{:javascript => "sign_up"}
     get "/publish", PageController, :home, private: %{:javascript => "publish_data"}
     get "/home", PageController, :home, private: %{:javascript => "home"}
+    get "/contact", PageController, :home, private: %{:javascript => "contact"}
+    get "/sites", PageController, :home, private: %{:javascript => "sites"}
+    get "/uploading", PageController, :home, private: %{:javascript => "uploading"}
   end
 
   # Other scopes may use custom stacks.

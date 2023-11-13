@@ -1,30 +1,25 @@
 module Main exposing (..)
 
-import Browser
 import Auth
+import Browser
+import UploadingData exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
 import Html.Events exposing (onClick)
+import Browser.Navigation exposing (load)
 
--- elm make .\src\Main.elm --output=build/main.js
--- npx serve -l 8000
 
 type alias Model =
   { mode : Mode
   }
 
-
-type Mode = Login | LoggedIn
-
+type Mode = Login
 
 init : () -> (Model, Cmd Msg)
 init flags =
-  ( { mode = Login
-    }
+  ( { mode = Login }
   , Cmd.none
   )
-
 
 type Msg
   = LoginMsg
@@ -37,7 +32,8 @@ update msg model =
       ( { model | mode = Login }, Auth.signIn () )
 
     LoginSuccessful ->
-      ( { model | mode = LoggedIn }, Cmd.none )
+      -- Load a new page when the user is logged in
+      ({ model | mode = Login }, load "/sites")
 
 view : Model -> Html Msg
 view model =
@@ -56,7 +52,7 @@ view model =
                   , onClick LoginMsg
                   ]
                   [ text "Login with Google  "
-                  , node "ion-icon" 
+                  , node "ion-icon"
                     [ class "bi bi-google teal-color", attribute "name" "logo-google" ]
                     []
                   ]
@@ -64,8 +60,6 @@ view model =
             ]
           ]
         ]
-    LoggedIn ->
-      div [] [text "The user is logged in"]
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =

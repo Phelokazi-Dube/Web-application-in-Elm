@@ -25,11 +25,14 @@ type Msg
     -- Define your message types here
     = NoOp
 
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         NoOp ->
             (model, Cmd.none)
+    
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -42,7 +45,7 @@ view model =
     div [ class "main" ]
         [ node "link" 
             [ attribute "rel" "stylesheet"
-            , attribute "href" "/css/yhoo.css"
+            , attribute "href" "/css/styling.css"
             ] 
             []
         , nav [ class "navbar" ]
@@ -60,10 +63,10 @@ view model =
                     [ a [ href "#" ] [ text "DATA" ]
                     , ul []
                         [ li []
-                            [ a [ href "/getData" ] [ text "Get Data" ]
+                            [ a [ href "#" ] [ text "Get Data" ]
                             ]
                         , li []
-                            [ a [ href "#" ] [ text "Publish Data" ]
+                            [ a [ href "/publish" ] [ text "Publish Data" ]
                             ]
                         ]
                     ]
@@ -79,7 +82,7 @@ view model =
                         ]
                     ]
                 , li []
-                    [ a [ href "#" ] [ text "CONTACT" ]
+                    [ a [ href "/contact" ] [ text "CONTACT" ]
                     ]
                 ]
             , div [ class "search" ]
@@ -93,7 +96,7 @@ view model =
                 [ text "Welcome to the CBC Portal, please login to describe and submit your data."
                 , br [] []
                 , text "A CBC Data Curator will review your submission and respond ASAP. "
-                , b [] [ a [ href "/Login" ] [ text "Login" ] ]
+                , b [] [ a [ href "/", style "color" "black", style "text-decoration" "underline" ] [ text "Login" ] ]
                 , text " to get started."
                 ]
             ]

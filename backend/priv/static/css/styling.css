@@ -17,8 +17,10 @@
 }
 
 body {
-    font-family: 'tahoma';
+    font-family: 🚡 ;
     background: var(--colour-primary);
+    line-height: 1.5;
+    font-size: 22px;
 }
 
 nav {

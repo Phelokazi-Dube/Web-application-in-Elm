@@ -34,7 +34,7 @@ update msg model =
             (model, Cmd.none)
 
         LoadPage ->
-            (model, load "http://localhost:8000/landing%20page/src/PublishData.elm" |> Cmd.map (always NoOp)) -- Use `Cmd.map` to transform the result of `load` to `NoOp`
+            (model, load "/publish" |> Cmd.map (always NoOp)) -- Use `Cmd.map` to transform the result of `load` to `NoOp`
 
 
 subscriptions : Model -> Sub Msg
@@ -57,10 +57,10 @@ view model =
                 ]
             , ul []
                 [ li []
-                    [ a [ href "#" ] [ text "HOME" ]
+                    [ a [ href "/home" ] [ text "HOME" ]
                     ]
                 , li []
-                    [ a [ href "#" ] [ text "SITES" ]
+                    [ a [ href "/sites" ] [ text "SITES" ]
                     ]
                 , li []
                     [ a [ href "#" ] [ text "DATA" ]
@@ -69,7 +69,7 @@ view model =
                             [ a [ href "#" ] [ text "Get Data" ]
                             ]
                         , li []
-                            [ a [ href "#", onClick LoadPage ] [ text "Publish Data" ] -- Add onClick event handler
+                            [ a [ href "/publish", onClick LoadPage ] [ text "Publish Data" ] -- Add onClick event handler
                             ]
                         ]
                     ]
@@ -85,7 +85,7 @@ view model =
                         ]
                     ]
                 , li []
-                    [ a [ href "#" ] [ text "CONTACT" ]
+                    [ a [ href "/contact" ] [ text "CONTACT" ]
                     ]
                 ]
             , div [ class "search" ]

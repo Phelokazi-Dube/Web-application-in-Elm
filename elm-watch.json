@@ -23,6 +23,12 @@
                 "landing page/src/PublishData.elm"
             ],
             "output": "backend/priv/static/js/publish_data.js"
+        },
+        "UploadingData": {
+            "inputs": [
+                "landing page/src/UploadingData.elm"
+            ],
+            "output": "backend/priv/static/js/uploading.js"
         }
     }
 }
