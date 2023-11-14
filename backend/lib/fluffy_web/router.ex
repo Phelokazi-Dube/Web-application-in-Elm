@@ -22,7 +22,7 @@ defmodule FluffyWeb.Router do
     get "/home", PageController, :home, private: %{:javascript => "home"}
     get "/contact", PageController, :home, private: %{:javascript => "contact"}
     get "/sites", PageController, :home, private: %{:javascript => "sites"}
-    get "/uploading", PageController, :home, private: %{:javascript => "uploading"}
+    get "/uploading", PageController, :home, private: %{:javascript => "uploading_data"}
   end
 
   # Other scopes may use custom stacks.

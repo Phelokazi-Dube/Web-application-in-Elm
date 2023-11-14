@@ -28,7 +28,7 @@
             "inputs": [
                 "landing page/src/UploadingData.elm"
             ],
-            "output": "backend/priv/static/js/uploading.js"
+            "output": "backend/priv/static/js/uploading_data.js"
         }
     }
 }

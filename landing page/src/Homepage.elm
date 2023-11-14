@@ -45,7 +45,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "main", style "background-image" "url(/css/images/Mass_rearing.png)" ]
+    div [ class "main", style "background-image" "url(images/Mass_rearing.png)" ]
         [ node "link"
             [ attribute "rel" "stylesheet"
             , attribute "href" "/css/styling.css"
