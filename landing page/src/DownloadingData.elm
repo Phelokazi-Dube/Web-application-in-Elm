@@ -1,12 +1,11 @@
-module PublishData exposing (..)
+module DownloadingData exposing (..)
 
-import Browser exposing (..)
-import Html exposing (Html, div, nav, ul, li, a, input, button, text, h2, p, node, h1, br)
-import Html.Attributes exposing (class, href, type_, name, placeholder)
-import Html.Events exposing (onClick)
+import Browser
+import Html exposing (Html, div, nav, h2, p, br, b, a, input, button, ul, li, text, node)
+import Html.Attributes exposing (class, type_, name, placeholder, href, style, attribute)
+import Html.Events exposing (onClick, onMouseOver)
 import Browser.Navigation exposing (load)
-import Html.Attributes exposing (..)
-import Html exposing (..)
+
 
 -- Model
 type alias Model =
@@ -31,7 +30,6 @@ update msg model =
     case msg of
         NoOp ->
             (model, Cmd.none)
-    
 
 
 subscriptions : Model -> Sub Msg
@@ -43,10 +41,10 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
     div [ class "main" ]
-        [ node "link" 
+        [ node "link"
             [ attribute "rel" "stylesheet"
             , attribute "href" "/css/styling.css"
-            ] 
+            ]
             []
         , nav [ class "navbar" ]
             [ div [ class "logo" ]
@@ -63,10 +61,10 @@ view model =
                     [ a [ href "#" ] [ text "DATA" ]
                     , ul []
                         [ li []
-                            [ a [ href "/downloading" ] [ text "Get Data" ]
+                            [ a [ href "/uploading" ] [ text "Get Data" ]
                             ]
                         , li []
-                            [ a [ href "/publish" ] [ text "Publish Data" ]
+                            [ a [ href "/publish" ] [ text "Publish Data" ] 
                             ]
                         ]
                     ]
@@ -91,17 +89,14 @@ view model =
                 ]
             ]
         , div [ class "body" ]
-            [ h1 [] [ text "For Users" ]
-            , p []
-                [ text "Welcome to the CBC Portal, please login to describe and submit your data."
+            [ p []
+                [ text "Welcome to the CBC Portal"
                 , br [] []
-                , text "A CBC Data Curator will review your submission and respond ASAP. "
-                , b [] [ a [ href "/", style "color" "black", style "text-decoration" "underline" ] [ text "Login" ] ]
-                , text " to get started."
+                , text "You can download data from "
+                , b [] [ a [ href "/api/couchdb/documents/:id", style "color" "black", style "text-decoration" "underline"] [ text "here" ] ]
                 ]
             ]
         ]
-    
 
 
 main : Program () Model Msg

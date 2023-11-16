@@ -5,7 +5,7 @@
   <script src={~p"/js/googleme.js"} defer></script>
 <% else %>
   <script>
-    const module = Elm.PublishData ?? Elm.Homepage ?? Elm.Contact ?? Elm.Sites ?? Elm.Surveys ?? Elm.UploadingData
+    const module = Elm.PublishData ?? Elm.Homepage ?? Elm.Contact ?? Elm.Sites ?? Elm.Surveys ?? Elm.UploadingData ?? Elm.DownloadingData
     const app =
       module.init({
         node: document.getElementById('myapp')

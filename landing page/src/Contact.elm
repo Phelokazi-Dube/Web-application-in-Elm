@@ -59,7 +59,7 @@ view model =
                     [ a [ href "#" ] [ text "DATA" ]
                     , ul []
                         [ li []
-                            [ a [ href "#" ] [ text "Get Data" ]
+                            [ a [ href "/downloading" ] [ text "Get Data" ]
                             ]
                         , li []
                             [ a [ href "/publish" ] [ text "Publish Data" ]

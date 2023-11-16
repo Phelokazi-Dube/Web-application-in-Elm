@@ -3,7 +3,6 @@ module Homepage exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import Browser.Navigation exposing (load)
 import Html.Attributes exposing (attribute)
 
@@ -24,7 +23,6 @@ init =
 type Msg
     -- Define your message types here
     = NoOp
-    | LoadPage
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -32,9 +30,6 @@ update msg model =
     case msg of
         NoOp ->
             (model, Cmd.none)
-
-        LoadPage ->
-            (model, load "/publish" |> Cmd.map (always NoOp)) -- Use `Cmd.map` to transform the result of `load` to `NoOp`
 
 
 subscriptions : Model -> Sub Msg
@@ -66,10 +61,10 @@ view model =
                     [ a [ href "#" ] [ text "DATA" ]
                     , ul []
                         [ li []
-                            [ a [ href "#" ] [ text "Get Data" ]
+                            [ a [ href "/downloading" ] [ text "Get Data" ]
                             ]
                         , li []
-                            [ a [ href "/publish", onClick LoadPage ] [ text "Publish Data" ] -- Add onClick event handler
+                            [ a [ href "/publish" ] [ text "Publish Data" ]
                             ]
                         ]
                     ]

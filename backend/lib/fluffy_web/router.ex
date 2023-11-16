@@ -23,6 +23,7 @@ defmodule FluffyWeb.Router do
     get "/contact", PageController, :home, private: %{:javascript => "contact"}
     get "/sites", PageController, :home, private: %{:javascript => "sites"}
     get "/uploading", PageController, :home, private: %{:javascript => "uploading_data"}
+    get "/downloading", PageController, :home, private: %{:javascript => "downloading_data"}
   end
 
   # Other scopes may use custom stacks.
@@ -33,7 +34,7 @@ defmodule FluffyWeb.Router do
     get "/couchdb/documents/:id", CouchDBController, :show
 
     # Route for creating a document
-    post "/couchdb/documents/:id", CouchDBController, :create
+    post "/couchdb/documents/newdoc", CouchDBController, :create
 
     get "/documents/:db_name" , CouchDBController, :fetch_documents
 

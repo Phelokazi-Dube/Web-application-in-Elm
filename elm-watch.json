@@ -29,6 +29,12 @@
                 "landing page/src/UploadingData.elm"
             ],
             "output": "backend/priv/static/js/uploading_data.js"
+        },
+        "DownloadingData": {
+            "inputs": [
+                "landing page/src/DownloadingData.elm"
+            ],
+            "output": "backend/priv/static/js/downloading_data.js"
         }
     }
 }
