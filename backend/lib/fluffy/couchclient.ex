@@ -58,6 +58,8 @@ defmodule Fluffy.CouchDBClient do
   end
 
   def handle_call({:create, id, value}, _from, state) do
-    {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "value" => value}), state}
+    # {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "value" => value}), state}
+    # {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "survey type" => "Blah blah survey", "Target weed" => %{ "name" => "Salvinia", "no. leaves" => 875, "some numbers" => [ 5, 7, 6, 9 ] }}), state}
+    {:reply, :couchdb_documents.save(state.conn, %{ value | "_id" => id }), state}
   end
 end

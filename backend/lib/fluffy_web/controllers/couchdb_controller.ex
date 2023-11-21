@@ -25,6 +25,40 @@ defmodule FluffyWeb.CouchDBController do
     # |> json(%{message: "OK", doc: doc})
   end
 
+  def save_document(conn, id, survey_type, target_weed) do
+    default_values = %{
+      "_id" => id,
+      "survey type" => survey_type,
+      "Target weed" => target_weed,
+      "location" => "",
+      "userLogin" => "",
+      "controlAgent" => "",
+      "targetWeedName" => "",
+      "targetWeedRank" => "",
+      "targetWeedId" => "",
+      "targetWeedTaxonName" => "",
+      "weather" => "",
+      "water" => "",
+      "photos" => "",
+      "province" => "KZN",
+      "sitename" => "PMB Botanical Gardens",
+      "date" => "10/18/2019",
+      "noLeaves" => "114",
+      "noStems" => "0",
+      "noFlowers" => "0",
+      "noCapsules" => "0",
+      "maxHeight" => "136",
+      "noRamets" => "21",
+      "sizeOfInf" => "2x2m",
+      "percentCover" => "",
+      "description" => ""
+    }
+    case CouchDBClient.create(document) do
+      {:ok, _saved_doc} ->
+        {:reply, :ok, conn}
+    end
+  end
+
   def find(conn, _) do
     case CouchDBClient.all_dbs() do
       {:ok, databases} ->
