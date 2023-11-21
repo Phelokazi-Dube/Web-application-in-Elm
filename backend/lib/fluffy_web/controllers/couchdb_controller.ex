@@ -17,7 +17,7 @@ defmodule FluffyWeb.CouchDBController do
         CouchDBClient.create(id, "Hello from CouchDB!")
         conn
         |> put_status(:ok)
-        |> json (%{message: "OK", value: "NEW value created in CouchDB; refresh and I'll show it to you"})
+        |> json(%{message: "OK", value: "NEW value created in CouchDB; refresh and I'll show it to you"})
     end
     # {:ok, parsed_doc} = Jiffy.decode(doc)
     # conn
@@ -27,7 +27,6 @@ defmodule FluffyWeb.CouchDBController do
 
   def save_document(conn, id, survey_type, target_weed) do
     default_values = %{
-      "_id" => id,
       "survey type" => survey_type,
       "Target weed" => target_weed,
       "location" => "",
@@ -53,7 +52,7 @@ defmodule FluffyWeb.CouchDBController do
       "percentCover" => "",
       "description" => ""
     }
-    case CouchDBClient.create(document) do
+    case CouchDBClient.create(id, default_values) do
       {:ok, _saved_doc} ->
         {:reply, :ok, conn}
     end
