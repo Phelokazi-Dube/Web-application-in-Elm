@@ -31,6 +31,8 @@ defmodule Fluffy.CouchDBClient do
   end
 
   def create(id, value) do
+    IO.inspect(value)
+    IO.inspect(id)
     GenServer.call(__MODULE__, {:create, id, value})
   end
 
@@ -60,6 +62,7 @@ defmodule Fluffy.CouchDBClient do
   def handle_call({:create, id, value}, _from, state) do
     # {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "value" => value}), state}
     # {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "survey type" => "Blah blah survey", "Target weed" => %{ "name" => "Salvinia", "no. leaves" => 875, "some numbers" => [ 5, 7, 6, 9 ] }}), state}
-    {:reply, :couchdb_documents.save(state.conn, %{ value | "_id" => id }), state}
+    dbValue = Map.put(value, "_id", id)
+    {:reply, :couchdb_documents.save(state.conn, dbValue), state}
   end
 end

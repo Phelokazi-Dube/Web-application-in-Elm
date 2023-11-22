@@ -3,6 +3,7 @@ defmodule FluffyWeb.CouchDBController do
   use FluffyWeb, :controller
 
 
+
   def show(conn, %{"id" => id}) do
     with  {:ok, value} <- CouchDBClient.get_document(id) |> IO.inspect() do
       conn
@@ -14,7 +15,31 @@ defmodule FluffyWeb.CouchDBController do
         |> put_status(:unauthorized)
         # |> json(%{problem: "Unauthenticated", solution: "Permit unauthenticated localhost access to CouchDB?  Or figure out the permissions..."})
       {:error, :not_found} ->
-        CouchDBClient.create(id, "Hello from CouchDB!")
+        default_values =  %{
+          "location" => "",
+          "userLogin" => "",
+          "controlAgent" => "",
+          "targetWeedName" => "",
+          "targetWeedRank" => "",
+          "targetWeedId" => "",
+          "targetWeedTaxonName" => "",
+          "weather" => "",
+          "water" => "",
+          "photos" => "",
+          "province" => "",
+          "sitename" => "PMB Botanical Gardens",
+          "date" => "",
+          "noLeaves" => "",
+          "noStems" => "",
+          "noFlowers" => "",
+          "noCapsules" => "",
+          "maxHeight" => "",
+          "noRamets" => "",
+          "sizeOfInf" => "",
+          "percentCover" => "",
+          "description" => ""
+        }
+        CouchDBClient.create(id, default_values)
         conn
         |> put_status(:ok)
         |> json(%{message: "OK", value: "NEW value created in CouchDB; refresh and I'll show it to you"})
@@ -25,38 +50,6 @@ defmodule FluffyWeb.CouchDBController do
     # |> json(%{message: "OK", doc: doc})
   end
 
-  def save_document(conn, id, survey_type, target_weed) do
-    default_values = %{
-      "survey type" => survey_type,
-      "Target weed" => target_weed,
-      "location" => "",
-      "userLogin" => "",
-      "controlAgent" => "",
-      "targetWeedName" => "",
-      "targetWeedRank" => "",
-      "targetWeedId" => "",
-      "targetWeedTaxonName" => "",
-      "weather" => "",
-      "water" => "",
-      "photos" => "",
-      "province" => "KZN",
-      "sitename" => "PMB Botanical Gardens",
-      "date" => "10/18/2019",
-      "noLeaves" => "114",
-      "noStems" => "0",
-      "noFlowers" => "0",
-      "noCapsules" => "0",
-      "maxHeight" => "136",
-      "noRamets" => "21",
-      "sizeOfInf" => "2x2m",
-      "percentCover" => "",
-      "description" => ""
-    }
-    case CouchDBClient.create(id, default_values) do
-      {:ok, _saved_doc} ->
-        {:reply, :ok, conn}
-    end
-  end
 
   def find(conn, _) do
     case CouchDBClient.all_dbs() do
