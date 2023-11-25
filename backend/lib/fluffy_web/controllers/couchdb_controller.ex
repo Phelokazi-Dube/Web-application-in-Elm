@@ -6,9 +6,42 @@ defmodule FluffyWeb.CouchDBController do
 
   def show(conn, %{"id" => id}) do
     with  {:ok, value} <- CouchDBClient.get_document(id) |> IO.inspect() do
+      html_content = """
+      <div style="max-width:100%; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h1 style="color: #333;">Document Info</h1>
+        <p><strong>ID:</strong> #{value["_id"]}</p>
+        <p><strong>Revision:</strong> #{value["_rev"]}</p>
+        <p><strong>Created on:</strong> #{value["created_at"]}</p>
+        <p><strong>Created by :</strong> #{value["userLogin"]}</p>
+
+          <div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+          <h2 style="color: #333;">Contents</h2>
+          <p><strong>Location:</strong> #{value["location"]}</p>
+          <p><strong>Observed on:</strong> #{value["date"]}</p>
+          <p><strong>Control Agent:</strong> #{value["controlAgent"]}</p>
+          <p><strong>Target Weed Name:</strong> #{value["targetWeedName"]}</p>
+          <p><strong>Target Weed Rank:</strong> #{value["targetWeedRank"]}</p>
+          <p><strong>Target Weed Taxon Name:</strong> #{value["targetWeedTaxonName"]}</p>
+          <p><strong>Weather:</strong> #{value["weather"]}</p>
+          <p><strong>Photos:</strong> #{value["photos"]}</p>
+          <p><strong>Province:</strong> #{value["province"]}</p>
+          <p><strong>Sitename:</strong> #{value["sitename"]}</p>
+          <p><strong>No Stems:</strong> #{value["noStems"]}</p>
+          <p><strong>No Flowers:</strong> #{value["noFlowers"]}</p>
+          <p><strong>No Capsules:</strong> #{value["noCapsules"]}</p>
+          <p><strong>Max Height:</strong> #{value["maxHeight"]}</p>
+          <p><strong>No Ramets:</strong> #{value["noRamets"]}</p>
+          <p><strong>Size of Infestation:</strong> #{value["sizeOfInf"]}</p>
+          <p><strong>Percent Cover:</strong> #{value["percentCover"]}</p>
+          <p><strong>Description:</strong> #{value["description"]}</p>
+        </div>
+      </div>
+      """
       conn
-      |> put_status(:ok)
-      |> json(%{message: "OK", value: value})
+      |> put_resp_content_type("text/html")
+      |> send_resp(:ok, html_content)
+      # |> put_status(:ok)
+      # |> json(%{message: "OK", value: value})
     else
       {:error, :unauthenticated} ->
         conn
@@ -37,7 +70,8 @@ defmodule FluffyWeb.CouchDBController do
           "noRamets" => "",
           "sizeOfInf" => "",
           "percentCover" => "",
-          "description" => ""
+          "description" => "",
+          "created_at" => System.os_time(:second)
         }
         CouchDBClient.create(id, default_values)
         conn
