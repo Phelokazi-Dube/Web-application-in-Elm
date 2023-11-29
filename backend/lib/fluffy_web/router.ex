@@ -23,6 +23,7 @@ defmodule FluffyWeb.Router do
     get "/contact", PageController, :home, private: %{:javascript => "contact"}
     get "/sites", PageController, :home, private: %{:javascript => "sites"}
     get "/uploading", PageController, :home, private: %{:javascript => "uploading_data"}
+    post "/uploading", PageController, :upload
     get "/downloading", PageController, :home, private: %{:javascript => "downloading_data"}
   end
 

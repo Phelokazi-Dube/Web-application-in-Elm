@@ -1,4 +1,5 @@
 defmodule Fluffy.CouchDBClient do
+  require Logger
   use GenServer
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -30,9 +31,13 @@ defmodule Fluffy.CouchDBClient do
     GenServer.call(__MODULE__, {:all_docs, db, headers})
   end
 
+  def create(value) do
+    GenServer.call(__MODULE__, {:create, value})
+  end
+
   def create(id, value) do
-    IO.inspect(value)
-    IO.inspect(id)
+    # IO.inspect(value)
+    # IO.inspect(id)
     GenServer.call(__MODULE__, {:create, id, value})
   end
 
@@ -51,18 +56,27 @@ defmodule Fluffy.CouchDBClient do
   end
 
   def handle_call(:all_dbs, _from, state) do
-    IO.inspect(state.server)
+    # IO.inspect(state.server)
     {:reply, :couchdb_server.all_dbs(state.server), state}
   end
 
   def handle_call({:all_docs, db, options}, _from, state) do
-    {:reply, :couchdb_documents.get(state.conn, db, options),  state}
+    {:reply, :couchdb_documents.get(state.conn, db, options), state}
   end
 
   def handle_call({:create, id, value}, _from, state) do
-    # {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "value" => value}), state}
-    # {:reply, :couchdb_documents.save(state.conn, %{"_id" => id, "survey type" => "Blah blah survey", "Target weed" => %{ "name" => "Salvinia", "no. leaves" => 875, "some numbers" => [ 5, 7, 6, 9 ] }}), state}
     dbValue = Map.put(value, "_id", id)
     {:reply, :couchdb_documents.save(state.conn, dbValue), state}
+  end
+
+  def handle_call({:create, value}, _from, state) do
+    case :couchdb_documents.save(state.conn, value) do
+      {:ok, doc} ->
+        {:reply, Map.get(doc, "_id"), state}
+
+      {:error, reason} ->
+        Logger.warn("Error while creating a new document: #{inspect(reason)}")
+        {:reply, :error, state}
+    end
   end
 end

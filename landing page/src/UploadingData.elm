@@ -6,11 +6,12 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
-
+-- ALL of this is stringly-typed data?  That's a recipe for disaster in future.
+-- Please be sure that you use proper data types after you have a basic working version.
 type alias Model =
     { surveyType : String
     , location : String
-    , userLogin : String
+    -- , userLogin : String -- not sure what this is for? The user will already be logged in, at this point.
     , controlAgent : String
     , targetWeedName : String
     , targetWeedRank : String
@@ -31,47 +32,49 @@ type alias Model =
     , sizeOfInf : String
     , percentCover : String
     , description : String
+    , csrf_token : String
     }
 
 
-init : Model
-init =
-    { surveyType = "Post-release or pre-release or survey"
-    , location = "41.27872259999999, -72.5571845909"
-    , userLogin = "micasa"
-    , controlAgent = "plant hopper (Megamelus scutellaris)"
-    , targetWeedName = "salvinia (Salvinia molesta)"
-    , targetWeedRank = "species"
-    , targetWeedId = "12345"
-    , targetWeedTaxonName = "Salvinia molesta"
-    , weather = "13°C"
-    , water = "the water body is a river at a temperature of 18.9°C"
-    , photos = ""
-    , province = "KZN"
-    , sitename = "PMB Botanical Gardens"
-    , date = "10/18/2019"
-    , noLeaves = "114"
-    , noStems = "0"
-    , noFlowers = "0"
-    , noCapsules = "0"
-    , maxHeight = "136"
-    , noRamets = "21"
-    , sizeOfInf = "2x2m"
-    , percentCover = ""
-    , description = ""
-    }
+init : String -> ( Model, Cmd Msg )
+init token =
+    ( { surveyType = "Post-release or pre-release or survey"
+      , location = "41.27872259999999, -72.5571845909"
+      , controlAgent = "plant hopper (Megamelus scutellaris)"
+      , targetWeedName = "salvinia (Salvinia molesta)"
+      , targetWeedRank = "species"
+      , targetWeedId = "12345"
+      , targetWeedTaxonName = "Salvinia molesta"
+      , weather = "13°C"
+      , water = "the water body is a river at a temperature of 18.9°C"
+      , photos = ""
+      , province = "KZN"
+      , sitename = "PMB Botanical Gardens"
+      , date = "10/18/2019"
+      , noLeaves = "114"
+      , noStems = "0"
+      , noFlowers = "0"
+      , noCapsules = "0"
+      , maxHeight = "136"
+      , noRamets = "21"
+      , sizeOfInf = "2x2m"
+      , percentCover = ""
+      , description = ""
+      , csrf_token = token
+      }
+      , Cmd.none
+    )
 
 
 type Msg
     = NoOp
     -- Add more message constructors as needed
 
-
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         NoOp ->
-            model
+            ( model, Cmd.none )
         -- Add cases for other messages as needed
 
 
@@ -111,11 +114,11 @@ view model =
                     , input [ type_ "text", id "location", name "location", placeholder "Latitude, Longitude", value model.location ] []
                     ]
 
-                -- User login
-                , div [ class "field" ]
-                    [ label [] [ text "User login" ]
-                    , input [ type_ "text", id "userLogin", name "userLogin", value model.userLogin ] []
-                    ]
+                -- -- User login
+                -- , div [ class "field" ]
+                --     [ label [] [ text "User login" ]
+                --     , input [ type_ "text", id "userLogin", name "userLogin", value model.userLogin ] []
+                --     ]
 
                 -- Control agent
                 , div [ class "field" ]
@@ -237,6 +240,9 @@ view model =
                     , textarea [ id "description", name "description" ] [ text model.description ]
                     ]
 
+                -- CSRF token (hidden).  This will be expected by Phoenix to validate the request.
+                , input [ type_ "hidden", name "_csrf_token", value model.csrf_token ] []
+
                 -- Add more fields as needed
                 -- Submit buttons
                 , div []
@@ -249,5 +255,11 @@ view model =
         ]
 
 
+main : Program String Model Msg
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = \_ -> Sub.none
+        }

@@ -1,3 +1,6 @@
+<%= if Map.has_key?(assigns, :extra_prepend) do %>
+<div><%= @extra_prepend %></div>
+<% end %>
 <div id="myapp"></div>
 <%= if @js_file == "sign_up" do %>
   <script src="https://apis.google.com/js/api.js" defer></script>
@@ -8,7 +11,8 @@
     const module = Elm.PublishData ?? Elm.Homepage ?? Elm.Contact ?? Elm.Sites ?? Elm.Surveys ?? Elm.UploadingData ?? Elm.DownloadingData
     const app =
       module.init({
-        node: document.getElementById('myapp')
+        node: document.getElementById('myapp'),
+        flags: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
       });
   </script>
 <% end %>
