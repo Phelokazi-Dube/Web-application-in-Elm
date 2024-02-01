@@ -4,14 +4,26 @@ import Browser
 import Html exposing (Html, form)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, on)
+import Json.Decode as Decode exposing (Decoder)
 
--- ALL of this is stringly-typed data?  That's a recipe for disaster in future.
--- Please be sure that you use proper data types after you have a basic working version.
+
+
+type Province
+    = None
+    | EasternCape
+    | Gauteng
+    | WesternCape
+    | KwaZuluNatal
+    | FreeState
+    | Mpumalanga
+    | Limpopo
+    | NorthWest
+    | NorthernCape
+
 type alias Model =
     { surveyType : String
     , location : String
-    -- , userLogin : String -- not sure what this is for? The user will already be logged in, at this point.
     , controlAgent : String
     , targetWeedName : String
     , targetWeedRank : String
@@ -20,21 +32,21 @@ type alias Model =
     , weather : String
     , water : String
     , photos : String
-    , province : String
+    , province : Province
+    , programme : String
     , sitename : String
     , date : String
-    , noLeaves : String
-    , noStems : String
-    , noFlowers : String
-    , noCapsules : String
-    , maxHeight : String
-    , noRamets : String
+    , noLeaves : Int  
+    , noStems : Int
+    , noFlowers : Int
+    , noCapsules : Int
+    , maxHeight : Int
+    , noRamets : Int
     , sizeOfInf : String
-    , percentCover : String
+    , percentCover : Float
     , description : String
     , csrf_token : String
     }
-
 
 init : String -> ( Model, Cmd Msg )
 init token =
@@ -48,35 +60,70 @@ init token =
       , weather = "13°C"
       , water = "the water body is a river at a temperature of 18.9°C"
       , photos = ""
-      , province = "KZN"
+      , province = None
+      , programme = "African Boxthorn Programme"
       , sitename = "PMB Botanical Gardens"
       , date = "10/18/2019"
-      , noLeaves = "114"
-      , noStems = "0"
-      , noFlowers = "0"
-      , noCapsules = "0"
-      , maxHeight = "136"
-      , noRamets = "21"
+      , noLeaves = 114
+      , noStems = 0
+      , noFlowers = 0
+      , noCapsules = 0
+      , maxHeight = 136
+      , noRamets = 21
       , sizeOfInf = "2x2m"
-      , percentCover = ""
+      , percentCover = 0.0
       , description = ""
       , csrf_token = token
       }
       , Cmd.none
     )
 
-
 type Msg
     = NoOp
-    -- Add more message constructors as needed
+    | ProvinceSelected Province
+
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
-        -- Add cases for other messages as needed
+            (model, Cmd.none)
+        ProvinceSelected selectedProvince ->
+            ({ model | province = selectedProvince }, Cmd.none)
+ 
 
+-- Helper function to generate radio buttons for provinces
+provinceRadioButtons : Province -> Html Msg
+provinceRadioButtons selectedProvince =
+    div []
+        [ label [] [ text "Eastern Cape"
+                   , input [ type_ "radio", name "province", value "Eastern Cape", checked (selectedProvince == EasternCape), onClick (ProvinceSelected EasternCape) ] []
+                   ]
+        , label [] [ text "Gauteng"
+                   , input [ type_ "radio", name "province", value "Gauteng", checked (selectedProvince == Gauteng), onClick (ProvinceSelected Gauteng) ] []
+                   ]
+        , label [] [ text "Western Cape"
+                   , input [ type_ "radio", name "province", value "Western Cape", checked (selectedProvince == WesternCape), onClick (ProvinceSelected WesternCape) ] []
+                   ]
+        , label [] [ text "North West"
+                   , input [ type_ "radio", name "province", value "North West", checked (selectedProvince == NorthWest), onClick (ProvinceSelected NorthWest) ] []
+                   ]
+        , label [] [ text "Nothern Cape"
+                   , input [ type_ "radio", name "province", value "Northern Cape", checked (selectedProvince == NorthernCape), onClick (ProvinceSelected NorthernCape) ] []
+                   ]
+        , label [] [ text "KwaZulu-Natal"
+                   , input [ type_ "radio", name "province", value "KwaZulu Natal", checked (selectedProvince == KwaZuluNatal), onClick (ProvinceSelected KwaZuluNatal) ] []
+                   ]
+        , label [] [ text "Limpopo"
+                   , input [ type_ "radio", name "province", value "Limpopo", checked (selectedProvince == Limpopo), onClick (ProvinceSelected Limpopo) ] []
+                   ]
+        , label [] [ text "Mpumalanga"
+                   , input [ type_ "radio", name "province", value "Mpumalanga", checked (selectedProvince == Mpumalanga), onClick (ProvinceSelected Mpumalanga) ] []
+                   ]
+        , label [] [ text "Free State"
+                   , input [ type_ "radio", name "province", value "Free State", checked (selectedProvince == FreeState), onClick (ProvinceSelected FreeState) ] []
+                   ]
+        ]
 
 view : Model -> Html Msg
 view model =
@@ -113,12 +160,6 @@ view model =
                     [ label [] [ text "Location" ]
                     , input [ type_ "text", id "location", name "location", placeholder "Latitude, Longitude", value model.location ] []
                     ]
-
-                -- -- User login
-                -- , div [ class "field" ]
-                --     [ label [] [ text "User login" ]
-                --     , input [ type_ "text", id "userLogin", name "userLogin", value model.userLogin ] []
-                --     ]
 
                 -- Control agent
                 , div [ class "field" ]
@@ -157,7 +198,7 @@ view model =
                     ]
 
                 -- Photos
-                , div [ class "field" ]
+               , div [ class "field" ]
                     [ label [] [ text "Photos" ]
                     , input [ type_ "file", id "photos", name "photos" ] []
                     ]
@@ -171,7 +212,13 @@ view model =
                 -- Province
                 , div [ class "field" ]
                     [ label [] [ text "Province" ]
-                    , input [ type_ "text", id "province", name "province", value model.province ] []
+                    , provinceRadioButtons model.province 
+                    ]
+
+                  -- Programme
+                , div [ class "field" ]
+                    [ label [] [ text "Programme" ]
+                    , input [ type_ "text", id "programme", name "programme", value model.programme ] []
                     ]
 
                 -- Sitename
@@ -189,37 +236,37 @@ view model =
                 -- No. leaves
                 , div [ class "field" ]
                     [ label [] [ text "No. leaves" ]
-                    , input [ type_ "text", id "noLeaves", name "noLeaves", value model.noLeaves ] []
+                    , input [ type_ "text", id "noLeaves", name "noLeaves", value (String.fromInt model.noLeaves) ] []
                     ]
 
                 -- No. stems
                 , div [ class "field" ]
                     [ label [] [ text "No. stems" ]
-                    , input [ type_ "text", id "noStems", name "noStems", value model.noStems ] []
+                    , input [ type_ "text", id "noStems", name "noStems", value (String.fromInt model.noStems) ] []
                     ]
 
                 -- No. flowers
                 , div [ class "field" ]
                     [ label [] [ text "No. flowers" ]
-                    , input [ type_ "text", id "noFlowers", name "noFlowers", value model.noFlowers ] []
+                    , input [ type_ "text", id "noFlowers", name "noFlowers", value (String.fromInt model.noFlowers) ] []
                     ]
 
                 -- No. capsules
                 , div [ class "field" ]
                     [ label [] [ text "No. capsules" ]
-                    , input [ type_ "text", id "noCapsules", name "noCapsules", value model.noCapsules ] []
+                    , input [ type_ "text", id "noCapsules", name "noCapsules", value (String.fromInt model.noCapsules) ] []
                     ]
 
                 -- Max height
                 , div [ class "field" ]
                     [ label [] [ text "Max height" ]
-                    , input [ type_ "text", id "maxHeight", name "maxHeight", value model.maxHeight ] []
+                    , input [ type_ "text", id "maxHeight", name "maxHeight", value (String.fromInt model.maxHeight) ] []
                     ]
 
                 -- No. ramets
                 , div [ class "field" ]
                     [ label [] [ text "No. ramets" ]
-                    , input [ type_ "text", id "noRamets", name "noRamets", value model.noRamets ] []
+                    , input [ type_ "text", id "noRamets", name "noRamets", value (String.fromInt model.noRamets) ] []
                     ]
 
                 -- Size of inf.
@@ -231,7 +278,7 @@ view model =
                 -- % Cover
                 , div [ class "field" ]
                     [ label [] [ text "% Cover" ]
-                    , input [ type_ "text", id "percentCover", name "percentCover", value model.percentCover ] []
+                    , input [ type_ "text", id "percentCover", name "percentCover", value (String.fromFloat model.percentCover) ] []
                     ]
 
                 -- Description
