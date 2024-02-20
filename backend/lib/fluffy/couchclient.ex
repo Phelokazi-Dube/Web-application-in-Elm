@@ -75,7 +75,7 @@ defmodule Fluffy.CouchDBClient do
         {:reply, Map.get(doc, "_id"), state}
 
       {:error, reason} ->
-        Logger.warn("Error while creating a new document: #{inspect(reason)}")
+        Logger.warning("Error while creating a new document: #{inspect(reason)}")
         {:reply, :error, state}
     end
   end
