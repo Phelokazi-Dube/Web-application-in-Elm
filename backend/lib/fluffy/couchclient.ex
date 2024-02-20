@@ -41,6 +41,18 @@ defmodule Fluffy.CouchDBClient do
     GenServer.call(__MODULE__, {:create, id, value})
   end
 
+  # This function is called by the handle_call/3 function when it needs to save an attachment.
+  def save_attachment!(db, upload, doc) do
+    case :couchdb_attachments.put(db, doc, upload.filename, File.read!(upload.path), content_type: upload.content_type) do
+      {:ok, new_doc} ->
+        Logger.debug("Attachment saved: #{upload.filename} (#{upload.content_type})")
+        new_doc
+      {:error, reason} ->
+        Logger.warning("I could not save attachment #{upload.filename} to document #{Map.get(doc, "_id")}: #{reason}")
+        raise reason
+    end
+  end
+
   # Each handle_call/3 function returns a tuple with three elements:
   #   - The first element is the kind of result that you're getting.  This can be one of
   #     - :reply, for sending information back to the caller
@@ -70,10 +82,40 @@ defmodule Fluffy.CouchDBClient do
   end
 
   def handle_call({:create, value}, _from, state) do
-    case :couchdb_documents.save(state.conn, value) do
+    # Check if any of the values is a %Plug.Upload.  If it is, put it into a separate map.
+    # We will need to save it as an attachment separately.
+    { uploads, fields } =
+      # How do I identify a file upload?
+      # Either it's a single Plug.Upload struct, OR it's a list of Plug.Upload structs.
+      # So, check for either of these.
+      Map.split_with(value, fn {_k, v} -> is_struct(v, Plug.Upload) or (is_list(v) and not(Enum.empty?(v)) and Enum.all?(v, &is_struct(&1, Plug.Upload))) end)
+    case :couchdb_documents.save(state.conn, fields) do
       {:ok, doc} ->
-        {:reply, Map.get(doc, "_id"), state}
-
+        # If there are any uploads, save them as attachments.
+        if map_size(uploads) == 0 do
+          {:reply, Map.get(doc, "_id"), state}
+        else
+          # If there are any uploads, save them as attachments.
+          # If the value is a list, then we have multiple uploads for the same field.
+          # We need to save each one separately.
+          final_doc =
+            Map.values(uploads) # get a list of the values in the map
+            # Every time that I upload an attachment, a new document revision is created.
+            # At the end, I need to specify the latest document revision as the return value.
+            # A "foldl" (i.e. fold-from-the-left) lets me do all of these things concisely and efficiently.
+            |> List.foldl(doc,
+              fn (v, doc) ->
+                if is_list(v) do
+                  # Every time that I upload an attachment, I must specify the LATEST document to upload it to.
+                  # Therefore, as I process each attachment, I must obtain the latest document revision
+                  # for use with the next attachment.
+                  List.foldl(v, doc, &save_attachment!(state.conn, &1, &2))
+                else
+                  save_attachment!(state.conn, v, doc)
+                end
+              end)
+          {:reply, Map.get(final_doc, "_id"), state}
+        end
       {:error, reason} ->
         Logger.warning("Error while creating a new document: #{inspect(reason)}")
         {:reply, :error, state}

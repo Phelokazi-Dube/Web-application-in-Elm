@@ -148,7 +148,7 @@ view model =
                 ]
                 -- Form
         , div [ class "column span-24" ]
-            [ Html.form [ Html.Attributes.action "#", Html.Attributes.method "post", Html.Attributes.class "form-group" ]
+            [ Html.form [ Html.Attributes.method "post", Html.Attributes.class "form-group", Html.Attributes.enctype "multipart/form-data" ]
         [ -- Survey type
           div [ class "field" ]
               [ label [] [ text "Survey type" ]
@@ -200,7 +200,7 @@ view model =
                 -- Photos
                , div [ class "field" ]
                     [ label [] [ text "Photos" ]
-                    , input [ type_ "file", id "photos", name "photos" ] []
+                    , input [ type_ "file", id "photos[]", name "photos[]", multiple True ] []
                     ]
 
                 -- Water
