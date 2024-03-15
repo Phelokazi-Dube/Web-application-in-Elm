@@ -84,6 +84,11 @@ defmodule FluffyWeb.CouchDBController do
     # |> json(%{message: "OK", doc: doc})
   end
 
+  def search(conn, %{"search" => searchString}) do
+    conn
+    |> put_status(:ok)
+    |> json([searchString, "moo"])
+  end
 
   def find(conn, _) do
     case CouchDBClient.all_dbs() do
