@@ -41,6 +41,11 @@ defmodule Fluffy.CouchDBClient do
     GenServer.call(__MODULE__, {:create, id, value})
   end
 
+  def search(db, query, options \\ []) do
+    headers = Keyword.put_new(options, :accept, "application/json")
+    GenServer.call(__MODULE__, {:search, db, query, headers})
+  end
+
   # This function is called by the handle_call/3 function when it needs to save an attachment.
   def save_attachment!(db, upload, doc) do
     case :couchdb_attachments.put(db, doc, upload.filename, File.read!(upload.path), content_type: upload.content_type) do
@@ -79,6 +84,10 @@ defmodule Fluffy.CouchDBClient do
   def handle_call({:create, id, value}, _from, state) do
     dbValue = Map.put(value, "_id", id)
     {:reply, :couchdb_documents.save(state.conn, dbValue), state}
+  end
+
+  def handle_call({:search, db, query, options}, _from, state) do
+    {:reply, :couchdb_mango.find(state.conn, db, query, options), state}
   end
 
   def handle_call({:create, value}, _from, state) do
