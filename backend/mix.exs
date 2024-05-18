@@ -19,7 +19,7 @@ defmodule Fluffy.MixProject do
   def application do
     [
       mod: {Fluffy.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :couchbeam]
     ]
   end
 
@@ -47,7 +47,8 @@ defmodule Fluffy.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:couchdb, "~> 2.1.0-beta"},
+      {:couchbeam, "~> 1.5.0", override: true, make: "make", env: ["CFLAGS": "-DWITH_JIFFY"]},
+      {:jsx, "~> 3.0.0", override: true},
       {:jiffy, "~> 1.1.1", override: true}
     ]
   end

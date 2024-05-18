@@ -18,7 +18,7 @@ defmodule Fluffy.Application do
       FluffyWeb.Endpoint,
       # Start a worker by calling: Fluffy.Worker.start_link(arg)
       # {Fluffy.Worker, arg}
-      Fluffy.CouchDBClient
+      # Fluffy.CouchDBClient
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

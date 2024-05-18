@@ -72,5 +72,6 @@ config :swoosh, :api_client, false
 config :fluffy, :couchdb,
   user: "admin",
   pass: "@Cc55!LhQA7sr2&u8sLe@$mqS3&NAsepCoTRCd$vhsjOngJ%3fFFxDzeYYQxUda6EF7L7oOFA7bfRFMnZnzW*&r78a@0gouNG8!",
-  server: "localhost:5984",
+  host: "localhost",
+  port: 5984,
   db_name: "cbctryout"

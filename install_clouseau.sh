@@ -16,10 +16,16 @@ fi
 unzip clouseau-2.23.0-dist.zip
 cd clouseau-2.23.0
 echo "Creating clouseau.ini."
+if [ -e "/var/lib/couchdb/.erlang.cookie" ]; then
+  echo "Hmm, I'm running on NixOS, I think? Let me get the random cookie.  Please authenticate."
+  cookie=$(sudo cat /var/lib/couchdb/.erlang.cookie)
+else
+  cookie="localmonster" # This is the default cookie for Ubuntu, I think
+fi
 cat <<EOF > clouseau.ini
 [clouseau]
 name=clouseau@127.0.0.1
-cookie=localmonster
+cookie=$cookie
 dir=$PWD
 max_indexes_open=500
 EOF
