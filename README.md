@@ -5,13 +5,17 @@
 - elm 0.19.1
 - nodejs 0.16+
 
+## Setup
+
+1. In `backend`, run `mix setup`.
+2. Run `npm install` to install Elm dependencies.
+3. Clouseau must be running to do searches.  Install it with the `install_clouseau.sh` script in the root folder.
+
 ## Development
 
-Run `npm install`, which should install both `elm-watch` and `serve`.  Then:
+Use `npm run start` to start frontend and backend and Clouseau.
 
-1. In one terminal, run `npx elm-watch hot` for hot-reloading.
-2. In another terminal, run `npx serve` for serving via HTTP.  (you need to do this because we use Google for auth, and Google auth does not like working from `file://` URLs).
-3. Go to `http://localhost:3000`.
+Go to `http://localhost:4000`.
 
 ### Dev notes
 
