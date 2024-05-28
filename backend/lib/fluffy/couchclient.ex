@@ -109,7 +109,9 @@ defmodule Fluffy.CouchDBClient do
       headers = [{"Content-Type", "multipart/related; boundary=\"#{boundary}\""}, {"Content-Length", to_string(len)}]
       case :couchbeam_httpc.request(:put, url, headers, :stream, []) do
         {:ok, ref} ->
-          {:reply, :couchbeam_httpc.send_mp_doc(items, ref, boundary, jsondoc, doc2), state}
+          result = :couchbeam_httpc.send_mp_doc(items, ref, boundary, jsondoc, doc2)
+          IO.inspect(result)
+          {:reply, result, state}
         {:error, reason} ->
           Logger.warning("Error while creating a new document: #{inspect(reason)}")
           {:reply, {:error, reason}, state}
