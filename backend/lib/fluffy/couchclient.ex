@@ -47,6 +47,18 @@ defmodule Fluffy.CouchDBClient do
     GenServer.call(__MODULE__, {:search, query})
   end
 
+  # This function is called by the handle_call/3 function when it needs to save an attachment.
+  def save_attachment!(db, upload, doc) do
+    case :couchdb_attachments.put(db, doc, upload.filename, File.read!(upload.path), content_type: upload.content_type) do
+      {:ok, new_doc} ->
+        Logger.debug("Attachment saved: #{upload.filename} (#{upload.content_type})")
+        new_doc
+      {:error, reason} ->
+        Logger.warning("I could not save attachment #{upload.filename} to document #{Map.get(doc, "_id")}: #{reason}")
+        raise reason
+    end
+  end
+
   # def search(db, query, options \\ []) do
   #   headers = Keyword.put_new(options, :accept, "application/json")
   #   GenServer.call(__MODULE__, {:search, db, query, headers})
