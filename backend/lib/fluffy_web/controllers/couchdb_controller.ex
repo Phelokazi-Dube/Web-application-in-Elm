@@ -1,4 +1,5 @@
 defmodule FluffyWeb.CouchDBController do
+  require Logger
   alias Fluffy.CouchDBClient
   use FluffyWeb, :controller
 
@@ -85,9 +86,17 @@ defmodule FluffyWeb.CouchDBController do
   end
 
   def search(conn, %{"search" => searchString}) do
-    conn
-    |> put_status(:ok)
-    |> json([searchString, "moo"])
+    case CouchDBClient.search(searchString) do
+      {:ok, documents} ->
+        Logger.debug("Search results: #{inspect(documents)}")
+        conn
+        |> put_status(:ok)
+        |> json(%{message: "OK", documents: documents})
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Error while searching in CouchDB: #{reason}"})
+    end
   end
 
   def fetch_documents(conn) do

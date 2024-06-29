@@ -43,6 +43,10 @@ defmodule Fluffy.CouchDBClient do
     GenServer.call(__MODULE__, {:create, id, value})
   end
 
+  def search(query) do
+    GenServer.call(__MODULE__, {:search, query})
+  end
+
   # def search(db, query, options \\ []) do
   #   headers = Keyword.put_new(options, :accept, "application/json")
   #   GenServer.call(__MODULE__, {:search, db, query, headers})
@@ -80,13 +84,34 @@ defmodule Fluffy.CouchDBClient do
     {:reply, :couchbeam_view.all(state.db), state}
   end
 
+  def handle_call({:search, query}, _from, state) do
+    {_, {_, host, _}, _, _} = state.db
+    # replace these with the correct ones!
+    db = "cbctryout"
+    design_doc = "_design/yolo"
+    index_name = "wassup"
+    url = :hackney_url.make_url(host, [db, design_doc, "_search", index_name], [q: query])
+    case :couchbeam_httpc.db_request(:get, url, [], [], [], [200]) do
+      {:ok, _, _, ref} ->
+          {:ok, body} = :hackney.body(ref)
+          %{"rows" => rows} = body |> :couchbeam_ejson.decode()
+          ids = Enum.map(rows, &Map.get(&1, "id"))
+          docs =
+            (Enum.map(ids, &:couchbeam.open_doc(state.db, &1))
+            |> Enum.filter(fn {code, _} -> code == :ok end))
+            |> Enum.map(fn {:ok, doc} -> doc end)
+          {:reply, {:ok, docs}, state}
+      {:error, reason} ->
+        Logger.error(reason)
+        {:reply, {:error, reason}, state}
+    end
+  end
   # def handle_call({:search, db, query, options}, _from, state) do
   #   {:reply, :couchdb_mango.find(state.conn, db, query, options), state}
   # end
 
   def handle_call({:create, id, value}, _from, state) do
-    {_, server, _, _} = state.db
-    {_, host, _} = server
+    {_, {_, host, _}, _, _} = state.db
     url = :hackney_url.make_url(host, :couchbeam_httpc.doc_url(state.db, id), [])
     # Check if any of the values is a %Plug.Upload.  If it is, put it into a separate map.
     # We will need to save it as an attachment separately.
@@ -98,7 +123,7 @@ defmodule Fluffy.CouchDBClient do
     dbValue = Mapper.map_to_list(Map.put(fields, "_id", id))
     if map_size(uploads) > 0 do
       boundary = :couchbeam_uuids.random()
-      IO.puts("Testing 123")
+      # IO.puts("Testing 123")
       items =
         uploads
         |> Map.to_list()
