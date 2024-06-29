@@ -43,7 +43,8 @@ curl -L -O -C - https://repo1.maven.org/maven2/org/slf4j/slf4j-simple/2.0.12/slf
 echo "Creating start_clouseau.sh script file."
 cat <<EOF > ../../start_clouseau.sh
 #!/bin/sh
-java -server -Xmx2G -Dsun.net.inetaddr.ttl=30 -Dsun.net.inetaddr.negative.ttl=30 -Dlog4j.configuration=file:$PWD/log4j.properties -XX:OnOutOfMemoryError="kill -9 %p" -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -classpath '$PWD/*' com.cloudant.clouseau.Main $PWD/clouseau.ini
+PWD=`pwd`
+java -server -Xmx2G -Dsun.net.inetaddr.ttl=30 -Dsun.net.inetaddr.negative.ttl=30 -Dlog4j.configuration=file:\$PWD/log4j.properties -XX:OnOutOfMemoryError="kill -9 %p" -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -classpath \$PWD'/*' com.cloudant.clouseau.Main \$PWD/clouseau.ini
 EOF
 cd ../../
 chmod +x start_clouseau.sh
