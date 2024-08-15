@@ -22,14 +22,18 @@ defmodule Fluffy.CouchDBClient do
     GenServer.call(__MODULE__, {:get_document, id})
   end
 
+  def all_documents(db, options \\ []) do
+    GenServer.call(__MODULE__, {:all_documents, db, options})
+  end
+
   def all_dbs() do
     GenServer.call(__MODULE__, :all_dbs)
   end
 
-  def all_docs(db, options) do
-    headers = Keyword.put_new(options, :accept, "application/json")
-    GenServer.call(__MODULE__, {:all_docs, db, headers})
-  end
+  # def all_docs(db, options) do
+  #   headers = Keyword.put_new(options, :accept, "application/json")
+  #   GenServer.call(__MODULE__, {:all_docs, db, headers})
+  # end
 
   def create(value) do
     GenServer.call(__MODULE__, {:create, value})
@@ -58,6 +62,10 @@ defmodule Fluffy.CouchDBClient do
     end
   end
 
+  def get_attachment(db, doc_id, attachment_name) do
+    GenServer.call(__MODULE__, {:get_attachment, db, doc_id, attachment_name})
+  end
+
   # Each handle_call/3 function returns a tuple with three elements:
   #   - The first element is the kind of result that you're getting.  This can be one of
   #     - :reply, for sending information back to the caller
@@ -68,28 +76,46 @@ defmodule Fluffy.CouchDBClient do
   #   - The third element is the new state of the GenServer.  USUALLY, we'll continue with the
   #     same state that we received, but sometimes we'll need to update the state.
 
+  # Handling getting documents by ID
   def handle_call({:get_document, id}, _from, state) do
     {:reply, :couchdb_documents.get(state.conn, id), state}
   end
 
+  # Handling getting all the documents
+  def handle_call({:all_documents, db, options}, _from, %{conn: conn} = state) do
+    options = Enum.into(options, %{}, fn {k, v} -> {String.to_atom(k), v} end)
+
+    result = :couchdb_databases.all_docs(conn, options)
+    {:reply, result, state}
+  end
+
+  # Handling getting all the databases
   def handle_call(:all_dbs, _from, state) do
     # IO.inspect(state.server)
     {:reply, :couchdb_server.all_dbs(state.server), state}
   end
 
-  def handle_call({:all_docs, db, options}, _from, state) do
-    {:reply, :couchdb_documents.get(state.conn, db, options), state}
-  end
+  # def handle_call({:all_docs, db, options}, _from, state) do
+  #   {:reply, :couchdb_documents.get(state.conn, db, options), state}
+  # end
 
+  # Handle creating a document
   def handle_call({:create, id, value}, _from, state) do
     dbValue = Map.put(value, "_id", id)
     {:reply, :couchdb_documents.save(state.conn, dbValue), state}
   end
 
+  # Handle searching for a document by using a text
   def handle_call({:search, db, query, options}, _from, state) do
     {:reply, :couchdb_mango.find(state.conn, db, query, options), state}
   end
 
+  def handle_call({:get_attachment, db, doc_id, attachment_name}, _from, %{conn: conn} = state) do
+    result = :couchdb_attachments.get(conn, doc_id, attachment_name)
+    {:reply, result, state}
+  end
+
+  # Handle and attachment to a document
   def handle_call({:create, value}, _from, state) do
     # Check if any of the values is a %Plug.Upload.  If it is, put it into a separate map.
     # We will need to save it as an attachment separately.

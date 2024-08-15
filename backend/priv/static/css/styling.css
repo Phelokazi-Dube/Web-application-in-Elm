@@ -152,7 +152,7 @@ a {
 }
 
 div.search input.srch {
-    margin-right:0%;
+    margin-right:0;
     font-family: 'Times New Roman';
     width: 215px;
     height: 40px;
@@ -185,3 +185,135 @@ div.search input.srch {
     float: right;
 }
 
+form {
+    max-width: 700px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: var(--colour-primary);
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+form div {
+    margin-bottom: 30px;
+}
+
+form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--colour-success);
+}
+
+form input[type="text"],
+form input[type="email"],
+form textarea {
+    width: calc(100% - 22px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+form input[type="text"]:focus,
+form input[type="email"]:focus,
+form textarea:focus {
+    border-color: var(--colour-success);
+    outline: none;
+}
+
+form textarea {
+    resize: vertical;
+    height: 110px;
+}
+
+form button {
+    width: 150px;
+    height: 50px;
+    display:inline-block;
+    background: linear-gradient(135deg, #099450, #4caf50);
+    border: none;
+    margin-top: 20px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 25px;
+    transition: var(--transition);
+    cursor: pointer;
+    margin-right: 16px;
+    float: none;
+    overflow: auto;
+    justify-content: space-between;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    -webkit-transition: var(--transition);
+    -moz-transition: var(--transition);
+    -ms-transition: var(--transition);
+    -o-transition: var(--transition);
+}
+
+form .floating {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 10px;
+    z-index: 9999;
+ }
+
+form button:hover {
+    background: linear-gradient(135deg, #4caf50, #099450);
+    transform: scale(1.05);
+}
+
+table {
+    width: 80%;
+    margin: 1rem auto; /* This adds space from the top to avoid overlapping with the navbar */
+    border-collapse: collapse; /* Removes the space between the table borders */
+}
+
+thead th {
+    background-color: rgb(17, 71, 104);
+    color: white;
+    padding: 10px;
+    text-align: left;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Adds a background color to even rows */
+}
+
+tbody td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+    table {
+        width: 100%;
+    }
+}
+
+.table-section h1 {
+    /* margin-top: 8rem; Pushes the heading down below the navbar */
+    text-align: center; /* Centers the heading */
+    font-size: 4rem; /* Adjust the size as needed */
+    color: black; /* Matches the navbar background color */
+    font-weight: bold;
+    font-family: 'Times New Roman';
+}
+
+.table-section p {
+    /* margin-top: 1rem; /* Adds space between the heading and paragraph */
+    /* margin-bottom: 2rem; Ensures there's space between the paragraph and the table */
+    text-align: center; /* Centers the paragraph */
+    font-size: 22px; /* Adjust the size as needed */
+    color: black; /* Sets a color that complements the theme */
+    width: 30%; /* Limits the width of the paragraph */
+    /* margin-left: left; Centers the paragraph horizontally */
+    /* margin-right: auto; Centers the paragraph horizontally */
+    line-height: 1.6; /* Improves readability */
+}
+
+.table-section {
+    margin-top: 4rem; /* Ensures the entire section is below the navbar */
+    /* padding-top: 6rem;  Adds padding to push down the content, ensuring it doesn't overlap*/
+} 

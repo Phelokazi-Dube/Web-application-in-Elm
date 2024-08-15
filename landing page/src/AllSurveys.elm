@@ -1,52 +1,38 @@
-module PublishData exposing (..)
+module AllSurveys exposing (..)
 
 import Browser exposing (..)
-import Html exposing (Html, div, nav, ul, li, a, input, button, text, h2, p, node, h1, br)
-import Html.Attributes exposing (class, href, type_, name, placeholder)
-import Html.Events exposing (onClick)
-import Browser.Navigation exposing (load)
-import Html.Attributes exposing (..)
-import Html exposing (..)
+import Browser exposing (..)
+import Html exposing (Html, div, nav, ul, li, a, text, h2, node, table, thead, tbody, tr, th, td, input, button, h1, p)
+import Html.Attributes exposing (class, href, attribute, type_, placeholder, attribute, name)
 
 -- Model
 type alias Model =
-    -- Define your model structure here
     {}
-
 
 -- Init
 init : Model
 init =
     {}
 
-
 -- Update
 type Msg
-    -- Define your message types here
     = NoOp
 
-
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> Model
 update msg model =
-    case msg of
-        NoOp ->
-            (model, Cmd.none)
-    
-
+    model
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    -- Define your subscriptions here
     Sub.none
-
 
 view : Model -> Html Msg
 view model =
     div [ class "main" ]
-        [ node "link" 
+        [ node "link"
             [ attribute "rel" "stylesheet"
-            , attribute "href" "/css/styling.css"
-            ] 
+            , attribute "href" "styling.css"
+            ]
             []
         , nav [ class "navbar" ]
             [ div [ class "logo" ]
@@ -74,10 +60,10 @@ view model =
                     [ a [ href "#" ] [ text "SURVEYS" ]
                     , ul []
                         [ li []
-                            [ a [ href "/survey" ] [ text "Map" ]
+                            [ a [ href "#" ] [ text "Map" ]
                             ]
                         , li []
-                            [ a [ href "/surveys" ] [ text "Survey Collection" ]
+                            [ a [ href "#" ] [ text "Survey Collection" ]
                             ]
                         ]
                     ]
@@ -86,29 +72,44 @@ view model =
                     ]
                 ]
             , div [ class "search" ]
-                [ input [ class "srch", type_ "search", name "", placeholder "Type To text" ] []
+                [ input [ class "srch", type_ "search", name "search", placeholder "Type To text" ] []
                 , button [ class "btn" ] [ text "Search" ]
                 ]
             ]
-        , div [ class "body" ]
-            [ h1 [] [ text "For Users" ]
-            , p []
-                [ text "Welcome to the CBC Portal, please login to describe and submit your data."
-                , br [] []
-                , text "A CBC Data Curator will review your submission and respond ASAP. "
-                , b [] [ a [ href "/", style "color" "black", style "text-decoration" "underline" ] [ text "Login" ] ]
-                , text " to get started."
+        , div [ class "table-section" ]
+            [ h1 [] [ text "Observations" ]
+            , p [] [ text "These are all the observations collected." ]
+            , table []
+                [ thead []
+                    [ tr []
+                        [ th [] [ text "Title" ]
+                        , th [] [ text "Author" ]
+                        , th [] [ text "Date" ]
+                        , th [] [ text "ID" ]
+                        ]
+                    ]
+                , tbody []
+                    [ tr []
+                        [ td [] [ text "Sample Title 1" ]
+                        , td [] [ text "Author 1" ]
+                        , td [] [ text "2024-08-11" ]
+                        , td [] [ text "1" ]
+                        ]
+                    , tr []
+                        [ td [] [ text "Sample Title 2" ]
+                        , td [] [ text "Author 2" ]
+                        , td [] [ text "2024-08-12" ]
+                        , td [] [ text "2" ]
+                        ]
+                    ]
                 ]
             ]
         ]
-    
-
 
 main : Program () Model Msg
 main =
-    Browser.element
-        { init = \_ -> (init, Cmd.none)
+    Browser.sandbox
+        { init = init
         , update = update
         , view = view
-        , subscriptions = subscriptions
         }

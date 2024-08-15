@@ -25,6 +25,8 @@ defmodule FluffyWeb.Router do
     get "/uploading", PageController, :home, private: %{:javascript => "uploading_data"}
     post "/uploading", PageController, :upload
     get "/downloading", PageController, :home, private: %{:javascript => "downloading_data"}
+    get "/surveys", PageController, :home, private: %{:javascript => "all_surveys"}
+    get "/survey", PageController, :home, private: %{:javascript => "surveys"}
   end
 
   # Other scopes may use custom stacks.
@@ -42,10 +44,16 @@ defmodule FluffyWeb.Router do
 
     get "/documents/:db_name" , CouchDBController, :fetch_documents
 
-    get "/couchdb/documents", CouchDBController, :find
+    # Retrives all the databases that are there
+    get "/couchdb/databases", CouchDBController, :find
 
     # Route for updating a document
     put "/couchdb/documents/:id", CouchDBController, :update
+
+    # Getting all the docs
+    get "/couchdb/document/:db", CouchDBController, :all
+
+
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

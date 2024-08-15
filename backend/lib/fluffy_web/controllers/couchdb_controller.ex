@@ -128,4 +128,25 @@ defmodule FluffyWeb.CouchDBController do
       |> json(%{error: "Error while fetching documents from CouchDB: #{reason}"})
     end
   end
+
+  def all(conn, %{"db" => db}) do
+    options = %{"include_docs" => true}  # Set options as needed
+
+    case CouchDBClient.all_documents(db, options) do
+      {:ok, documents} ->
+        conn
+        |> put_status(:ok)
+        |> json(%{documents: documents})
+
+      {:error, :unauthenticated} ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{"error" => "Unauthenticated. Probable fix: in Fauxton, go to Configuration options; under the 'chttpd' section, add the option 'admin_only_all_dbs' and set it to the value: false"})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{error: "Error retrieving all documents: #{reason}"})
+    end
+  end
 end

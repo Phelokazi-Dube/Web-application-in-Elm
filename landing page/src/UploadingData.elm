@@ -290,7 +290,6 @@ view model =
                 -- CSRF token (hidden).  This will be expected by Phoenix to validate the request.
                 , input [ type_ "hidden", name "_csrf_token", value model.csrf_token ] []
 
-                -- Add more fields as needed
                 -- Submit buttons
                 , div []
                     [ button [ type_ "submit" ] [ text "Save Observation" ]
