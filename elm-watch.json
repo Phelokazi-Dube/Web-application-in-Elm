@@ -41,6 +41,12 @@
                 "landing page/src/AllSurveys.elm"
             ],
             "output": "backend/priv/static/js/all_surveys.js"
+        },
+        "Surveys": {
+            "inputs": [
+                "landing page/src/Surveys.elm"
+            ],
+            "output": "backend/priv/static/js/surveys.js"
         }
     }
 }
