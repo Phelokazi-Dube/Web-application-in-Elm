@@ -51,8 +51,7 @@ defmodule FluffyWeb.Router do
     put "/couchdb/documents/:id", CouchDBController, :update
 
     # Getting all the docs
-    get "/couchdb/document/:db", CouchDBController, :all
-
+    get "/couchdb/document", CouchDBController, :all
 
   end
 

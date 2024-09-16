@@ -45,10 +45,14 @@ defmodule Fluffy.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.20"},
-      {:jason, "~> 1.2"},
+      # {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:couchdb, "~> 2.1.0-beta"},
-      {:jiffy, "~> 1.1.1", override: true}
+      {:mongodb_driver, "~> 1.4.1"},
+      {:db_connection,  "~> 2.6"},
+      {:decimal, "~> 2.1.1"},
+      {:telemetry, "~> 1.0"},
+      {:castore, "~> 1.0"},
+      {:jason, "~> 1.4"}
     ]
   end
 

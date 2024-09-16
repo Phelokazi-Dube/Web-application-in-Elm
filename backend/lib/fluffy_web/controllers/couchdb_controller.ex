@@ -3,150 +3,331 @@ defmodule FluffyWeb.CouchDBController do
   use FluffyWeb, :controller
 
 
-
-  def show(conn, %{"id" => id}) do
-    with  {:ok, value} <- CouchDBClient.get_document(id) |> IO.inspect() do
-      html_content = """
-      <div style="max-width:100%; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-        <h1 style="color: #333;">Document Info</h1>
-        <p><strong>ID:</strong> #{value["_id"]}</p>
-        <p><strong>Revision:</strong> #{value["_rev"]}</p>
-        <p><strong>Created on:</strong> #{value["created_at"]}</p>
-        <p><strong>Created by :</strong> #{value["userLogin"]}</p>
-
-          <div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-          <h2 style="color: #333;">Contents</h2>
-          <p><strong>Location:</strong> #{value["location"]}</p>
-          <p><strong>Observed on:</strong> #{value["date"]}</p>
-          <p><strong>Control Agent:</strong> #{value["controlAgent"]}</p>
-          <p><strong>Target Weed Name:</strong> #{value["targetWeedName"]}</p>
-          <p><strong>Target Weed Rank:</strong> #{value["targetWeedRank"]}</p>
-          <p><strong>Target Weed Taxon Name:</strong> #{value["targetWeedTaxonName"]}</p>
-          <p><strong>Weather:</strong> #{value["weather"]}</p>
-          <p><strong>Photos:</strong> #{value["photos"]}</p>
-          <p><strong>Province:</strong> #{value["province"]}</p>
-          <p><strong>Sitename:</strong> #{value["sitename"]}</p>
-          <p><strong>No Stems:</strong> #{value["noStems"]}</p>
-          <p><strong>No Flowers:</strong> #{value["noFlowers"]}</p>
-          <p><strong>No Capsules:</strong> #{value["noCapsules"]}</p>
-          <p><strong>Max Height:</strong> #{value["maxHeight"]}</p>
-          <p><strong>No Ramets:</strong> #{value["noRamets"]}</p>
-          <p><strong>Size of Infestation:</strong> #{value["sizeOfInf"]}</p>
-          <p><strong>Percent Cover:</strong> #{value["percentCover"]}</p>
-          <p><strong>Description:</strong> #{value["description"]}</p>
-        </div>
-      </div>
-      """
-      conn
-      |> put_resp_content_type("text/html")
-      |> send_resp(:ok, html_content)
-      # |> put_status(:ok)
-      # |> json(%{message: "OK", value: value})
-    else
-      {:error, :unauthenticated} ->
-        conn
-        |> put_status(:unauthorized)
-        # |> json(%{problem: "Unauthenticated", solution: "Permit unauthenticated localhost access to CouchDB?  Or figure out the permissions..."})
-      {:error, :not_found} ->
-        default_values =  %{
-          "location" => "",
-          "userLogin" => "",
-          "controlAgent" => "",
-          "targetWeedName" => "",
-          "targetWeedRank" => "",
-          "targetWeedId" => "",
-          "targetWeedTaxonName" => "",
-          "weather" => "",
-          "water" => "",
-          "photos" => "",
-          "province" => "",
-          "sitename" => "PMB Botanical Gardens",
-          "date" => "",
-          "noLeaves" => "",
-          "noStems" => "",
-          "noFlowers" => "",
-          "noCapsules" => "",
-          "maxHeight" => "",
-          "noRamets" => "",
-          "sizeOfInf" => "",
-          "percentCover" => "",
-          "description" => "",
-          "created_at" => System.os_time(:second)
-        }
-        CouchDBClient.create(id, default_values)
-        conn
-        |> put_status(:ok)
-        |> json(%{message: "OK", value: "NEW value created in CouchDB; refresh and I'll show it to you"})
+  # Implement Jason.Encoder for BSON.ObjectId
+  defimpl Jason.Encoder, for: BSON.ObjectId do
+    def encode(value, opts) do
+      Jason.Encode.string(BSON.ObjectId.encode!(value), opts)
     end
-    # {:ok, parsed_doc} = Jiffy.decode(doc)
-    # conn
-    # |> put_status(:ok)
-    # |> json(%{message: "OK", doc: doc})
   end
 
-  def search(conn, %{"search" => searchString}) do
+  # Function to normalize the MongoDB _id to id
+  defp normalize_mongo_id(doc) do
+    doc
+    |> Map.put("id", BSON.ObjectId.encode!(doc["_id"]))  # Add the "id" field with the string version of BSON _id
+    |> Map.delete("_id")  # Remove the original "_id" field
+  end
+
+  def all(conn, _params) do
+    # Fetch all documents from the "Surveys" collection
+    documents = CouchDBClient.get_all_documents("Surveys")
+
+    # Return the documents as JSON in the HTTP response
     conn
     |> put_status(:ok)
-    |> json([searchString, "moo"])
+    |> json(%{documents: documents})
   end
 
-  def find(conn, _) do
-    case CouchDBClient.all_dbs() do
-      {:ok, databases} ->
-        conn
-        |> put_status(:ok)
-        |> json(databases)
+  def create(conn, _params) do
+    default_values = %{
+      "location" => "",
+      "userLogin" => "",
+      "controlAgent" => "",
+      "targetWeedName" => "",
+      "targetWeedRank" => "",
+      "targetWeedId" => "",
+      "targetWeedTaxonName" => "",
+      "weather" => "",
+      "water" => "",
+      "photos" => "",
+      "province" => "",
+      "sitename" => "PMB Botanical Gardens",
+      "date" => "",
+      "noLeaves" => "",
+      "noStems" => "",
+      "noFlowers" => "",
+      "noCapsules" => "",
+      "maxHeight" => "",
+      "noRamets" => "",
+      "sizeOfInf" => "",
+      "percentCover" => "",
+      "description" => "💝",
+      "created_at" => System.os_time(:second)
+    }
 
-      {:error, :unauthenticated} ->
-        conn
-        |> put_status(:unauthorized)
-        |> json(%{"error" => "Unauthenticated.  Probable fix: in Fauxton, go to Configuration options; under the \"chttpd\" section, add the option \"admin_only_all_dbs\" and set it to the value: false"})
+    # Insert the document into the "Surveys" collection
+    case CouchDBClient.insert_document("Surveys", default_values) do
+      {:ok, %{inserted_id: bson_id}} ->
+        # Fetch the inserted document to return
+        case CouchDBClient.get_document_by_id("Surveys", bson_id) do
+          nil ->
+            conn
+            |> put_status(:not_found)
+            |> json(%{error: "Document not found after insertion"})
 
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{"error" => "List of databases not found"})
+          {:ok, doc} ->
+            document =
+              normalize_mongo_id(doc)
+              |> Jason.encode!()
 
-      {:error, :http_error} ->
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{"error" => "Error while fetching the list of databases from CouchDB"})
-    end
-  end
+            conn
+            |> put_status(:created)
+            |> json(%{message: "Document created successfully", document: document})
 
-  def fetch_documents(conn, %{"db_name" => db_name}) do
-    options = [include_docs: true, accept: "application/json"]
+          {:error, _} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: "Failed to fetch created document"})
+        end
 
-    with {:ok, documents} <- CouchDBClient.all_docs(db_name, options) do
-      conn
-      |> put_status(:ok)
-      |> json(%{message: "OK", documents: documents})
-    else
       {:error, reason} ->
-      conn
-      |> put_status(:internal_server_error)
-      |> json(%{error: "Error while fetching documents from CouchDB: #{reason}"})
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Failed to create document", reason: reason})
     end
   end
 
-  def all(conn, %{"db" => db}) do
-    options = %{"include_docs" => true}  # Set options as needed
+  # Fetch a document by its ID
+  def show(conn, %{"id" => id}) do
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        # Fetch the document from the "Surveys" collection by its ID
+        doc = CouchDBClient.get_document_by_id("Surveys", bson_id)
 
-    case CouchDBClient.all_documents(db, options) do
-      {:ok, documents} ->
-        conn
-        |> put_status(:ok)
-        |> json(%{documents: documents})
+        case doc do
+          nil ->
+            # If the document is not found, respond with 404
+            send_resp(conn, 404, "Not Found")
 
-      {:error, :unauthenticated} ->
-        conn
-        |> put_status(:unauthorized)
-        |> json(%{"error" => "Unauthenticated. Probable fix: in Fauxton, go to Configuration options; under the 'chttpd' section, add the option 'admin_only_all_dbs' and set it to the value: false"})
+          %{} ->
+            # Normalize the document by replacing _id with id
+            document =
+              normalize_mongo_id(doc)  # Correctly use the local function to normalize the document
+              |> Jason.encode!()
 
-      {:error, reason} ->
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{error: "Error retrieving all documents: #{reason}"})
+            conn
+            |> put_resp_content_type("application/json")
+            |> send_resp(200, document)
+
+          {:error, _} ->
+            # Handle any errors that occur during the operation
+            send_resp(conn, 500, "Something went wrong")
+        end
+
+      {:error, _reason} ->
+        # Handle invalid BSON ObjectId
+        send_resp(conn, 400, "Invalid ID format")
     end
   end
+
+  # Controller function to handle document update
+  def update(conn, %{"id" => id}) do
+    # Decode the BSON ID from the string ID
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        # Extract and sanitize the update fields from the request body
+        update_fields =
+          conn.body_params
+          |> Map.take([
+            "location",
+            "userLogin",
+            "controlAgent",
+            "targetWeedName",
+            "targetWeedRank",
+            "targetWeedId",
+            "targetWeedTaxonName",
+            "weather",
+            "water",
+            "photos",
+            "province",
+            "sitename",
+            "date",
+            "noLeaves",
+            "noStems",
+            "noFlowers",
+            "noCapsules",
+            "maxHeight",
+            "noRamets",
+            "sizeOfInf",
+            "percentCover",
+            "description",
+          ])
+          |> Enum.into(%{}, fn {key, value} -> {key, value} end)
+
+        # Call the CouchDBClient to update the document
+        case CouchDBClient.update_document("Surveys", bson_id, update_fields) do
+          {:ok, doc} ->
+            # If document is found and updated, respond with the updated document
+            if doc do
+              updated_doc =
+                normalize_mongo_id(doc)
+                |> Jason.encode!()
+
+              conn
+              |> put_resp_content_type("application/json")
+              |> send_resp(200, updated_doc)
+            else
+              conn
+              |> put_status(:not_found)
+              |> json(%{error: "Document not found"})
+            end
+
+          {:error, _reason} ->
+            conn
+            |> put_status(:internal_server_error)
+            |> json(%{error: "Failed to update document"})
+        end
+
+      # If BSON ID decoding fails
+      :error ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid document ID"})
+    end
+  end
+
+  # def show(conn, %{"id" => id}) do
+  #   with  {:ok, value} <- CouchDBClient.get_document(id) |> IO.inspect() do
+  #     html_content = """
+  #     <div style="max-width:100%; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+  #       <h1 style="color: #333;">Document Info</h1>
+  #       <p><strong>ID:</strong> #{value["_id"]}</p>
+  #       <p><strong>Revision:</strong> #{value["_rev"]}</p>
+  #       <p><strong>Created on:</strong> #{value["created_at"]}</p>
+  #       <p><strong>Created by :</strong> #{value["userLogin"]}</p>
+
+  #         <div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+  #         <h2 style="color: #333;">Contents</h2>
+  #         <p><strong>Location:</strong> #{value["location"]}</p>
+  #         <p><strong>Observed on:</strong> #{value["date"]}</p>
+  #         <p><strong>Control Agent:</strong> #{value["controlAgent"]}</p>
+  #         <p><strong>Target Weed Name:</strong> #{value["targetWeedName"]}</p>
+  #         <p><strong>Target Weed Rank:</strong> #{value["targetWeedRank"]}</p>
+  #         <p><strong>Target Weed Taxon Name:</strong> #{value["targetWeedTaxonName"]}</p>
+  #         <p><strong>Weather:</strong> #{value["weather"]}</p>
+  #         <p><strong>Photos:</strong> #{value["photos"]}</p>
+  #         <p><strong>Province:</strong> #{value["province"]}</p>
+  #         <p><strong>Sitename:</strong> #{value["sitename"]}</p>
+  #         <p><strong>No Stems:</strong> #{value["noStems"]}</p>
+  #         <p><strong>No Flowers:</strong> #{value["noFlowers"]}</p>
+  #         <p><strong>No Capsules:</strong> #{value["noCapsules"]}</p>
+  #         <p><strong>Max Height:</strong> #{value["maxHeight"]}</p>
+  #         <p><strong>No Ramets:</strong> #{value["noRamets"]}</p>
+  #         <p><strong>Size of Infestation:</strong> #{value["sizeOfInf"]}</p>
+  #         <p><strong>Percent Cover:</strong> #{value["percentCover"]}</p>
+  #         <p><strong>Description:</strong> #{value["description"]}</p>
+  #       </div>
+  #     </div>
+  #     """
+  #     conn
+  #     |> put_resp_content_type("text/html")
+  #     |> send_resp(:ok, html_content)
+  #     # |> put_status(:ok)
+  #     # |> json(%{message: "OK", value: value})
+  #   else
+  #     {:error, :unauthenticated} ->
+  #       conn
+  #       |> put_status(:unauthorized)
+  #       # |> json(%{problem: "Unauthenticated", solution: "Permit unauthenticated localhost access to CouchDB?  Or figure out the permissions..."})
+  #     {:error, :not_found} ->
+  #       default_values =  %{
+  #         "location" => "",
+  #         "userLogin" => "",
+  #         "controlAgent" => "",
+  #         "targetWeedName" => "",
+  #         "targetWeedRank" => "",
+  #         "targetWeedId" => "",
+  #         "targetWeedTaxonName" => "",
+  #         "weather" => "",
+  #         "water" => "",
+  #         "photos" => "",
+  #         "province" => "",
+  #         "sitename" => "PMB Botanical Gardens",
+  #         "date" => "",
+  #         "noLeaves" => "",
+  #         "noStems" => "",
+  #         "noFlowers" => "",
+  #         "noCapsules" => "",
+  #         "maxHeight" => "",
+  #         "noRamets" => "",
+  #         "sizeOfInf" => "",
+  #         "percentCover" => "",
+  #         "description" => "",
+  #         "created_at" => System.os_time(:second)
+  #       }
+  #       CouchDBClient.create(id, default_values)
+  #       conn
+  #       |> put_status(:ok)
+  #       |> json(%{message: "OK", value: "NEW value created in CouchDB; refresh and I'll show it to you"})
+  #   end
+  #   # {:ok, parsed_doc} = Jiffy.decode(doc)
+  #   # conn
+  #   # |> put_status(:ok)
+  #   # |> json(%{message: "OK", doc: doc})
+  # end
+
+  # def search(conn, %{"search" => searchString}) do
+  #   conn
+  #   |> put_status(:ok)
+  #   |> json([searchString, "moo"])
+  # end
+
+  # def find(conn, _) do
+  #   case CouchDBClient.all_dbs() do
+  #     {:ok, databases} ->
+  #       conn
+  #       |> put_status(:ok)
+  #       |> json(databases)
+
+  #     {:error, :unauthenticated} ->
+  #       conn
+  #       |> put_status(:unauthorized)
+  #       |> json(%{"error" => "Unauthenticated.  Probable fix: in Fauxton, go to Configuration options; under the \"chttpd\" section, add the option \"admin_only_all_dbs\" and set it to the value: false"})
+
+  #     {:error, :not_found} ->
+  #       conn
+  #       |> put_status(:not_found)
+  #       |> json(%{"error" => "List of databases not found"})
+
+  #     {:error, :http_error} ->
+  #       conn
+  #       |> put_status(:internal_server_error)
+  #       |> json(%{"error" => "Error while fetching the list of databases from CouchDB"})
+  #   end
+  # end
+
+  # def fetch_documents(conn, %{"db_name" => db_name}) do
+  #   options = [include_docs: true, accept: "application/json"]
+
+  #   with {:ok, documents} <- CouchDBClient.all_docs(db_name, options) do
+  #     conn
+  #     |> put_status(:ok)
+  #     |> json(%{message: "OK", documents: documents})
+  #   else
+  #     {:error, reason} ->
+  #     conn
+  #     |> put_status(:internal_server_error)
+  #     |> json(%{error: "Error while fetching documents from CouchDB: #{reason}"})
+  #   end
+  # end
+
+  # def all(conn, %{"db" => db}) do
+  #   options = %{"include_docs" => true}  # Set options as needed
+
+  #   case CouchDBClient.all_documents(db, options) do
+  #     {:ok, documents} ->
+  #       conn
+  #       |> put_status(:ok)
+  #       |> json(%{documents: documents})
+
+  #     {:error, :unauthenticated} ->
+  #       conn
+  #       |> put_status(:unauthorized)
+  #       |> json(%{"error" => "Unauthenticated. Probable fix: in Fauxton, go to Configuration options; under the 'chttpd' section, add the option 'admin_only_all_dbs' and set it to the value: false"})
+
+  #     {:error, reason} ->
+  #       conn
+  #       |> put_status(:internal_server_error)
+  #       |> json(%{error: "Error retrieving all documents: #{reason}"})
+  #   end
+  # end
 end

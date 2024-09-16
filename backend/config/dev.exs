@@ -69,8 +69,23 @@ config :phoenix, :plug_init_mode, :runtime
 config :swoosh, :api_client, false
 
 # Configure CouchDB connection
-config :fluffy, :couchdb,
-  user: "admin",
-  pass: "@Cc55!LhQA7sr2&u8sLe@$mqS3&NAsepCoTRCd$vhsjOngJ%3fFFxDzeYYQxUda6EF7L7oOFA7bfRFMnZnzW*&r78a@0gouNG8!",
-  server: "localhost:5984",
-  db_name: "cbctryout"
+config :fluffy, :mongodb_driver,
+url: "mongodb://localhost:27017/cbctryout",
+pool_size: 5
+  # url: "mongodb+srv://admin:<Phelokazi>@cluster0.optlo.mongodb.net/cbctryout?authSource=admin&readPreference=primary&ssl=true&directConnection=true",
+  # timeout: 60_000,
+  # idle_interval: 10_000,
+  # queue_target: 5_000,
+  # ssl: true,
+  # username: "CN=cert-user",
+  # password: "",
+  # auth_mechanism: :x509,
+  # ssl_opts: [
+  #   verify: :verify_peer,
+  #   cacertfile: to_charlist(CAStore.file_path()),
+  #   certfile: '/path-to-cert/X509-cert-2227052404946303101.pem',
+  #   customize_hostname_check: [
+  #     match_fun:
+  #       :public_key.pkix_verify_hostname_match_fun(:https)
+  #   ]
+  # ]
