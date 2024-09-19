@@ -34,7 +34,8 @@ defmodule FluffyWeb.Router do
     pipe_through :api
 
     # Route for searching documents for text
-    get "/documentIdsByText", CouchDBController, :search
+    # get "/documentIdsByText", CouchDBController, :search
+    get "/couchdb/document/search", CouchDBController, :search
 
     # Route for retrieving a document
     get "/couchdb/documents/:id", CouchDBController, :show

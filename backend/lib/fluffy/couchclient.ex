@@ -38,6 +38,23 @@ defmodule Fluffy.CouchDBClient do
     {:reply, documents, state}
   end
 
+  # Function to search documents by text
+  def search_documents_by_text(collection_name, search_text) do
+    GenServer.call(__MODULE__, {:search_documents_by_text, collection_name, search_text})
+  end
+
+  def handle_call({:search_documents_by_text, collection_name, search_text}, _from, %{conn: conn} = state) do
+    # Define the filter for the text search
+    filter = %{"$text" => %{"$search" => search_text}}
+
+    # Fetch documents that match the text search
+    cursor = Mongo.find(conn, collection_name, filter)
+
+    # Convert the cursor to a list and return it
+    documents = cursor |> Enum.to_list()
+    {:reply, documents, state}
+  end
+
   # Function to insert a document into a collection
   @spec insert_document(String.t(), map()) :: {:ok, Mongo.InsertOneResult.t()} | {:error, any()}
   def insert_document(collection_name, document) do

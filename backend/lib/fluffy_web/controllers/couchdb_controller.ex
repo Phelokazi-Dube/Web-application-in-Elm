@@ -27,6 +27,19 @@ defmodule FluffyWeb.CouchDBController do
     |> json(%{documents: documents})
   end
 
+  def search(conn, %{"search" => search_text}) do
+    # Set the collection to "Surveys"
+    collection = "Surveys"
+
+    # Fetch documents that match the search text from the "Surveys" collection
+    documents = CouchDBClient.search_documents_by_text(collection, search_text)
+
+    # Return the documents as JSON in the HTTP response
+    conn
+    |> put_status(:ok)
+    |> json(%{documents: documents})
+  end
+
   def create(conn, _params) do
     default_values = %{
       "location" => "",
