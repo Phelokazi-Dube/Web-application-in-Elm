@@ -79,12 +79,10 @@ defmodule Fluffy.CouchDBClient do
 
   def handle_call({:get_document_by_id, collection_name, bson_id}, _from, %{conn: conn} = state) do
     # Fetch the document by its BSON ObjectId
-    case Mongo.find_one(conn, collection_name, %{_id: bson_id}) do
-      nil ->
-        {:reply, {:error, :not_found}, state}
-      doc ->
-        {:reply, {:ok, doc}, state}
-    end
+    doc = Mongo.find_one(conn, collection_name, %{_id: bson_id})
+
+    # Reply with the found document or nil
+    {:reply, doc, state}
   end
 
   #  Function to update a document by its ID

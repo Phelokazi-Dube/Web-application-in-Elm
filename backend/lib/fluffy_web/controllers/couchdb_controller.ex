@@ -100,6 +100,7 @@ defmodule FluffyWeb.CouchDBController do
   end
 
   # Fetch a document by its ID
+  # Fetch a document by its ID
   def show(conn, %{"id" => id}) do
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
@@ -108,13 +109,12 @@ defmodule FluffyWeb.CouchDBController do
 
         case doc do
           nil ->
-            # If the document is not found, respond with 404
             send_resp(conn, 404, "Not Found")
 
           %{} ->
             # Normalize the document by replacing _id with id
             document =
-              normalize_mongo_id(doc)  # Correctly use the local function to normalize the document
+              normalize_mongo_id(doc)
               |> Jason.encode!()
 
             conn
@@ -122,81 +122,79 @@ defmodule FluffyWeb.CouchDBController do
             |> send_resp(200, document)
 
           {:error, _} ->
-            # Handle any errors that occur during the operation
             send_resp(conn, 500, "Something went wrong")
         end
 
       {:error, _reason} ->
-        # Handle invalid BSON ObjectId
         send_resp(conn, 400, "Invalid ID format")
     end
   end
 
-  # Controller function to handle document update
-  def update(conn, %{"id" => id}) do
-    # Decode the BSON ID from the string ID
-    case BSON.ObjectId.decode(id) do
-      {:ok, bson_id} ->
-        # Extract and sanitize the update fields from the request body
-        update_fields =
-          conn.body_params
-          |> Map.take([
-            "location",
-            "userLogin",
-            "controlAgent",
-            "targetWeedName",
-            "targetWeedRank",
-            "targetWeedId",
-            "targetWeedTaxonName",
-            "weather",
-            "water",
-            "photos",
-            "province",
-            "sitename",
-            "date",
-            "noLeaves",
-            "noStems",
-            "noFlowers",
-            "noCapsules",
-            "maxHeight",
-            "noRamets",
-            "sizeOfInf",
-            "percentCover",
-            "description",
-          ])
-          |> Enum.into(%{}, fn {key, value} -> {key, value} end)
+  # # Controller function to handle document update
+  # def update(conn, %{"id" => id}) do
+  #   # Decode the BSON ID from the string ID
+  #   case BSON.ObjectId.decode(id) do
+  #     {:ok, bson_id} ->
+  #       # Extract and sanitize the update fields from the request body
+  #       update_fields =
+  #         conn.body_params
+  #         |> Map.take([
+  #           "location",
+  #           "userLogin",
+  #           "controlAgent",
+  #           "targetWeedName",
+  #           "targetWeedRank",
+  #           "targetWeedId",
+  #           "targetWeedTaxonName",
+  #           "weather",
+  #           "water",
+  #           "photos",
+  #           "province",
+  #           "sitename",
+  #           "date",
+  #           "noLeaves",
+  #           "noStems",
+  #           "noFlowers",
+  #           "noCapsules",
+  #           "maxHeight",
+  #           "noRamets",
+  #           "sizeOfInf",
+  #           "percentCover",
+  #           "description",
+  #         ])
+  #         |> Enum.into(%{}, fn {key, value} -> {key, value} end)
 
-        # Call the CouchDBClient to update the document
-        case CouchDBClient.update_document("Surveys", bson_id, update_fields) do
-          {:ok, doc} ->
-            # If document is found and updated, respond with the updated document
-            if doc do
-              updated_doc =
-                normalize_mongo_id(doc)
-                |> Jason.encode!()
+  #       # Call the CouchDBClient to update the document
+  #       case CouchDBClient.update_document("Surveys", bson_id, update_fields) do
+  #         {:ok, doc} ->
+  #           # If document is found and updated, respond with the updated document
+  #           if doc do
+  #             updated_doc =
+  #               normalize_mongo_id(doc)
+  #               |> Jason.encode!()
 
-              conn
-              |> put_resp_content_type("application/json")
-              |> send_resp(200, updated_doc)
-            else
-              conn
-              |> put_status(:not_found)
-              |> json(%{error: "Document not found"})
-            end
+  #             conn
+  #             |> put_resp_content_type("application/json")
+  #             |> send_resp(200, updated_doc)
+  #           else
+  #             conn
+  #             |> put_status(:not_found)
+  #             |> json(%{error: "Document not found"})
+  #           end
 
-          {:error, _reason} ->
-            conn
-            |> put_status(:internal_server_error)
-            |> json(%{error: "Failed to update document"})
-        end
+  #         {:error, _reason} ->
+  #           conn
+  #           |> put_status(:internal_server_error)
+  #           |> json(%{error: "Failed to update document"})
+  #       end
 
-      # If BSON ID decoding fails
-      :error ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid document ID"})
-    end
-  end
+  #     # If BSON ID decoding fails
+  #     :error ->
+  #       conn
+  #       |> put_status(:bad_request)
+  #       |> json(%{error: "Invalid document ID"})
+  #   end
+  # end
 
   # def show(conn, %{"id" => id}) do
   #   with  {:ok, value} <- CouchDBClient.get_document(id) |> IO.inspect() do

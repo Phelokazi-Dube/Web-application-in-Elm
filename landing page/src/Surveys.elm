@@ -13,7 +13,8 @@ import Html.Events exposing (onClick)
 
 type alias Document =
     { id : String
-    , rev : String
+    , date : String
+    , notes : String
     }
 
 type alias Model =
@@ -109,8 +110,9 @@ view model =
                   [ thead []
                       [ tr []
                           [ th [] [ text "Document ID" ]
-                          , th [] [ text "Revision" ]
+                          , th [] [ text "Date" ]
                           , th [] [ text "Document" ]
+                          , th [] [ text "Notes" ]
                           ]
                       ]
                   , tbody []
@@ -130,25 +132,28 @@ documentRow : Document -> Html Msg
 documentRow doc =
     tr []
         [ td [] [ text doc.id ]
-        , td [] [ text doc.rev ]
+        , td [] [ text doc.date ]
         , td [] [ a [ href ("api/couchdb/documents/" ++ doc.id) ] [ text "View Document" ] ]
+        , td [] [ text doc.notes ]
         ]
+
 
 -- HTTP REQUEST
 
 fetchDocuments : Cmd Msg
 fetchDocuments =
     Http.get
-        { url = "http://localhost:4000/api/couchdb/document/cbctryout"
-        , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.field "rows" (Decode.list documentDecoder)))
+        { url = "http://localhost:4000/api/couchdb/document"
+        , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.list documentDecoder))
         }
 
 
 documentDecoder : Decode.Decoder Document
 documentDecoder =
-   Decode.map2 Document
-        (Decode.field "id" Decode.string)
-        (Decode.field "value" (Decode.field "rev" Decode.string))
+   Decode.map3 Document
+        (Decode.field "_id" Decode.string)
+        (Decode.field "Date" Decode.string)
+        (Decode.field "Notes" Decode.string)
 
 
 errorToString : Http.Error -> String
