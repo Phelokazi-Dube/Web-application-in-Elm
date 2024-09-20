@@ -41,7 +41,7 @@ defmodule FluffyWeb.Router do
     get "/couchdb/documents/:id", CouchDBController, :show
 
     # Route for creating a document
-    post "/couchdb/documents/newdoc", CouchDBController, :create
+    post "/couchdb/documents/newdoc", CouchDBController, :insert_document
 
     get "/documents/:db_name" , CouchDBController, :fetch_documents
 

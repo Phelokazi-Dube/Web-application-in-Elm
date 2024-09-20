@@ -8,7 +8,7 @@ defmodule FluffyWeb.PageController do
   end
 
   def upload(conn, params) do
-    CouchDBClient.create(Map.delete(params, "_csrf_token"))
+    CouchDBClient.insert_document("Surveys", Map.delete(params, "_csrf_token"))
     # Expected: the _id of the new document.
     |> IO.inspect(label: "Document stored with ID")
 
