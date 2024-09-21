@@ -133,7 +133,7 @@ documentRow doc =
     tr []
         [ td [] [ text doc.id ]
         , td [] [ text  (Maybe.withDefault "No Date" doc.date)  ]
-        , td [] [ a [ href ("api/couchdb/documents/" ++ doc.id) ] [ text "View Document" ] ]
+        , td [] [ a [ href ("api/couchdb/documents/" ++ doc.id) , class "document-link"] [ text "Document" ] ]
         , td [] [ text (Maybe.withDefault "No Notes" doc.notes) ]
         ]
 
