@@ -13,8 +13,8 @@ import Html.Events exposing (onClick)
 
 type alias Document =
     { id : String
-    , date : String
-    , notes : String
+    , date : Maybe String
+    , notes : Maybe String
     }
 
 type alias Model =
@@ -132,9 +132,9 @@ documentRow : Document -> Html Msg
 documentRow doc =
     tr []
         [ td [] [ text doc.id ]
-        , td [] [ text doc.date ]
+        , td [] [ text  (Maybe.withDefault "No Date" doc.date)  ]
         , td [] [ a [ href ("api/couchdb/documents/" ++ doc.id) ] [ text "View Document" ] ]
-        , td [] [ text doc.notes ]
+        , td [] [ text (Maybe.withDefault "No Notes" doc.notes) ]
         ]
 
 
@@ -152,8 +152,8 @@ documentDecoder : Decode.Decoder Document
 documentDecoder =
    Decode.map3 Document
         (Decode.field "_id" Decode.string)
-        (Decode.field "Date" Decode.string)
-        (Decode.field "Notes" Decode.string)
+        (Decode.maybe (Decode.field "Date" Decode.string))
+        (Decode.maybe (Decode.field "Notes" Decode.string))
 
 
 errorToString : Http.Error -> String
