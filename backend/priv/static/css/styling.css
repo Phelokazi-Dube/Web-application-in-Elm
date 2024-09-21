@@ -317,3 +317,25 @@ tbody td {
     margin-top: 4rem; /* Ensures the entire section is below the navbar */
     /* padding-top: 6rem;  Adds padding to push down the content, ensuring it doesn't overlap*/
 } 
+
+/* Style for the <p> that contains the link */
+.document-paragraph {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.document-link {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.3s, color 0.3s; /* Smooth hover transition */
+}
+
+.document-link:hover {
+    background-color: #007BFF; /* Blue background on hover */
+    color: white; /* White text on hover */
+}
+

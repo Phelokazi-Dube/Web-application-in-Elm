@@ -8,10 +8,22 @@ import Browser.Navigation exposing (load)
 import Http
 import Json.Decode as D
 
+
+-- Define a type for the document fields that we will decode
+type alias Document =
+    { date : Maybe String
+    , site : Maybe String
+    , province : Maybe String
+    , notes : Maybe String
+    , id : String
+    }
+
+
+
 -- Model
 type alias Model =
     { searchText : String
-    , results : List String
+    , results : List Document
     , status : Status
     }
 
@@ -19,6 +31,7 @@ type Status
     = WaitingForServer
     | ErrorHappenedOhNo
     | GettingUserInput
+
 
 -- Init
 init : Model
@@ -31,10 +44,9 @@ init =
 
 -- Update
 type Msg
-    -- Define your message types here
     = ChangeSearchText String
     | AskServerForResults
-    | ReceiveResults (Result Http.Error (List String))
+    | ReceiveResults (Result Http.Error (List Document))
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -55,22 +67,37 @@ update msg model =
                 Err _ ->
                     ( { model | status = ErrorHappenedOhNo }, Cmd.none )
 
-decodeResults : D.Decoder (List String)
+
+-- JSON Decoder to decode a list of documents
+decodeDocument : D.Decoder Document
+decodeDocument =
+    D.map5 Document
+        (D.maybe (D.field "Date" D.string))
+        (D.maybe (D.field "Site" D.string))
+        (D.maybe (D.field "Province" D.string))
+        (D.maybe (D.field "Notes" D.string))
+        (D.field "_id" D.string)
+
+
+decodeResults : D.Decoder (List Document)
 decodeResults =
-    D.list D.string
+    D.field "documents" (D.list decodeDocument)
+
 
 fetchResults : String -> Cmd Msg
 fetchResults searchString =
     Http.get
-        { url = "/api/documentIdsByText?search=" ++ searchString
+        { url = "http://localhost:4000/api/couchdb/document/search?search=" ++ searchString
         , expect = Http.expectJson ReceiveResults decodeResults
         }
 
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    -- Define your subscriptions here
     Sub.none
 
+
+-- View
 
 view : Model -> Html Msg
 view model =
@@ -86,37 +113,23 @@ view model =
                 [ h2 [] [ text "CBC" ]
                 ]
             , ul []
-                [ li []
-                    [ a [ href "/home" ] [ text "HOME" ]
-                    ]
-                , li []
-                    [ a [ href "/sites" ] [ text "SITES" ]
-                    ]
+                [ li [] [ a [ href "/home" ] [ text "HOME" ] ]
+                , li [] [ a [ href "/sites" ] [ text "SITES" ] ]
                 , li []
                     [ a [ href "#" ] [ text "DATA" ]
                     , ul []
-                        [ li []
-                            [ a [ href "/uploading" ] [ text "Get Data" ]
-                            ]
-                        , li []
-                            [ a [ href "/publish" ] [ text "Publish Data" ] 
-                            ]
+                        [ li [] [ a [ href "/uploading" ] [ text "Get Data" ] ]
+                        , li [] [ a [ href "/publish" ] [ text "Publish Data" ] ]
                         ]
                     ]
                 , li []
                     [ a [ href "#" ] [ text "SURVEYS" ]
                     , ul []
-                        [ li []
-                            [ a [ href "/survey" ] [ text "Map" ]
-                            ]
-                        , li []
-                            [ a [ href "/surveys" ] [ text "Survey Collection" ]
-                            ]
+                        [ li [] [ a [ href "/survey" ] [ text "Map" ] ]
+                        , li [] [ a [ href "/surveys" ] [ text "Survey Collection" ] ]
                         ]
                     ]
-                , li []
-                    [ a [ href "/contact" ] [ text "CONTACT" ]
-                    ]
+                , li [] [ a [ href "/contact" ] [ text "CONTACT" ] ]
                 ]
             ]
         , case model.status of
@@ -137,36 +150,42 @@ view model =
                         [ text "Search" ]
                     ]
             WaitingForServer ->
-                div
-                    [ ]
-                    [ text ("Searching for '" ++ model.searchText ++ "', please wait…") ]
+                div [] [ text ("Searching for '" ++ model.searchText ++ "', please wait…") ]
             ErrorHappenedOhNo ->
-                div
-                    [ ]
+                div []
                     [ text <| "Oh no! An error occurred while searching for '" ++ model.searchText ++ "'."
                     , text "  Please contact the developer, who will be very sorry and will fix it ASAP."
                     ]
-        , div
-            [ class "body" ]
-            ( List.map
-                (\result ->
-                    p
-                        []
-                        [ text "I found the result: "
-                        , text result
-                        ]
-                )
-                model.results
-            )
-            -- [  p []
-            --     [ text "Welcome to the CBC Portal"
-            --     , br [] []
-            --     , text "You can download data from "
-            --     , b [] [ a [ href "/api/couchdb/documents/:id", style "color" "black", style "text-decoration" "underline"] [ text "here" ] ]
-            --     ]
-            -- ]
+        , div [ class "body" ]
+            (List.map viewDocument model.results)
         ]
 
+
+viewDocument : Document -> Html msg
+viewDocument doc =
+    p [class "document-paragraph"]
+        [ text "Date: "
+        , text (Maybe.withDefault "No date available" doc.date)
+        , br [] []
+        , text "Site: "
+        , text (Maybe.withDefault "No site available" doc.site)
+        , br [] []
+        , text "Province: "
+        , text (Maybe.withDefault "No province available" doc.province)
+        , br [] []
+        , text "Notes: "
+        , text (Maybe.withDefault "No notes available" doc.notes)
+        , br [] []
+        , a [ href ("api/couchdb/documents/" ++ doc.id), class "document-link"] [ text "View Document" ]
+        ]
+
+viewResults : List Document -> Html msg
+viewResults results =
+    div []
+        (List.map viewDocument results)
+
+
+-- Main
 
 main : Program () Model Msg
 main =
@@ -176,3 +195,4 @@ main =
         , view = view
         , subscriptions = subscriptions
         }
+
