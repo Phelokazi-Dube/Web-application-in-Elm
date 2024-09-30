@@ -56,12 +56,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ class "main" ]
-        [ node "link" [
-            attribute "rel" "stylesheet"
-            , attribute "href" "/css/styling.css"
-            ] [], 
-          
-          nav [ class "navbar" ]
+        [ nav [ class "navbar" ]
           [ div [ class "logo" ]
               [ h2 [] [ text "CBC" ]
               ]

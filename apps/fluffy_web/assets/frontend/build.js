@@ -7,7 +7,7 @@ async function watch() {
   const ctx = await esbuild.context({
     entryPoints: ['all_surveys.js', 'contact.js', 'downloading_data.js', 'home.js', 'publish_data.js', 'surveys.js', 'uploading_data.js', 'sign_up.js'],
     bundle: true,
-    outdir: '../js',
+    outdir: '../../priv/static/js',
     format: 'esm',
     plugins: [
       ElmPlugin({

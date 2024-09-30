@@ -1,10 +1,7 @@
 import { Elm } from './src/SignUp.elm';
-const $root = document.getElementById("elm-app");
-export function start_elm_sign_up(flags, phoenix_setup) {
-  let app = Elm.Main.init({
-    node: $root,
+window.start_elm = function(flags) {
+  return Elm.SignUp.init({
+    node: document.getElementById("myapp"),
     flags: flags
   });
-  phoenix_setup(app);
-  // now do things with hooking up ports, if you want to; the app will start to run after all the immediate JS is done, as per usual JS semantics.
 };

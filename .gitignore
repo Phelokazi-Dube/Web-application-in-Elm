@@ -26,9 +26,9 @@ elm-stuff
 node_modules
 .elixir_ls/
 apps/fluffy_web/priv/static/js/*.js
+!apps/fluffy_web/priv/static/js/googleme.js
 apps/fluffy_web/assets/js/*.js
-!/backend/priv/static/js/googleme.js
-!/backend/priv/static/js/app.js
+!apps/fluffy_web/assets/js/app.js
 
 .direnv
 .formatter.exs
