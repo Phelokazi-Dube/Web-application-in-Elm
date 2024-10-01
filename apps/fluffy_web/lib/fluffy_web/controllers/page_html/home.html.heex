@@ -5,13 +5,13 @@
 <%= if @js_file == "sign_up" do %>
   <script src="https://apis.google.com/js/api.js" defer></script>
   <script src="https://accounts.google.com/gsi/client" defer></script>
-  <script src={~p"/js/googleme.js"} defer>import { start_elm } from "./sign_up";</script>
+  <script type="module" src={~p"/js/sign_up.js"} defer></script>
+  <script type="module" src={~p"/js/googleme.js"} defer>import { start_elm } from "/js/sign_up.js";</script>
 <% else %>
   <script type="module">
     <%= raw "import { start_elm } from \"/js/" <> @js_file <> ".js\";" %>
     const flags = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const app = start_elm(flags);
-    console.log("Moo");
   </script>
   <script>
   </script>

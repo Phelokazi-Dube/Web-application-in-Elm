@@ -10,12 +10,12 @@ window.google.accounts.id.initialize({
   redirect_uri: 'http://localhost:8000', // Replace this with your actual redirect URI if you're not using elm reactor
 });
 
-function authenticate(immediate) {
-  window.google.accounts.id.prompt({
-    auto_select: immediate,
-    prompt_parent_id: 'myapp',
-  });
-}
+// function authenticate(immediate) {
+//   window.google.accounts.id.prompt({
+//     auto_select: immediate,
+//     prompt_parent_id: 'myapp',
+//   });
+// }
 
 /*
 BEFORE this is loaded, I must load api.js.
