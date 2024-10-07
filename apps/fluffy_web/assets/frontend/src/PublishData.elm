@@ -31,7 +31,7 @@ update msg model =
     case msg of
         NoOp ->
             (model, Cmd.none)
-    
+
 
 
 subscriptions : Model -> Sub Msg
@@ -69,10 +69,10 @@ view model =
                     [ a [ href "#" ] [ text "SURVEYS" ]
                     , ul []
                         [ li []
-                            [ a [ href "/survey" ] [ text "Map" ]
+                            [ a [ href "/map" ] [ text "Map" ]
                             ]
                         , li []
-                            [ a [ href "/surveys" ] [ text "Survey Collection" ]
+                            [ a [ href "/survey" ] [ text "Survey Collection" ]
                             ]
                         ]
                     ]
@@ -96,7 +96,7 @@ view model =
                 ]
             ]
         ]
-    
+
 
 
 main : Program () Model Msg

@@ -50,6 +50,12 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:update_document, collection_name, bson_id, update_fields})
   end
 
+  # Function to insert multiple documents into a collection (for CSV data)
+  @spec insert_many_documents(String.t(), [map()]) :: {:ok, Mongo.InsertManyResult.t()} | {:error, any()}
+  def insert_many_documents(collection_name, documents) do
+    GenServer.call(__MODULE__, {:insert_many_documents, collection_name, documents})
+  end
+
   def handle_call({:get_all_documents, collection_name}, _from, %{conn: conn} = state) do
     # Fetch documents from the collection
     cursor = Mongo.find(conn, collection_name, %{})
@@ -103,6 +109,17 @@ defmodule WaterWeeds.MongoDBClient do
          ) do
       {:ok, doc} ->
         {:reply, {:ok, doc}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:insert_many_documents, collection_name, documents}, _from, %{conn: conn} = state) do
+    # Insert multiple documents into the collection
+    case Mongo.insert_many(conn, collection_name, documents) do
+      {:ok, result} ->
+        {:reply, {:ok, result}, state}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}

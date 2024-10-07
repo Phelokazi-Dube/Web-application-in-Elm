@@ -58,7 +58,8 @@ defmodule FluffyWeb.MixProject do
       {:gettext, "~> 0.20"},
       {:water_weeds, in_umbrella: true},
       {:jason, "~> 1.2"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:csv, "~> 3.2"}
     ]
   end
 

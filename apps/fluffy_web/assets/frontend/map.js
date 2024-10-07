@@ -1,6 +1,6 @@
-import { Elm } from './src/AllSurveys.elm';
+import { Elm } from './src/Map.elm';
 export function start_elm(flags) {
-  return Elm.AllSurveys.init({
+  return Elm.Map.init({
     node: document.getElementById("myapp"),
     flags: flags
   });

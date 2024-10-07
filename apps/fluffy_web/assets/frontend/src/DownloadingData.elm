@@ -87,7 +87,7 @@ decodeResults =
 fetchResults : String -> Cmd Msg
 fetchResults searchString =
     Http.get
-        { url = "http://localhost:4000/api/couchdb/document/search?search=" ++ searchString
+        { url = "http://localhost:4000/api/Mongodb/document/search?search=" ++ searchString
         , expect = Http.expectJson ReceiveResults decodeResults
         }
 
@@ -120,8 +120,8 @@ view model =
                 , li []
                     [ a [ href "#" ] [ text "SURVEYS" ]
                     , ul []
-                        [ li [] [ a [ href "/survey" ] [ text "Map" ] ]
-                        , li [] [ a [ href "/surveys" ] [ text "Survey Collection" ] ]
+                        [ li [] [ a [ href "/map" ] [ text "Map" ] ]
+                        , li [] [ a [ href "/survey" ] [ text "Survey Collection" ] ]
                         ]
                     ]
                 , li [] [ a [ href "/contact" ] [ text "CONTACT" ] ]
@@ -171,7 +171,7 @@ viewDocument doc =
         , text "Notes: "
         , text (Maybe.withDefault "No notes available" doc.notes)
         , br [] []
-        , a [ href ("api/couchdb/documents/" ++ doc.id), class "document-link"] [ text "View Document" ]
+        , a [ href ("api/Mongodb/documents/" ++ doc.id), class "document-link"] [ text "View Document" ]
         ]
 
 viewResults : List Document -> Html msg

@@ -129,4 +129,49 @@ defmodule FluffyWeb.MongoDBController do
         send_resp(conn, 400, "Invalid ID format")
     end
   end
+
+  # Action to upload and process a CSV file with dynamic fields
+  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}, "topic_id" => topic_id}) do
+    # Read the CSV file and decode with dynamic headers
+    csv_data =
+      file_path
+      |> File.stream!()
+      |> CSV.decode(separator: ?;, headers: true) # headers: true reads the first row as headers
+      |> Enum.map(fn
+        {:ok, row} ->
+          # Add the topic_id to each row, creating a document
+          Map.put(row, "topic_id", topic_id)
+          |> Map.put("created_at", System.os_time(:second)) # Add a timestamp field
+        {:error, reason} ->
+          {:error, reason} # Handle any errors in CSV decoding
+      end)
+
+    # Filter out any rows that had errors
+    documents = Enum.filter(csv_data, fn item -> is_map(item) end)
+
+    # Insert the documents into MongoDB
+    case MongoDBClient.insert_many_documents("Sana", documents) do
+      {:ok, result} ->
+        # Fetch inserted documents by their BSON ObjectIds and normalize _id to id
+        inserted_documents =
+          Enum.map(result.inserted_ids, fn {_index, bson_id} ->
+            MongoDBClient.get_document_by_id("Sana", bson_id)
+          end)
+          |> Enum.filter(&(&1 != nil))     # Filter out any nil results
+          |> Enum.map(&normalize_mongo_id/1) # Normalize BSON _id to id
+
+        conn
+        |> put_status(:created)
+        |> json(%{message: "CSV data inserted successfully", documents: inserted_documents})
+
+      {:error, reason} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Failed to insert CSV data", reason: reason})
+    end
+  end
+
+  def to_rhodes(conn, _params) do
+    redirect(conn, external: "https://www.ru.ac.za/centreforbiologicalcontrol/")
+  end
 end

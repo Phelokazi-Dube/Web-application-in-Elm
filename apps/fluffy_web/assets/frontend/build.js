@@ -5,7 +5,7 @@ const isProduction = process.env.MIX_ENV === "prod"
 
 async function watch() {
   const ctx = await esbuild.context({
-    entryPoints: ['all_surveys.js', 'contact.js', 'downloading_data.js', 'home.js', 'publish_data.js', 'surveys.js', 'uploading_data.js', 'sign_up.js'],
+    entryPoints: ['map.js', 'contact.js', 'downloading_data.js', 'home.js', 'publish_data.js', 'surveys.js', 'uploading_data.js', 'sign_up.js'],
     bundle: true,
     outdir: '../../priv/static/js',
     format: 'esm',
@@ -20,7 +20,7 @@ async function watch() {
 
 async function build() {
   await esbuild.build({
-    entryPoints: ['all_surveys.js', 'contact.js', 'downloading_data.js', 'home.js', 'publish_data.js', 'surveys.js', 'uploading_data.js', 'sign_up.js'],
+    entryPoints: ['map.js', 'contact.js', 'downloading_data.js', 'home.js', 'publish_data.js', 'surveys.js', 'uploading_data.js', 'sign_up.js'],
     bundle: true,
     minify: true,
     outdir: '../js',

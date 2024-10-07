@@ -25,8 +25,9 @@ defmodule FluffyWeb.Router do
     get "/uploading", PageController, :home, private: %{:javascript => "uploading_data"}
     post "/uploading", PageController, :upload
     get "/downloading", PageController, :home, private: %{:javascript => "downloading_data"}
-    get "/surveys", PageController, :home, private: %{:javascript => "all_surveys"}
     get "/survey", PageController, :home, private: %{:javascript => "surveys"}
+    get "/map", PageController, :home, private: %{:javascript => "map"}
+    post "/map", PageController, :upload_csv
   end
 
   # Other scopes may use custom stacks.
@@ -54,6 +55,11 @@ defmodule FluffyWeb.Router do
     # Getting all the docs
     get "/Mongodb/document", MongoDBController, :all
 
+    # Add a route for uploading CSV files
+    post "/Mongodb/upload_csv", MongoDBController, :insert_many_documents
+
+    # Add a route for uploading CSV files
+    get "/rhodes", MongoDBController, :to_rhodes
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

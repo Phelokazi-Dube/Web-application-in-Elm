@@ -128,7 +128,7 @@ documentRow doc =
     tr []
         [ td [] [ text doc.id ]
         , td [] [ text  (Maybe.withDefault "No Date" doc.date)  ]
-        , td [] [ a [ href ("api/couchdb/documents/" ++ doc.id) , class "document-link"] [ text "Document" ] ]
+        , td [] [ a [ href ("api/Mongodb/documents/" ++ doc.id) , class "document-link"] [ text "Document" ] ]
         , td [] [ text (Maybe.withDefault "No Notes" doc.notes) ]
         ]
 
@@ -138,7 +138,7 @@ documentRow doc =
 fetchDocuments : Cmd Msg
 fetchDocuments =
     Http.get
-        { url = "http://localhost:4000/api/couchdb/document"
+        { url = "http://localhost:4000/api/Mongodb/document"
         , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.list documentDecoder))
         }
 

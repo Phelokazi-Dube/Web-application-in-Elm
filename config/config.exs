@@ -55,6 +55,7 @@ config :tailwind,
       --config=tailwind.config.js
       --input=css/app.css
       --input=css/styling.css
+      --input=css/styles.css
       --output=../priv/static/assets/app.css
     ),
     cd: Path.expand("../apps/fluffy_web/assets", __DIR__)
