@@ -154,8 +154,8 @@ defmodule FluffyWeb.MongoDBController do
       {:ok, result} ->
         # Fetch inserted documents by their BSON ObjectIds and normalize _id to id
         inserted_documents =
-          Enum.map(result.inserted_ids, fn {_index, bson_id} ->
-            MongoDBClient.get_document_by_id("Sana", bson_id)
+          Enum.map(result.inserted_ids, fn bson_obj ->
+            MongoDBClient.get_document_by_id("Sana", bson_obj)
           end)
           |> Enum.filter(&(&1 != nil))     # Filter out any nil results
           |> Enum.map(&normalize_mongo_id/1) # Normalize BSON _id to id

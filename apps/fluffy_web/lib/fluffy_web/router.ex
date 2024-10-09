@@ -56,7 +56,7 @@ defmodule FluffyWeb.Router do
     get "/Mongodb/document", MongoDBController, :all
 
     # Add a route for uploading CSV files
-    post "/Mongodb/upload_csv", MongoDBController, :insert_many_documents
+    post "/Mongodb/upload_csv", MongoDBController, :upload_csv
 
     # Add a route for uploading CSV files
     get "/rhodes", MongoDBController, :to_rhodes

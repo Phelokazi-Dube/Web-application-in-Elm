@@ -46,7 +46,7 @@ view : Model -> Html Msg
 view model =
     form
         [ method "post"
-        , action "/api/upload_csv"
+        , action "/api/Mongodb/upload_csv"
         , enctype "multipart/form-data"
         , class "column span-24" -- Class for form styling
         ]
