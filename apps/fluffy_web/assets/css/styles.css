@@ -111,7 +111,7 @@
 
 /* Hero Section */
 .hero-section {
-    margin-bottom: 48px;
+    margin-bottom: 44px;
 }
 
 .hero-title {
@@ -121,19 +121,26 @@
 }
 
 .hero-subtitle {
-    font-size: 1.25rem;
+    font-size: 2rem;
     color: #6b7280;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
+    font-family: "Times New Roman", Times, serif;
 }
 
 .hero-image {
-    height: 320px;
+    height: 360px;
     background-size: cover;
     background-position: center;
     width: 100%;
 }
 
 /* Features Section */
+.grid{
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem; /* 32px */
+    margin-bottom: 3rem;
+}
 .feature-box {
     background-color: white;
     padding: 24px;
@@ -142,7 +149,7 @@
 }
 
 .feature-title {
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     font-weight: 600;
     margin-bottom: 16px;
 }
@@ -150,11 +157,13 @@
 .feature-text {
     color: #6b7280;
     margin-bottom: 16px;
+    font-size: 1.5rem;
 }
 
 .feature-link {
     color: #6b7280;
     cursor: pointer;
+    font-size: 1.5rem;
 }
 
 .feature-link:hover {
@@ -167,17 +176,20 @@
     padding: 32px;
     border-radius: 8px;
     text-align: center;
+    margin-bottom: 36px; /* Margin to create space between CTA and footer */
 }
 
 .cta-title {
-    font-size: 2rem;
+    font-size: 2.25rem;
     font-weight: bold;
     margin-bottom: 16px;
 }
 
 .cta-text {
     color: #6b7280;
+    font-size: 1.5rem;
     margin-bottom: 24px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 
 .cta-link {
@@ -209,18 +221,20 @@
 }
 
 .footer-title {
-    font-size: 1.125rem;
+    font-size: 1.75rem;
     font-weight: 600;
     margin-bottom: 16px;
 }
 
 .footer-text {
     color: #9ca3af;
+    font-size: 1.5rem;
 }
 
 .footer-link {
     color: #9ca3af;
     cursor: pointer;
+    font-size: 1.5rem;
 }
 
 .footer-link:hover {
@@ -230,15 +244,22 @@
 .social-icons {
     display: flex;
     gap: 16px;
-    background-color: rgb(163 163 163);
+    color: rgb(163 163 163);
 }
 
 .social-icon {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     fill: currentColor;
 }
 
-.social-icon:hover {
+.fa:hover{
     color: white;
+}
+
+
+.footer-credits{
+    margin-top: 2.25rem; /* 32px */
+    text-align: center;
+    color: rgb(163 163 163);
 }

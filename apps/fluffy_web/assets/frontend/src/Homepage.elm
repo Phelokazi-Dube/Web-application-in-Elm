@@ -3,8 +3,6 @@ module Homepage exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Browser.Navigation exposing (load)
-import Html.Attributes exposing (attribute)
 import Html.Events exposing (onClick)
 
 
@@ -85,7 +83,7 @@ view model =
                 , p [ class "hero-subtitle" ] [ text "Enhancing access to biological control data for research and collaboration." ]
                 , div [ class "hero-image", style "background-image" "url(images/Mass_rearings.png)" ] []
                 ]
-            , section [ id "features", class "grid grid-cols-1 md:grid-cols-3 gap-8 mb-12" ]
+            , section [ id "features", class "grid md:grid-cols-3" ]
                 [ div [ class "feature-box" ]
                     [ h2 [ class "feature-title" ] [ text "Weekly Publications" ]
                     , p [ class "feature-text" ] [ text "Stay updated with the latest news and research from the CBC." ]
@@ -121,19 +119,22 @@ view model =
                         , ul []
                             [ li [] [ a [ href "#", class "footer-link" ] [ text "Privacy Policy" ] ]
                             , li [] [ a [ href "#", class "footer-link" ] [ text "Terms of Service" ] ]
-                            , li [] [ a [ href "#", class "footer-link" ] [ text "Contact Us" ] ]
+                            , li [] [ a [ href "/contact", class "footer-link" ] [ text "Contact Us" ] ]
                             ]
                         ]
                     , div [ class "footer-section" ]
                         [ h3 [ class "footer-title" ] [ text "Connect With Us" ]
                         , div [ class "social-icons" ]
-                            [ a [ href "#", class "social-icon" ] []
-                            , a [ href "#", class "social-icon" ] []
-                            , a [ href "#", class "social-icon" ] []
+                            [ a [ href "#", class "fa fa-facebook" ] []
+                            , a [ href "#", class "fa fa-twitter" ] []
+                            , a [ href "#", class "fa fa-instagram" ] []
+                            , a [ href "#", class "fa fa-linkedin" ] []
                             ]
                         ]
                     ]
                 ]
+            , div [ class "footer-credits" ]
+                [ p [] [ text "© 2025 Center for Biological Control. All rights reserved." ] ]
             ]
         ]
 
