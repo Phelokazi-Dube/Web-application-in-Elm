@@ -100,7 +100,6 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   # Fetch a document by its ID
-  # Fetch a document by its ID
   def show(conn, %{"id" => id}) do
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
@@ -131,19 +130,15 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   # Action to upload and process a CSV file with dynamic fields
-  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}, "topic_id" => topic_id}) do
-    # Read the CSV file and decode with dynamic headers
+  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}}) do
+    # Read the CSV file and decode it with dynamic headers (headers: true)
     csv_data =
       file_path
       |> File.stream!()
-      |> CSV.decode(separator: ?;, headers: true) # headers: true reads the first row as headers
+      |> CSV.decode(separator: ?,, headers: true) # Use comma as the delimiter and read headers dynamically
       |> Enum.map(fn
-        {:ok, row} ->
-          # Add the topic_id to each row, creating a document
-          Map.put(row, "topic_id", topic_id)
-          |> Map.put("created_at", System.os_time(:second)) # Add a timestamp field
-        {:error, reason} ->
-          {:error, reason} # Handle any errors in CSV decoding
+        {:ok, row} -> row
+        {:error, reason} -> {:error, reason} # Handle any errors in CSV decoding
       end)
 
     # Filter out any rows that had errors
