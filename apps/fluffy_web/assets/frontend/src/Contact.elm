@@ -109,7 +109,7 @@ view model =
                     ]
                 ]
             ]
-        , main_ [ class " mina flex-grow container mx-auto px-4 py-8" ]
+        , main_ [ class " flex-grow container mx-auto px-4 py-8" ]
             [ h1 [ class "contact-title text-6xl text-left mb-4" ] [ text "Contact Us" ]
             , div [ class "grid grid-cols-1 md:grid-cols-2 gap-8" ]
                 [ section [ id "contacts", class "contact-main" ]

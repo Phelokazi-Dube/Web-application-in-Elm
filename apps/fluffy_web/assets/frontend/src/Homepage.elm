@@ -93,7 +93,7 @@ view model =
                     ]
                 ]
             ]
-        , main_ [ class "container mx-auto" ]
+        , main_ [ class "container mx-auto flex-grow" ]
             [ section [ id "hero", class "hero-section" ]
                 [ h1 [ class "hero-title" ] [ text "Center for Biological Control" ]
                 , p [ class "hero-subtitle" ] [ text "Enhancing access to biological control data for research and collaboration." ]

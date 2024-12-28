@@ -94,7 +94,7 @@ view model =
                     ]
                 ]
             ]
-        , main_ [ class "container mx-auto" ]
+        , main_ [ class "container mx-auto flex-grow" ]
             [ section [ id "first", class "first-main" ]
                 [ h1 [ class "first-title" ] [ text "For Users" ]
                 , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]
