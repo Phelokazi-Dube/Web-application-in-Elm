@@ -1,37 +1,45 @@
 module PublishData exposing (..)
 
 import Browser exposing (..)
-import Html exposing (Html, div, nav, ul, li, a, input, button, text, h2, p, node, h1, br)
-import Html.Attributes exposing (class, href, type_, name, placeholder)
-import Html.Events exposing (onClick)
 import Browser.Navigation exposing (load)
-import Html.Attributes exposing (..)
 import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
+
+
 
 -- Model
+
+
 type alias Model =
     -- Define your model structure here
     {}
 
 
+
 -- Init
+
+
 init : Model
 init =
     {}
 
 
+
 -- Update
-type Msg
+
+
+type
+    Msg
     -- Define your message types here
     = NoOp
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            (model, Cmd.none)
-
+            ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -42,23 +50,25 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ class "flex flex-col min-h-screen" ]
         [ node "link"
             [ attribute "rel" "stylesheet"
             , attribute "href" "styles.css"
             ]
             []
         , div [ class "min-h-36 bg-base-50" ]
-            [ header [ class "bg-neutral-100 shadow-sm", style "background-color" "rgb(17, 71, 104)"]
+            [ header [ class "bg-neutral-100 shadow-sm", style "background-color" "rgb(17, 71, 104)" ]
                 [ nav [ class "container mx-auto px-4 py-3 flex items-center justify-between" ]
                     [ div [ class "brand-container" ]
                         [ img [ src "images/images.png", alt "Logo", class "logo" ] []
-                        , div [ class "brand-title"] [ text "CBC" ]
+                        , div [ class "brand-title" ] [ text "CBC" ]
                         ]
                     , ul [ class "nav-items" ]
-                        [ li []  -- HOME link
+                        [ li []
+                            -- HOME link
                             [ a [ href "/home", class "nav-link" ] [ text "HOME" ] ]
-                        , li [ class "group" ]  -- Dropdown for DATA
+                        , li [ class "group" ]
+                            -- Dropdown for DATA
                             [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                             , ul [ class "dropdown" ]
                                 [ li []
@@ -67,7 +77,8 @@ view model =
                                     [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
                                 ]
                             ]
-                        , li [ class "group" ]  -- Dropdown for SURVEYS
+                        , li [ class "group" ]
+                            -- Dropdown for SURVEYS
                             [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
                             , ul [ class "dropdown" ]
                                 [ li []
@@ -76,7 +87,8 @@ view model =
                                     [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Collection" ] ]
                                 ]
                             ]
-                        , li []  -- CONTACT link
+                        , li []
+                            -- CONTACT link
                             [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
                         ]
                     ]
@@ -126,10 +138,11 @@ view model =
             ]
         ]
 
+
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \_ -> (init, Cmd.none)
+        { init = \_ -> ( init, Cmd.none )
         , update = update
         , view = view
         , subscriptions = subscriptions

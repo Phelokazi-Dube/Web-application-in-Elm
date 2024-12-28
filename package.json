@@ -2,5 +2,8 @@
   "devDependencies": {
     "elm": "^0.19.1-6",
     "esbuild-plugin-elm": "^0.0.12"
+  },
+  "dependencies": {
+    "topbar": "^3.0.0"
   }
 }
