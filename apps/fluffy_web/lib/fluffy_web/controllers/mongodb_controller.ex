@@ -64,6 +64,7 @@ defmodule FluffyWeb.MongoDBController do
       "sizeOfInf" => "",
       "percentCover" => "",
       "description" => "💝",
+      "approved" => false,  # Field marks the document as unapproved initially
       "created_at" => System.os_time(:second)
     }
 
@@ -169,4 +170,63 @@ defmodule FluffyWeb.MongoDBController do
   def to_rhodes(conn, _params) do
     redirect(conn, external: "https://www.ru.ac.za/centreforbiologicalcontrol/")
   end
+
+  def approve(conn, %{"id" => id}) do
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        # Update the "approved" field to true
+        case MongoDBClient.update_document("Surveys", bson_id, %{"approved" => true}) do
+          {:ok, doc} ->
+            document = normalize_mongo_id(doc)
+            conn
+            |> put_status(:ok)
+            |> json(%{message: "Document approved successfully", document: document})
+
+          {:error, reason} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: "Failed to approve document", reason: reason})
+        end
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid ID format"})
+    end
+  end
+
+  def unapproved(conn, _params) do
+    # Fetch unapproved documents from the "Surveys" collection
+    documents = MongoDBClient.get_all_documents("Surveys", %{"approved" => false})
+
+    # Return the documents as JSON
+    conn
+    |> put_status(:ok)
+    |> json(%{documents: documents})
+  end
+
+  # Function to fetch approved documents
+  def approved(conn, _params) do
+    # Fetch approved documents from the "Surveys" collection
+    documents = MongoDBClient.get_all_documents("Surveys", %{"approved" => true})
+
+    # Return the documents as JSON
+    conn
+    |> put_status(:ok)
+    |> json(%{documents: documents})
+  end
+
+  # def approve(conn, %{"id" => id}) do
+  #   case MongoDBClient.approve_document("Surveys", id) do
+  #     {:ok, _result} ->
+  #       conn
+  #       |> put_status(:ok)
+  #       |> json(%{message: "Document approved successfully"})
+
+  #     {:error, reason} ->
+  #       conn
+  #       |> put_status(:unprocessable_entity)
+  #       |> json(%{error: "Failed to approve document", reason: reason})
+  #   end
+  # end
 end

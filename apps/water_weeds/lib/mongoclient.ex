@@ -25,8 +25,14 @@ defmodule WaterWeeds.MongoDBClient do
   end
 
   # Function to get all documents from a collection
+   # Function to get all documents from a collection (default filter: %{})
   def get_all_documents(collection_name) do
-    GenServer.call(__MODULE__, {:get_all_documents, collection_name})
+    get_all_documents(collection_name, %{})
+  end
+
+  # Function to get all documents from a collection with a filter
+  def get_all_documents(collection_name, filter) do
+    GenServer.call(__MODULE__, {:get_all_documents, collection_name, filter})
   end
 
   # Function to search documents by text
@@ -56,14 +62,13 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:insert_many_documents, collection_name, documents})
   end
 
-  def handle_call({:get_all_documents, collection_name}, _from, %{conn: conn} = state) do
-    # Fetch documents from the collection
-    cursor = Mongo.find(conn, collection_name, %{})
-
-    # Convert the cursor to a list and return it
-    documents = cursor |> Enum.to_list()
-    {:reply, documents, state}
-  end
+    # Handle call for getting documents with a filter
+    def handle_call({:get_all_documents, collection_name, filter}, _from, %{conn: conn} = state) do
+      # Fetch documents from the collection with the given filter
+      cursor = Mongo.find(conn, collection_name, filter)
+      documents = cursor |> Enum.to_list()
+      {:reply, documents, state}
+    end
 
   def handle_call({:search_documents_by_text, collection_name, search_text}, _from, %{conn: conn} = state) do
     # Define the filter for the text search
@@ -126,4 +131,12 @@ defmodule WaterWeeds.MongoDBClient do
     end
   end
 
+  # Approve a specific document by updating the "approved" field
+  def approve_document(collection, document_id) do
+    # Convert the document_id to BSON ObjectId
+    object_id = BSON.ObjectId.decode!(document_id)
+
+    # Update the document by setting "approved" to true
+    Mongo.update_one(:mongo, collection, %{"_id" => object_id}, %{"$set" => %{"approved" => true}})
+  end
 end

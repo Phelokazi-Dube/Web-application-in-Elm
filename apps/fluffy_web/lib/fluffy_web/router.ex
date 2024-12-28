@@ -60,6 +60,15 @@ defmodule FluffyWeb.Router do
 
     # Add a route for uploading CSV files
     get "/rhodes", MongoDBController, :to_rhodes
+
+    # Handle document approvals by setting the approved field to true
+    post "/Mongodb/approve_document/:id", MongoDBController, :approve
+
+    # Get approved documents
+    get "/Mongodb/approved_documents", MongoDBController, :approved
+
+    # See unapproved documents
+    get "/Mongodb/unapproved_documents", MongoDBController, :unapproved
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

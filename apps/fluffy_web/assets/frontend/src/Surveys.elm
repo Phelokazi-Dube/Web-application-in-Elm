@@ -36,6 +36,8 @@ init =
 type Msg
     = FetchDocuments
     | DocumentsFetched (Result Http.Error (List Document))
+    | ApproveDocument String
+    | DocumentApproved (Result Http.Error String)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -48,6 +50,15 @@ update msg model =
             ( { model | documents = docs, error = Nothing }, Cmd.none )
 
         DocumentsFetched (Err err) ->
+            ( { model | error = Just (errorToString err) }, Cmd.none )
+
+        ApproveDocument docId ->
+            ( model, approveDocument docId )
+
+        DocumentApproved (Ok docId) ->
+            ( model, fetchDocuments )
+
+        DocumentApproved (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
 
 
@@ -100,36 +111,58 @@ view model =
           ]
       , div [ class "table-section" ]
               [ h1 [] [ text "Observations" ]
-              , p [] [ text "These are all the observations collected." ]
-              , table []
-                  [ thead []
-                      [ tr []
-                          [ th [] [ text "Document ID" ]
-                          , th [] [ text "Date" ]
-                          , th [] [ text "Document" ]
-                          , th [] [ text "Notes" ]
-                          ]
-                      ]
-                  , tbody []
-                      (List.map documentRow model.documents)
-                  ]
-              ]
-          , case model.error of
-              Just errorMsg ->
-                  div [] [ text ("Error: " ++ errorMsg) ]
 
-              Nothing ->
-                  text ""  -- Use text "" to represent no content
-          ]
+            , p [] [ text "These are all the observations collected." ]
+
+            , table []
+
+                [ thead []
+
+                    [ tr []
+
+                        [ th [] [ text "Document ID" ]
+
+                        , th [] [ text "Date" ]
+
+                        , th [] [ text "Document" ]
+
+                        , th [] [ text "Notes" ]
+
+                        , th [] [ text "Actions" ]
+
+                        ]
+
+                    ]
+
+                , tbody []
+
+                    (List.map documentRow model.documents)
+
+                ]
+
+            ]
+
+        , case model.error of
+
+            Just errorMsg ->
+                div [] [ text ("Error: " ++ errorMsg) ]
+
+            Nothing ->
+                text ""
+
+        ]
+
 
 
 documentRow : Document -> Html Msg
 documentRow doc =
     tr []
         [ td [] [ text doc.id ]
-        , td [] [ text  (Maybe.withDefault "No Date" doc.date)  ]
-        , td [] [ a [ href ("api/Mongodb/documents/" ++ doc.id) , class "document-link"] [ text "Document" ] ]
+        , td [] [ text (Maybe.withDefault "No Date" doc.date) ]
+        , td [] [ a [ href ("api/Mongodb/documents/" ++ doc.id), class "document-link" ] [ text "Document" ] ]
         , td [] [ text (Maybe.withDefault "No Notes" doc.notes) ]
+        , td []
+            [ button [ onClick (ApproveDocument doc.id) ] [ text "Approve" ] ]
         ]
 
 
@@ -140,6 +173,14 @@ fetchDocuments =
     Http.get
         { url = "http://localhost:4000/api/Mongodb/document"
         , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.list documentDecoder))
+        }
+
+approveDocument : String -> Cmd Msg
+approveDocument docId =
+    Http.post
+        { url = "http://localhost:4000/api/Mongodb/approve_document/" ++ docId
+        , body = Http.emptyBody
+        , expect = Http.expectString (DocumentApproved << Result.map (always docId))
         }
 
 
