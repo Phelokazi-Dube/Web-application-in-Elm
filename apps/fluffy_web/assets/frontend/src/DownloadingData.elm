@@ -115,7 +115,7 @@ view model =
             , attribute "href" "styles.css"
             ]
             []
-        , nav [ class "bg-neutral-100 shadow-sm", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
+        , nav [ class "bg-neutral-100 shadow-sm mb-5", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
             [ div [ class "container mx-auto px-4 py-3 flex items-center justify-between" ]
                 [ div [ class "brand-container" ]
                     [ img [ Html.Attributes.src "images/images.png", Html.Attributes.alt "Logo", class "logo" ] []
@@ -141,7 +141,7 @@ view model =
                     ]
                 ]
             ]
-        , div [ class "search-bar container mx-auto px-4 py-4 flex items-center" ]
+        , div [ class "search-bar container mx-auto flex-grow items-center mb-4 w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-neutral-400" ]
             [ input
                 [ class "search-input"
                 , type_ "text"
@@ -150,8 +150,8 @@ view model =
                 , onInput SearchTextChanged
                 ]
                 []
-            , button [ class "btn", onClick FetchDocuments ] [ text "Search" ]
-            , button [ class "clear-btn", onClick ClearSearch ] [ text "X" ]
+            , button [ class "btn mb-4 bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick FetchDocuments ] [ text "Search" ]
+            , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
             ]
         , div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 container mx-auto px-4 py-8 flex-grow" ]
             (List.map documentCard paginatedDocuments)
