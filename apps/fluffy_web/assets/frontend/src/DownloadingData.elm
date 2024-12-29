@@ -1,193 +1,296 @@
 module DownloadingData exposing (..)
 
-import Browser
-import Html exposing (Html, div, nav, h2, p, br, b, a, input, button, ul, li, text, node)
-import Html.Attributes exposing (class, type_, name, placeholder, href, style, attribute, value)
-import Html.Events exposing (onClick, onMouseOver, onInput)
-import Browser.Navigation exposing (load)
+import Browser exposing (element)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (onClick, onInput)
 import Http
-import Json.Decode as D
+import Json.Decode as Decode
 
 
--- Define a type for the document fields that we will decode
+
+-- MODEL
+
+
 type alias Document =
-    { date : Maybe String
+    { id : Maybe String
+    , date : Maybe String
+    , notes : Maybe String
     , site : Maybe String
     , province : Maybe String
-    , notes : Maybe String
-    , id : String
     }
 
 
-
--- Model
 type alias Model =
-    { searchText : String
-    , results : List Document
-    , status : Status
+    { documents : List Document
+    , filteredDocuments : List Document
+    , searchText : String
+    , error : Maybe String
+    , currentPage : Int
+    , itemsPerPage : Int
     }
 
-type Status
-    = WaitingForServer
-    | ErrorHappenedOhNo
-    | GettingUserInput
 
-
--- Init
-init : Model
+init : ( Model, Cmd Msg )
 init =
-    { searchText = ""
-    , results = []
-    , status = GettingUserInput
-    }
+    ( { documents = []
+      , filteredDocuments = []
+      , searchText = ""
+      , error = Nothing
+      , currentPage = 1
+      , itemsPerPage = 11
+      }
+    , fetchDocuments ""
+      -- Fetch all documents initially
+    )
 
 
--- Update
+
+-- UPDATE
+
+
 type Msg
-    = ChangeSearchText String
-    | AskServerForResults
-    | ReceiveResults (Result Http.Error (List Document))
+    = FetchDocuments
+    | DocumentsFetched (Result Http.Error (List Document))
+    | SearchTextChanged String
+    | ClearSearch
+    | NextPage
+    | PrevPage
 
-update : Msg -> Model -> (Model, Cmd Msg)
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeSearchText newText ->
-            ( { model | searchText = newText }, Cmd.none )
+        FetchDocuments ->
+            ( model, fetchDocuments model.searchText )
 
-        AskServerForResults ->
-            ( { model | status = WaitingForServer }
-            , fetchResults model.searchText
-            )
+        DocumentsFetched (Ok docs) ->
+            ( { model | documents = docs, filteredDocuments = docs, error = Nothing }, Cmd.none )
 
-        ReceiveResults possibleResults ->
-            case possibleResults of
-                Ok newResults ->
-                    ( { model | results = newResults, status = GettingUserInput }, Cmd.none )
+        DocumentsFetched (Err err) ->
+            ( { model | error = Just (errorToString err) }, Cmd.none )
 
-                Err _ ->
-                    ( { model | status = ErrorHappenedOhNo }, Cmd.none )
+        SearchTextChanged text ->
+            let
+                filteredDocs =
+                    if String.isEmpty text then
+                        model.documents
 
+                    else
+                        List.filter (\doc -> String.contains (String.toLower text) (Maybe.withDefault "" doc.notes)) model.documents
+            in
+            ( { model | searchText = text, filteredDocuments = filteredDocs }, Cmd.none )
 
--- JSON Decoder to decode a list of documents
-decodeDocument : D.Decoder Document
-decodeDocument =
-    D.map5 Document
-        (D.maybe (D.field "Date" D.string))
-        (D.maybe (D.field "Site" D.string))
-        (D.maybe (D.field "Province" D.string))
-        (D.maybe (D.field "Notes" D.string))
-        (D.field "_id" D.string)
+        ClearSearch ->
+            ( { model | searchText = "", filteredDocuments = model.documents }, Cmd.none )
 
+        NextPage ->
+            let
+                totalPages =
+                    (List.length model.filteredDocuments + model.itemsPerPage - 1) // model.itemsPerPage
+            in
+            ( { model | currentPage = Basics.min (model.currentPage + 1) totalPages }, Cmd.none )
 
-decodeResults : D.Decoder (List Document)
-decodeResults =
-    D.field "documents" (D.list decodeDocument)
-
-
-fetchResults : String -> Cmd Msg
-fetchResults searchString =
-    Http.get
-        { url = "http://localhost:4000/api/Mongodb/document/search?search=" ++ searchString
-        , expect = Http.expectJson ReceiveResults decodeResults
-        }
+        PrevPage ->
+            ( { model | currentPage = Basics.max (model.currentPage - 1) 1 }, Cmd.none )
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
 
+-- VIEW
 
--- View
 
 view : Model -> Html Msg
 view model =
-    div [ class "main" ]
-        [ nav
-            [ class "navbar" ]
-            [ div [ class "logo" ]
-                [ h2 [] [ text "CBC" ]
-                ]
-            , ul []
-                [ li [] [ a [ href "/home" ] [ text "HOME" ] ]
-                , li [] [ a [ href "/sites" ] [ text "SITES" ] ]
-                , li []
-                    [ a [ href "#" ] [ text "DATA" ]
-                    , ul []
-                        [ li [] [ a [ href "/uploading" ] [ text "Get Data" ] ]
-                        , li [] [ a [ href "/publish" ] [ text "Publish Data" ] ]
-                        ]
+    let
+        start =
+            (model.currentPage - 1) * model.itemsPerPage
+
+        paginatedDocuments =
+            List.drop start model.filteredDocuments
+                |> List.take model.itemsPerPage
+    in
+    div [ class "flex flex-col min-h-screen" ]
+        [ Html.node "link"
+            [ attribute "rel" "stylesheet"
+            , attribute "href" "styles.css"
+            ]
+            []
+        , nav [ class "bg-neutral-100 shadow-sm", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
+            [ div [ class "container mx-auto px-4 py-3 flex items-center justify-between" ]
+                [ div [ class "brand-container" ]
+                    [ img [ Html.Attributes.src "images/images.png", Html.Attributes.alt "Logo", class "logo" ] []
+                    , div [ class "brand-title" ] [ text "CBC" ]
                     ]
-                , li []
-                    [ a [ href "#" ] [ text "SURVEYS" ]
-                    , ul []
-                        [ li [] [ a [ href "/map" ] [ text "Map" ] ]
-                        , li [] [ a [ href "/survey" ] [ text "Survey Collection" ] ]
+                , ul [ class "nav-items" ]
+                    [ li [] [ a [ href "/home", class "nav-link" ] [ text "HOME" ] ]
+                    , li [ class "group" ]
+                        [ a [ href "#", class "nav-link" ] [ text "DATA" ]
+                        , ul [ class "dropdown" ]
+                            [ li [] [ a [ href "/downloading", class "dropdown-link" ] [ text "Get Data" ] ]
+                            , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
+                            ]
                         ]
+                    , li [ class "group" ]
+                        [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
+                        , ul [ class "dropdown" ]
+                            [ li [] [ a [ href "/map", class "dropdown-link" ] [ text "Map" ] ]
+                            , li [] [ a [ href "/surveys", class "dropdown-link" ] [ text "Survey Collection" ] ]
+                            ]
+                        ]
+                    , li [] [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
                     ]
-                , li [] [ a [ href "/contact" ] [ text "CONTACT" ] ]
                 ]
             ]
-        , case model.status of
-            GettingUserInput ->
-                div [ class "search" ]
-                    [ input
-                        [ class "srch"
-                        , type_ "search"
-                        , placeholder "Type to search"
-                        , value model.searchText
-                        , onInput ChangeSearchText
+        , div [ class "search-bar container mx-auto px-4 py-4 flex items-center" ]
+            [ input
+                [ class "search-input"
+                , type_ "text"
+                , placeholder "Search by text"
+                , value model.searchText
+                , onInput SearchTextChanged
+                ]
+                []
+            , button [ class "btn", onClick FetchDocuments ] [ text "Search" ]
+            , button [ class "clear-btn", onClick ClearSearch ] [ text "X" ]
+            ]
+        , div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 container mx-auto px-4 py-8 flex-grow" ]
+            (List.map documentCard paginatedDocuments)
+        , div [ class "pagination mt-4 flex justify-between container mx-auto px-4" ]
+            [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn" ] [ text "Previous" ]
+            , span [] [ text ("Page " ++ String.fromInt model.currentPage) ]
+            , button [ onClick NextPage, disabled ((model.currentPage * model.itemsPerPage) >= List.length model.filteredDocuments), class "btn" ] [ text "Next" ]
+            ]
+        , case model.error of
+            Just errorMsg ->
+                div [] [ text ("Error: " ++ errorMsg) ]
+
+            Nothing ->
+                text ""
+        , footer [ class "footer" ]
+            [ div [ class "container mx-auto" ]
+                [ div [ class "footer-content" ]
+                    [ div [ class "footer-section" ]
+                        [ h3 [ class "footer-title" ] [ text "CBC" ]
+                        , p [ class "footer-text" ] [ text "Enhancing access to biological control data" ]
                         ]
-                        []
-                    , button
-                        [ class "btn"
-                        , onClick AskServerForResults
+                    , div [ class "footer-section" ]
+                        [ h3 [ class "footer-title" ] [ text "Quick Links" ]
+                        , ul []
+                            [ li [] [ a [ href "#", class "footer-link" ] [ text "Privacy Policy" ] ]
+                            , li [] [ a [ href "#", class "footer-link" ] [ text "Terms of Service" ] ]
+                            , li [] [ a [ href "/contact", class "footer-link" ] [ text "Contact Us" ] ]
+                            ]
                         ]
-                        [ text "Search" ]
+                    , div [ class "footer-section" ]
+                        [ h3 [ class "footer-title" ] [ text "Connect With Us" ]
+                        , div [ class "social-icons" ]
+                            [ a [ href "#", class "fa fa-facebook" ] []
+                            , a [ href "#", class "fa fa-twitter" ] []
+                            , a [ href "#", class "fa fa-instagram" ] []
+                            , a [ href "#", class "fa fa-linkedin" ] []
+                            ]
+                        ]
                     ]
-            WaitingForServer ->
-                div [] [ text ("Searching for '" ++ model.searchText ++ "', please wait…") ]
-            ErrorHappenedOhNo ->
-                div []
-                    [ text <| "Oh no! An error occurred while searching for '" ++ model.searchText ++ "'."
-                    , text "  Please contact the developer, who will be very sorry and will fix it ASAP."
-                    ]
-        , div [ class "body" ]
-            (List.map viewDocument model.results)
+                ]
+            , div [ class "footer-credits" ]
+                [ p [] [ text "© 2025 Center for Biological Control. All rights reserved." ] ]
+            ]
         ]
 
 
-viewDocument : Document -> Html msg
-viewDocument doc =
-    p [class "document-paragraph"]
-        [ text "Date: "
-        , text (Maybe.withDefault "No date available" doc.date)
-        , br [] []
-        , text "Site: "
-        , text (Maybe.withDefault "No site available" doc.site)
-        , br [] []
-        , text "Province: "
-        , text (Maybe.withDefault "No province available" doc.province)
-        , br [] []
-        , text "Notes: "
-        , text (Maybe.withDefault "No notes available" doc.notes)
-        , br [] []
-        , a [ href ("api/Mongodb/documents/" ++ doc.id), class "document-link"] [ text "View Document" ]
+
+-- RENDER DOCUMENT CARD
+
+
+documentCard : Document -> Html Msg
+documentCard doc =
+    div [ class "border rounded shadow p-4 bg-white flex-grow" ]
+        [ div [ class "flex items-center justify-between mb-4" ]
+            [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ Maybe.withDefault "Unknown" doc.id) ]
+            , span [ class "badge active" ] [ text "Active" ]
+            ]
+        , div [ class "mb-2" ]
+            [ text ("Created: " ++ Maybe.withDefault "No Date" doc.date) ]
+        , div [ class "mb-2" ]
+            [ text ("Location: " ++ Maybe.withDefault "No Site" doc.site) ]
+        , div [ class "mb-2" ]
+            [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
+        , div [ class "mb-4" ]
+            [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
+        , a [ href ("api/Mongodb/documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
         ]
 
-viewResults : List Document -> Html msg
-viewResults results =
-    div []
-        (List.map viewDocument results)
 
 
--- Main
+-- HTTP REQUEST
+
+
+fetchDocuments : String -> Cmd Msg
+fetchDocuments searchString =
+    let
+        url =
+            if String.isEmpty searchString then
+                "http://localhost:4000/api/Mongodb/document"
+                -- Fetch all documents initially
+
+            else
+                "http://localhost:4000/api/Mongodb/document/search?search=" ++ searchString
+
+        -- Fetch documents based on search
+    in
+    Http.get
+        { url = url
+        , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.list documentDecoder))
+        }
+
+
+documentDecoder : Decode.Decoder Document
+documentDecoder =
+    Decode.map5 Document
+        (Decode.maybe (Decode.field "_id" Decode.string))
+        (Decode.maybe (Decode.field "Date" Decode.string))
+        (Decode.maybe (Decode.field "Notes" Decode.string))
+        (Decode.maybe (Decode.field "Site" Decode.string))
+        (Decode.maybe (Decode.field "Province" Decode.string))
+
+
+errorToString : Http.Error -> String
+errorToString err =
+    case err of
+        Http.BadUrl url ->
+            "Bad URL: " ++ url
+
+        Http.Timeout ->
+            "Request timed out"
+
+        Http.NetworkError ->
+            "Network error"
+
+        Http.BadStatus status ->
+            "Bad status: " ++ String.fromInt status
+
+        Http.BadBody body ->
+            "Bad body: " ++ body
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
+
+-- MAIN
+
 
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \_ -> (init, Cmd.none)
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = subscriptions
         }
-

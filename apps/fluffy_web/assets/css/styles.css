@@ -43,7 +43,8 @@
 /* Flex container for logo and brand title */
 .brand-container {
     display: flex;
-    align-items: center; /* Vertically align logo and text */
+    align-items: center;
+    /* Vertically align logo and text */
 }
 
 /* Brand title styling */
@@ -58,18 +59,25 @@
 /* Navigation items styling */
 .nav-items {
     display: flex;
-    margin-left: auto; /* Push nav items to the right */
-    position: relative; /* Add this for positioning the dropdown */
+    margin-left: auto;
+    /* Push nav items to the right */
+    position: relative;
+    /* Add this for positioning the dropdown */
 }
 
 .nav-link {
     color: white;
     font-weight: 700;
-    padding-left: 1rem; /* 16px */
-    padding-right: 1rem; /* 16px */
-    padding-top: 0.5rem; /* 8px */
-    padding-bottom: 0.5rem; /* 8px */
-    border-radius: 0.25rem; /* 4px */
+    padding-left: 1rem;
+    /* 16px */
+    padding-right: 1rem;
+    /* 16px */
+    padding-top: 0.5rem;
+    /* 8px */
+    padding-bottom: 0.5rem;
+    /* 8px */
+    border-radius: 0.25rem;
+    /* 4px */
     cursor: pointer;
     transition: color 0.2s ease;
 }
@@ -81,26 +89,35 @@
 /* Dropdown styles */
 .dropdown {
     position: absolute;
-    display: none; /* Hide by default */
+    display: none;
+    /* Hide by default */
     background-color: rgb(17, 71, 104);
-    z-index: 10; /* Ensure dropdown is above other content */
-    left: 0; /* Align dropdown with the parent */
-    top: 100%; /* Position below the nav item */
-    min-width: 200px; /* Set a minimum width for the dropdown */
+    z-index: 10;
+    /* Ensure dropdown is above other content */
+    left: 0;
+    /* Align dropdown with the parent */
+    top: 100%;
+    /* Position below the nav item */
+    min-width: 200px;
+    /* Set a minimum width for the dropdown */
 }
 
 .group:hover .dropdown {
-    display: block; /* Show dropdown on hover */
+    display: block;
+    /* Show dropdown on hover */
 }
 
 .dropdown-link {
     display: block;
     color: rgb(255 255 255);
     font-weight: 700;
-    padding-left: 1rem; /* 16px */
+    padding-left: 1rem;
+    /* 16px */
     padding-right: 1rem;
-    padding-top: 0.625rem; /* 10px */
-    padding-bottom: 0.625rem; /* 10px */
+    padding-top: 0.625rem;
+    /* 10px */
+    padding-bottom: 0.625rem;
+    /* 10px */
     cursor: pointer;
     transition: color 0.2s ease;
 }
@@ -128,19 +145,22 @@
 }
 
 .hero-image {
-    height: 360px;
+    height: 370px;
     background-size: cover;
     background-position: center;
     width: 100%;
+    border-radius: 8px;
 }
 
 /* Features Section */
-.grid{
+.grid {
     grid-template-columns: repeat(1, minmax(0, 1fr));
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 2rem; /* 32px */
+    gap: 2rem;
+    /* 32px */
     margin-bottom: 3rem;
 }
+
 .feature-box {
     background-color: white;
     padding: 24px;
@@ -157,13 +177,15 @@
 .feature-text {
     color: #6b7280;
     margin-bottom: 16px;
-    font-size: 1.5rem;
+    font-size: 1.87rem;
+    font-family: "Times New Roman", Times, serif;
 }
 
 .feature-link {
     color: #6b7280;
     cursor: pointer;
-    font-size: 1.5rem;
+    font-size: 1.87rem;
+    font-family: "Times New Roman", Times, serif;
 }
 
 .feature-link:hover {
@@ -176,7 +198,8 @@
     padding: 32px;
     border-radius: 8px;
     text-align: center;
-    margin-bottom: 36px; /* Margin to create space between CTA and footer */
+    margin-bottom: 36px;
+    /* Margin to create space between CTA and footer */
 }
 
 .cta-title {
@@ -187,9 +210,10 @@
 
 .cta-text {
     color: #6b7280;
-    font-size: 1.5rem;
+    font-size: 2rem;
     margin-bottom: 24px;
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-family: "Times New Roman", Times, serif;
+    /* font-family: Verdana, Geneva, Tahoma, sans-serif; */
 }
 
 .cta-link {
@@ -253,13 +277,220 @@
     fill: currentColor;
 }
 
-.fa:hover{
+.fa:hover {
     color: white;
 }
 
-
-.footer-credits{
-    margin-top: 2.25rem; /* 32px */
+.footer-credits {
+    margin-top: 2.25rem;
+    /* 32px */
     text-align: center;
     color: rgb(163 163 163);
+}
+
+/* Another page */
+.first-main {
+    background-color: rgb(255 255 255);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    border-radius: 0.5rem;
+    padding: 3rem;
+    /* Increase padding to create more space inside */
+    margin: 2.25rem 0;
+    /* Increase margin to add space around the section */
+}
+
+.first-title {
+    font-size: 3rem;
+    /* Increase font size to make the title larger */
+    font-weight: 700;
+    /* Make the text bold */
+    margin-bottom: 1.5rem;
+    /* Add more space below the title */
+    text-align: left;
+}
+
+.ff-title {
+    font-size: 2rem;
+    /* Increase font size for paragraphs */
+    line-height: 1.5;
+    /* Increase line height for better readability */
+    margin-bottom: 1.25rem;
+    /* Add space between paragraphs */
+    text-align: left;
+    font-family: "Times New Roman", Times, serif;
+    color: #6b7280;
+}
+
+.loggin-btn {
+    display: inline-block;
+    /* Ensure the button takes up its own space */
+    padding: 1rem 2rem;
+    /* Increase padding for a larger button */
+    font-size: 1.5rem;
+    /* Increase font size of the button text */
+    font-weight: bold;
+    background-color: rgb(38 38 38);
+    color: white;
+    border-radius: 0.5rem;
+    /* Slightly round the corners */
+    margin-top: 1rem;
+    /* Add some space above the button */
+    text-align: center;
+    /* Center align the button */
+}
+
+.loggin-btn:hover {
+    background-color: rgb(15, 60, 90);
+    /* Darken the button color on hover */
+}
+
+
+.the-bg {
+    background-color: rgb(229 229 229);
+    border-radius: 0.5rem;
+    /* 8px */
+    height: 30rem;
+    /* 320px */
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+}
+
+.some-info {
+    margin-top: 1.5rem;
+    /* 16px */
+    color: rgb(82 82 82);
+    padding-top: 1.5rem;
+    /* 8px */
+    padding-bottom: 1.5rem;
+    /*8px */
+    font-size: 2.125rem;
+    font-family: "Times New Roman", Times, serif;
+    color: #6b7280;
+    /* font-family: Verdana, Geneva, Tahoma, sans-serif; */
+}
+
+.second-title {
+    font-size: 3rem;
+    /* Increase the font size */
+    font-weight: bold;
+    /* Make the text bold */
+    margin-bottom: 1rem;
+    /* Add some space below the title */
+    color: #111827;
+    /* Optionally, you can adjust the color */
+    text-align: left;
+}
+
+/* Contact Section */
+.contact-main {
+    display: flex;
+    flex-direction: row;
+    /* Ensure sections are arranged horizontally */
+    justify-content: space-between;
+    /* Create space between form and support info */
+    align-items: flex-start;
+    /* Align items to the top */
+    gap: 2rem;
+    /* Add space between the two sections */
+    margin-bottom: 3rem;
+}
+
+.contact-body {
+    flex: 1;
+    /* Make the contact form take available space on the left */
+    background-color: white;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.contact-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #111827;
+}
+
+.contact-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 1rem;
+    color: #374151;
+}
+
+.contact-submit {
+    background-color: #374151;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.contact-submit:hover {
+    background-color: #4b5563;
+}
+
+/* Support Section */
+.support-info {
+    flex: 1;
+    /* Make the support info take available space on the right */
+    background-color: #f3f4f6;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.support-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #111827;
+}
+
+.support-text {
+    font-size: 1.125rem;
+    color: #6b7280;
+    line-height: 1.75;
+    margin-bottom: 24px;
+}
+
+.support-link {
+    color: #374151;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.support-link:hover {
+    color: #111827;
+}
+
+.grid .document-card::before,
+.grid .document-card::after {
+    content: none;
+    display: none;
+}
+
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .contact-container {
+        flex-direction: column;
+        /* Stack the form and support info on smaller screens */
+    }
+
+    .contact-form,
+    .support-info {
+        width: 100%;
+        /* Make both sections take up full width */
+    }
 }
