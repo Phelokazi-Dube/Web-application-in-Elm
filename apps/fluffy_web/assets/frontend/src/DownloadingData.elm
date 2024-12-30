@@ -141,7 +141,7 @@ view model =
                     ]
                 ]
             ]
-        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-4" ] [ text "Survey Collections" ]
+        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Survey Collections" ]
         , div [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
             [ input
                 [ class "search-input flex-grow px-2 py-1 border rounded-md"
