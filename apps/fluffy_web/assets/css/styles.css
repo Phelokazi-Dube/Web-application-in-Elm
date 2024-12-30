@@ -438,6 +438,16 @@
     background-color: #4b5563;
 }
 
+/* Map Section(CSV file upload) */
+
+.import-data-description {
+    font-size: 2rem;
+    color: #6b7280;
+    margin-bottom: 28px;
+    font-family: "Times New Roman", Times, serif;
+    text-align: left;
+}
+
 /* Support Section */
 .support-info {
     flex: 1;

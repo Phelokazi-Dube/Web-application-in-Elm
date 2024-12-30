@@ -38,7 +38,7 @@ init =
       , searchText = ""
       , error = Nothing
       , currentPage = 1
-      , itemsPerPage = 11
+      , itemsPerPage = 12
       }
     , fetchDocuments ""
       -- Fetch all documents initially
@@ -141,32 +141,37 @@ view model =
                     ]
                 ]
             ]
-        , div [ class "search-bar container mx-auto flex-grow items-center mb-4 w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-neutral-400" ]
+        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-4" ] [ text "Survey Collections" ]
+        , div [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
             [ input
-                [ class "search-input"
+                [ class "search-input flex-grow px-2 py-1 border rounded-md"
                 , type_ "text"
                 , placeholder "Search by text"
                 , value model.searchText
                 , onInput SearchTextChanged
                 ]
                 []
-            , button [ class "btn mb-4 bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick FetchDocuments ] [ text "Search" ]
-            , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
+            , div [ class "this flex space-x-2 ml-auto" ]
+                [ button [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick FetchDocuments ] [ text "Search" ]
+                , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
+                ]
             ]
-        , div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 container mx-auto px-4 py-8 flex-grow" ]
-            (List.map documentCard paginatedDocuments)
-        , div [ class "pagination mt-4 flex justify-between container mx-auto px-4" ]
-            [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn" ] [ text "Previous" ]
-            , span [] [ text ("Page " ++ String.fromInt model.currentPage) ]
-            , button [ onClick NextPage, disabled ((model.currentPage * model.itemsPerPage) >= List.length model.filteredDocuments), class "btn" ] [ text "Next" ]
+        , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200" ]
+            [ div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
+                (List.map documentCard paginatedDocuments)
+            , div [ class "pagination mt-4 flex justify-between" ]
+                [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Previous" ]
+                , span [ class "px-4 py-2 text-gray-700" ] [ text ("Page " ++ String.fromInt model.currentPage) ]
+                , button [ onClick NextPage, disabled ((model.currentPage * model.itemsPerPage) >= List.length model.filteredDocuments), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Next" ]
+                ]
             ]
         , case model.error of
             Just errorMsg ->
-                div [] [ text ("Error: " ++ errorMsg) ]
+                div [ class "error-msg text-red-500 mt-4" ] [ text ("Error: " ++ errorMsg) ]
 
             Nothing ->
                 text ""
-        , footer [ class "footer" ]
+        , footer [ class "footer mt-8" ]
             [ div [ class "container mx-auto" ]
                 [ div [ class "footer-content" ]
                     [ div [ class "footer-section" ]
