@@ -448,6 +448,160 @@
     text-align: left;
 }
 
+/* Uploading data form */
+
+.uploading-buttons {
+    display: flex;
+    justify-content: flex-end;
+    /* Align buttons to the right */
+    align-items: center;
+    /* Align buttons vertically */
+    gap: 16px;
+    /* Add space between buttons */
+    margin-top: 20px;
+    /* Space above the buttons */
+}
+
+.uploading-buttons button {
+    width: auto;
+    /* Adjust width to fit text */
+    padding: 12px 24px;
+    /* Add more padding for consistency */
+    background: linear-gradient(135deg, #099450, #4caf50);
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    /* Ensure consistent font size */
+    font-weight: bold;
+    border-radius: 25px;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.uploading-buttons button:hover {
+    background: linear-gradient(135deg, #099950, #4caf50);
+    /* Brighter green on hover */
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    /* Enhanced shadow effect */
+    transform: translateY(-2px);
+    /* Subtle lift on hover */
+}
+
+.uploading-buttons button:active {
+    transform: translateY(0);
+    /* Reset on click */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #0a7d43;
+    /* Darker green for labels */
+    font-weight: bold;
+}
+
+.field input[type="text"],
+.field textarea,
+.field select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #4caf50;
+    /* Green border */
+    border-radius: 8px;
+    background: #f9fff9;
+    /* Light greenish background */
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    transition: all 0.3s ease-in-out;
+}
+
+.field input[type="text"]:focus,
+.field textarea:focus,
+.field select:focus {
+    border-color: #099450;
+    /* Darker green border on focus */
+    box-shadow: 0 0 8px rgba(9, 148, 80, 0.5);
+    /* Glow effect */
+    outline: none;
+}
+
+.field input[type="file"] {
+    border: none;
+    font-size: 16px;
+}
+
+.province-buttons label.radio-label {
+    display: block;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #e7f8e7;
+    /* Light green */
+    border: 2px solid #4caf50;
+    /* Green border */
+    border-radius: 8px;
+    color: #0a7d43;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+}
+
+.province-buttons label.radio-label:hover {
+    background: #d5f3d5;
+    /* Slightly darker green on hover */
+}
+
+.province-buttons input[type="radio"] {
+    margin-right: 10px;
+}
+
+.uploading-container {
+    padding: 20px;
+    background: #f2fff2;
+    /* Light greenish background */
+    border: 2px solid #4caf50;
+    /* Green border */
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15), 0 6px 6px rgba(0, 0, 0, 0.1);
+    /* Adds shadow */
+    margin: 30px auto;
+    /* Center alignment */
+    max-width: 800px;
+    /* Restrict the width */
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* Space between logo image and text */
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #099450;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+    /* Add subtle shadow */
+}
+
+.add-observation {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #0a7d43;
+    margin-bottom: 16px;
+    text-align: center;
+    letter-spacing: 1px;
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.1);
+    /* Slight shadow for depth */
+    background: linear-gradient(90deg, #099450, #4caf50);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Gradient text effect */
+    padding: 10px 0;
+}
+
 /* Support Section */
 .support-info {
     flex: 1;
