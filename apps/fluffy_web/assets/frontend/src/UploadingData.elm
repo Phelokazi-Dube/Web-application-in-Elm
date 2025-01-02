@@ -90,6 +90,7 @@ init token =
 type Msg
     = NoOp
     | ProvinceSelected Province
+    | FileUploaded String
 
 
 
@@ -104,6 +105,9 @@ update msg model =
 
         ProvinceSelected selectedProvince ->
             ( { model | province = selectedProvince }, Cmd.none )
+
+        FileUploaded filePath ->
+            ( { model | photos = filePath }, Cmd.none )
 
 
 

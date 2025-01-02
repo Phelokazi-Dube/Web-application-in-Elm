@@ -1,7 +1,7 @@
 defmodule FluffyWeb.MongoDBController do
+  require Logger
   alias WaterWeeds.MongoDBClient
   use FluffyWeb, :controller
-
 
   # Implement Jason.Encoder for BSON.ObjectId
   defimpl Jason.Encoder, for: BSON.ObjectId do
@@ -11,12 +11,15 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   # Function to normalize the MongoDB _id to id
-  defp normalize_mongo_id(doc) do
+  def normalize_mongo_id(doc) do
     doc
-    |> Map.put("id", BSON.ObjectId.encode!(doc["_id"]))  # Add the "id" field with the string version of BSON _id
-    |> Map.delete("_id")  # Remove the original "_id" field
+    # Add the "id" field with the string version of BSON _id
+    |> Map.put("id", BSON.ObjectId.encode!(doc["_id"]))
+    # Remove the original "_id" field
+    |> Map.delete("_id")
   end
 
+  @spec all(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def all(conn, _params) do
     # Fetch all documents from the "Surveys" collection
     documents = MongoDBClient.get_all_documents("Surveys")
@@ -40,7 +43,38 @@ defmodule FluffyWeb.MongoDBController do
     |> json(%{documents: documents})
   end
 
-  def create(conn, _params) do
+  def create(conn, %{"photos" => photos} = _params) do
+    # Process uploaded photos using GridFS
+    processed_photos =
+      photos
+      |> Enum.map(fn %Plug.Upload{path: file_path, filename: filename} ->
+        case File.read(file_path) do
+          {:ok, binary_data} ->
+            # Log the metadata being passed to the upload function
+            Logger.debug(
+              "Uploading image with metadata: #{inspect(%{content_type: "image/png"})}"
+            )
+
+            # Upload image with the correct metadata
+            case MongoDBClient.upload_image(filename, binary_data, %{content_type: "image/png"}) do
+              {:ok, file_id} ->
+                # Return the ObjectId of the uploaded image (as a BSON ID)
+                BSON.ObjectId.encode!(file_id)
+
+              {:error, reason} ->
+                Logger.error("Failed to upload photo: #{inspect(reason)}")
+                nil
+            end
+
+          {:error, reason} ->
+            Logger.error("Failed to read photo file: #{inspect(reason)}")
+            nil
+        end
+      end)
+      # Exclude failed uploads (nil values)
+      |> Enum.filter(&(&1 != nil))
+
+    # Default values for the document to be inserted into the "Surveys" collection
     default_values = %{
       "location" => "",
       "userLogin" => "",
@@ -51,7 +85,8 @@ defmodule FluffyWeb.MongoDBController do
       "targetWeedTaxonName" => "",
       "weather" => "",
       "water" => "",
-      "photos" => "",
+      # List of processed photo IDs
+      "photos" => processed_photos,
       "province" => "",
       "sitename" => "PMB Botanical Gardens",
       "date" => "",
@@ -100,7 +135,6 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   # Fetch a document by its ID
-  # Fetch a document by its ID
   def show(conn, %{"id" => id}) do
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
@@ -131,19 +165,17 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   # Action to upload and process a CSV file with dynamic fields
-  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}, "topic_id" => topic_id}) do
-    # Read the CSV file and decode with dynamic headers
+  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}}) do
+    # Read the CSV file and decode it with dynamic headers (headers: true)
     csv_data =
       file_path
       |> File.stream!()
-      |> CSV.decode(separator: ?;, headers: true) # headers: true reads the first row as headers
+      # Use comma as the delimiter and read headers dynamically
+      |> CSV.decode(separator: ?,, headers: true)
       |> Enum.map(fn
-        {:ok, row} ->
-          # Add the topic_id to each row, creating a document
-          Map.put(row, "topic_id", topic_id)
-          |> Map.put("created_at", System.os_time(:second)) # Add a timestamp field
-        {:error, reason} ->
-          {:error, reason} # Handle any errors in CSV decoding
+        {:ok, row} -> row
+        # Handle any errors in CSV decoding
+        {:error, reason} -> {:error, reason}
       end)
 
     # Filter out any rows that had errors
@@ -154,11 +186,13 @@ defmodule FluffyWeb.MongoDBController do
       {:ok, result} ->
         # Fetch inserted documents by their BSON ObjectIds and normalize _id to id
         inserted_documents =
-          Enum.map(result.inserted_ids, fn {_index, bson_id} ->
-            MongoDBClient.get_document_by_id("Sana", bson_id)
+          Enum.map(result.inserted_ids, fn bson_obj ->
+            MongoDBClient.get_document_by_id("Sana", bson_obj)
           end)
-          |> Enum.filter(&(&1 != nil))     # Filter out any nil results
-          |> Enum.map(&normalize_mongo_id/1) # Normalize BSON _id to id
+          # Filter out any nil results
+          |> Enum.filter(&(&1 != nil))
+          # Normalize BSON _id to id
+          |> Enum.map(&normalize_mongo_id/1)
 
         conn
         |> put_status(:created)
