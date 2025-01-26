@@ -103,7 +103,7 @@ view model =
                 [ h1 [ class "import-data-title text-5xl text-left font-bold mb-6 text-gray-800" ] [ text "Import Data" ]
                 , p [ class "import-data-description" ]
                     [ text "To create a new survey, you can either import a CSV file from below or you can fill a document on this "
-                    , a [ href "/document", class "page-link text-blue-500 underline" ] [ text "page." ]
+                    , a [ href "/publish", class "page-link text-blue-500 underline" ] [ text "page." ]
                     ]
                 , Html.form
                     [ method "post"
