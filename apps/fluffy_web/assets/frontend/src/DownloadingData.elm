@@ -79,7 +79,7 @@ update msg model =
                     else
                         List.filter (\doc -> String.contains (String.toLower text) (Maybe.withDefault "" doc.notes)) model.documents
             in
-            ( { model | searchText = text, filteredDocuments = filteredDocs }, Cmd.none )
+            ( { model | searchText = text, filteredDocuments = filteredDocs }, fetchDocuments model.searchText )
 
         ClearSearch ->
             ( { model | searchText = "", filteredDocuments = model.documents }, Cmd.none )

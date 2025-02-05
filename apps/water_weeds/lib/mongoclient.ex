@@ -102,13 +102,14 @@ defmodule WaterWeeds.MongoDBClient do
       # Start with binary_data and an offset of 0
       fn -> {binary_data, 0} end,
       fn
-        {remaining_data, offset} when byte_size(remaining_data) > 0 ->
+        {remaining_data, offset} when byte_size(remaining_data) > offset ->
           # Determine the chunk size (adjust to your needs, e.g., 4KB)
           # Example: 4 KB per chunk
           chunk_size = 4_096
           # Get the chunk from offset
-          chunk = binary_part(remaining_data, 0, chunk_size)
-          new_offset = offset + byte_size(chunk)
+          taken = min(byte_size(remaining_data) - offset, chunk_size)
+          chunk = binary_part(remaining_data, offset, taken)
+          new_offset = offset + taken
           # Return the chunk and the new remaining data with updated offset
           {[chunk], {remaining_data, new_offset}}
 
