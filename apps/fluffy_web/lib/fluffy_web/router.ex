@@ -60,6 +60,9 @@ defmodule FluffyWeb.Router do
 
     # Add a route for uploading CSV files
     get("/rhodes", MongoDBController, :to_rhodes)
+
+    # Add a route for viewing the calender
+    get("/calender", MongoDBController, :to_calender)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

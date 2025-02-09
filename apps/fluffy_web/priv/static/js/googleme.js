@@ -5,7 +5,7 @@ app.ports.signIn.subscribe(() => {
 });
 
 window.google.accounts.id.initialize({
-  client_id: '1083959778576-iakboe5jsa216o17klhtqeenqg1vec92.apps.googleusercontent.com',
+  client_id: '104917603258-m0pjot8jhah0c07r4o6sqjpdvb0ov32v.apps.googleusercontent.com',
   ux_mode: 'redirect', // This sets the redirect mode
   redirect_uri: 'http://localhost:8000', // Replace this with your actual redirect URI if you're not using elm reactor
 });
@@ -22,7 +22,7 @@ BEFORE this is loaded, I must load api.js.
 AFTER this is loaded, I must load gsi/client.
 */
 
-const CLIENT_ID = '1083959778576-iakboe5jsa216o17klhtqeenqg1vec92.apps.googleusercontent.com'; 
+const CLIENT_ID = '104917603258-m0pjot8jhah0c07r4o6sqjpdvb0ov32v.apps.googleusercontent.com'; 
 var allReady = false;
 var popup_error = false;
 const initialTokenClientConfig = {

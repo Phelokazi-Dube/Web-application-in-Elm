@@ -19,6 +19,27 @@ defmodule FluffyWeb.MongoDBController do
     |> Map.delete("_id")
   end
 
+  def to_camel_case(key) when is_binary(key) do
+    key
+    |> String.replace(~r/[^a-zA-Z0-9\s]/, "")  # Remove non-alphanumeric chars (e.g., ".", "%")
+    |> String.split()                          # Split words by spaces
+    |> Enum.map(&Macro.camelize/1)             # Convert each word to PascalCase
+    |> then(fn [first | rest] ->
+      String.downcase(first) <> Enum.join(rest, "")
+    end)
+  end
+
+  def normalize_keys(map) do
+    map
+    |> Enum.map(fn {key, value} ->
+      new_key = to_camel_case(to_string(key))
+      {new_key, value}
+    end)
+    |> Enum.into(%{})
+  end
+
+
+
   @spec all(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def all(conn, _params) do
     # Fetch all documents from the "Surveys" collection
@@ -173,21 +194,21 @@ defmodule FluffyWeb.MongoDBController do
       # Use comma as the delimiter and read headers dynamically
       |> CSV.decode(separator: ?,, headers: true)
       |> Enum.map(fn
-        {:ok, row} -> row
+        {:ok, row} ->  normalize_keys(row)  # Convert CSV headers to camelCase
         # Handle any errors in CSV decoding
         {:error, reason} -> {:error, reason}
       end)
 
     # Filter out any rows that had errors
-    documents = Enum.filter(csv_data, fn item -> is_map(item) end)
+    documents = Enum.filter(csv_data, &is_map/1)
 
     # Insert the documents into MongoDB
-    case MongoDBClient.insert_many_documents("Sana", documents) do
+    case MongoDBClient.insert_many_documents("Surveys", documents) do
       {:ok, result} ->
         # Fetch inserted documents by their BSON ObjectIds and normalize _id to id
         inserted_documents =
           Enum.map(result.inserted_ids, fn bson_obj ->
-            MongoDBClient.get_document_by_id("Sana", bson_obj)
+            MongoDBClient.get_document_by_id("Surveys", bson_obj)
           end)
           # Filter out any nil results
           |> Enum.filter(&(&1 != nil))
@@ -207,5 +228,9 @@ defmodule FluffyWeb.MongoDBController do
 
   def to_rhodes(conn, _params) do
     redirect(conn, external: "https://www.ru.ac.za/centreforbiologicalcontrol/")
+  end
+
+  def to_calender(conn, _params) do
+    redirect(conn, external: "https://calendar.google.com/calendar/embed?src=phelokazidube%40gmail.com&ctz=Africa%2FJohannesburg")
   end
 end

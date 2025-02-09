@@ -253,10 +253,10 @@ documentDecoder : Decode.Decoder Document
 documentDecoder =
     Decode.map5 Document
         (Decode.maybe (Decode.field "_id" Decode.string))
-        (Decode.maybe (Decode.field "Date" Decode.string))
-        (Decode.maybe (Decode.field "Notes" Decode.string))
-        (Decode.maybe (Decode.field "Site" Decode.string))
-        (Decode.maybe (Decode.field "Province" Decode.string))
+        (Decode.maybe (Decode.field "date" Decode.string))
+        (Decode.maybe (Decode.field "notes" Decode.string))
+        (Decode.maybe (Decode.field "site" Decode.string))
+        (Decode.maybe (Decode.field "province" Decode.string))
 
 
 errorToString : Http.Error -> String

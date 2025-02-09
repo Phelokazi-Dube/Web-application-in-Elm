@@ -168,4 +168,4 @@ view model =
 
 main : Program () Model Msg
 main =
-    Browser.sandbox { init = init "token", update = update, view = view }
+    Browser.sandbox { init = init "csrfToken", update = update, view = view }
