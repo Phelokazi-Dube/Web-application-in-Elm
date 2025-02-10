@@ -99,6 +99,8 @@ view model =
                 [ h1 [ class "first-title" ] [ text "For Users" ]
                 , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]
                 , p [ class "ff-title" ] [ text "A CBC Data Curator will review your submission and respond ASAP." ]
+                , p [ class "ff-title" ] [ text "Or, if you prefer, you can import a CSV file directly from "
+                , a [ href "/map", class "import-link" ] [ text "here" ], text "." ]
                 , a [ href "/", class "loggin-btn" ] [ text "Login with Google" ]
                 ]
             , section [ id "bg-image", class "second-main" ]

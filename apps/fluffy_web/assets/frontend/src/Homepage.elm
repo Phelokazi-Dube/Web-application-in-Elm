@@ -112,7 +112,7 @@ view model =
                     ]
                 , div [ class "feature-box" ]
                     [ h2 [ class "feature-title" ] [ text "CBC Public Calendar of Events" ]
-                    , p [ class "feature-text" ] [ text "Stay informed about CBC's upcoming events." ]
+                    , p [ class "feature-text" ] [ text "Stay up to date about all the exciting events of the CBC." ]
                     , a [ href "api/calender", class "feature-link" ] [ text "View Calendar" ]
                     ]
                 ]
