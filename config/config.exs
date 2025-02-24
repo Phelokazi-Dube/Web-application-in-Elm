@@ -66,10 +66,6 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
-config :elixir_auth_google,
-client_id: "104917603258-m0pjot8jhah0c07r4o6sqjpdvb0ov32v.apps.googleusercontent.com",
-client_secret: "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"
-
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
