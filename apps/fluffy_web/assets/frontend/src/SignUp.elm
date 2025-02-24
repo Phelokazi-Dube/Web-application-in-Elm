@@ -33,7 +33,7 @@ update msg model =
 
     LoginSuccessful ->
       -- Load a new page when the user is logged in
-      ({ model | mode = Login }, load "/uploading")
+      ({ model | mode = Login }, load "/profile")
 
 view : Model -> Html Msg
 view model =

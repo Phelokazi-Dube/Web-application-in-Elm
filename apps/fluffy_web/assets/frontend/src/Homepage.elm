@@ -89,6 +89,9 @@ view model =
                         , li []
                             -- CONTACT link
                             [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
+                        , li []
+                            -- User link
+                            [ a [ href "/auth/google/page", class "nav-link" ] [ text "USER" ] ]
                         ]
                     ]
                 ]

@@ -43,7 +43,8 @@ defmodule WaterWeeds.MixProject do
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.5"},
       {:finch, "~> 0.13"},
-      {:mongodb_driver, "~> 1.4.1"}
+      {:mongodb_driver, "~> 1.4.1"},
+      {:elixir_auth_google, "~> 1.6.9"}
     ]
   end
 

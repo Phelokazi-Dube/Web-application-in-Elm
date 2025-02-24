@@ -2,6 +2,7 @@ defmodule FluffyWeb.PageController do
   require Logger
   alias FluffyWeb.MongoDBController
   alias WaterWeeds.MongoDBClient
+  alias FluffyWeb.GoogleAuthController
   use FluffyWeb, :controller
 
   def home(conn, _params) do
@@ -104,6 +105,12 @@ defmodule FluffyWeb.PageController do
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
 
+  def index(conn, _params) do
+    base_url = FluffyWeb.Endpoint.url()
+    oauth_google_url = ElixirAuthGoogle.generate_oauth_url(base_url)
+    render(conn, :home, layout: false, oauth_google_url: oauth_google_url, js_file: conn.private[:javascript])
+  end
+
   def upload_csv(conn, params) do
     MongoDBClient.insert_many_documents("Sana", Map.delete(params, "csrf_token"))
     # Expected: the _id of the new document.
@@ -119,6 +126,11 @@ defmodule FluffyWeb.PageController do
   end
 
   def map(conn, _params) do
+    # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
+    render(conn, :home, layout: false, js_file: conn.private[:javascript])
+  end
+
+  def profile(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end

@@ -28,6 +28,9 @@ defmodule FluffyWeb.Router do
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
     get("/map", PageController, :home, private: %{:javascript => "map"})
     post("/map", PageController, :upload_csv)
+    get "/auth/google/callback", GoogleAuthController, :index
+    get "/auth/google/page", PageController, :home, private: %{:javascript => "new"}
+    get "/profile", PageController, :home, private: %{:javascript => "profile"}
   end
 
   # Other scopes may use custom stacks.
@@ -63,6 +66,9 @@ defmodule FluffyWeb.Router do
 
     # Add a route for viewing the calender
     get("/calender", MongoDBController, :to_calender)
+
+    # Route that lets Elm fetch the logged-in user's profile at any time.
+    get "/profile", ProfileController, :show
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
