@@ -8,7 +8,7 @@ defmodule FluffyWeb.GoogleAuthController do
           {:ok, profile} ->
             conn
             |> put_session(:profile, profile)
-            |> redirect(to: "/profile")
+            |> redirect(to: "/")
 
           {:error, reason} ->
             conn |> put_status(:unauthorized) |> json(%{error: reason})

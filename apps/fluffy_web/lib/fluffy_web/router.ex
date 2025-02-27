@@ -14,10 +14,14 @@ defmodule FluffyWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  # Suggestion: make a pipeline that only allows authenticated users. (You might need to make a plug).
+  # Then you can throw ALL of your authenticated routes into that, and you shouldn't need to worry
+  # about manually authenticated a user.
+
   scope "/", FluffyWeb do
     pipe_through(:browser)
 
-    get("/", PageController, :home, private: %{:javascript => "sign_up"})
+    get("/", PageController, :home, private: %{:javascript => "home"})
     get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
     get("/home", PageController, :home, private: %{:javascript => "home"})
     get("/contact", PageController, :home, private: %{:javascript => "contact"})
@@ -28,9 +32,9 @@ defmodule FluffyWeb.Router do
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
     get("/map", PageController, :home, private: %{:javascript => "map"})
     post("/map", PageController, :upload_csv)
-    get "/auth/google/callback", GoogleAuthController, :index
-    get "/auth/google/page", PageController, :home, private: %{:javascript => "new"}
-    get "/profile", PageController, :home, private: %{:javascript => "profile"}
+    get("/auth/google/callback", GoogleAuthController, :index)
+    get("/auth/google/page", PageController, :home, private: %{:javascript => "new"})
+    get("/profile", PageController, :home, private: %{:javascript => "profile"})
   end
 
   # Other scopes may use custom stacks.
@@ -66,9 +70,6 @@ defmodule FluffyWeb.Router do
 
     # Add a route for viewing the calender
     get("/calender", MongoDBController, :to_calender)
-
-    # Route that lets Elm fetch the logged-in user's profile at any time.
-    get "/profile", ProfileController, :show
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

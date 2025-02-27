@@ -1,18 +1,18 @@
 <%= if Map.has_key?(assigns, :extra_prepend) do %>
 <div><%= @extra_prepend %></div>
 <% end %>
-<div id="myapp"></div>
-<%= if @js_file == "sign_up" do %>
-  <script src="https://apis.google.com/js/api.js" defer></script>
-  <script src="https://accounts.google.com/gsi/client" defer></script>
-  <script type="module" src={~p"/js/sign_up.js"} defer></script>
-  <script type="module" src={~p"/js/googleme.js"} defer>import { start_elm } from "/js/sign_up.js";</script>
+
+<%= if IO.inspect(@profile) == nil do %>
+<.login_link oauth_url={ElixirAuthGoogle.generate_oauth_url(@conn)} />
 <% else %>
-  <script type="module">
-    <%= raw "import { start_elm } from \"/js/" <> @js_file <> ".js\";" %>
-    const flags = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const app = start_elm(flags);
-  </script>
-  <script>
-  </script>
+<.profile {@profile} />
 <% end %>
+
+<div id="myapp"></div>
+<script type="module">
+  <%= raw "import { start_elm } from \"/js/" <> @js_file <> ".js\";" %>
+  const flags = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  const app = start_elm(flags);
+</script>
+<script>
+</script>

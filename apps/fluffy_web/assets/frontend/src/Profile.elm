@@ -35,8 +35,7 @@ init _ =
 fetchProfile : Cmd Msg
 fetchProfile =
     Http.get
-        { url = "/api/profile" -- 
-        -- New API endpoint to get profile
+        { url = "/priv/profile" -- New API endpoint to get profile
         , expect = Http.expectJson GotProfile profileDecoder
         }
 

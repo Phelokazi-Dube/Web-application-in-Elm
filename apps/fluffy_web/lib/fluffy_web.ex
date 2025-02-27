@@ -85,6 +85,7 @@ defmodule FluffyWeb do
       import Phoenix.HTML
       # Core UI components and translation
       import FluffyWeb.CoreComponents
+      import FluffyWeb.LoginOrProfile
       import FluffyWeb.Gettext
 
       # Shortcut for generating JS commands
