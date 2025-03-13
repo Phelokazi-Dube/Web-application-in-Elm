@@ -59,7 +59,7 @@ defmodule FluffyWeb.Router do
     get("/Mongodb/documents/:id", MongoDBController, :show)
 
     # Route for creating a document
-    post("/Mongodb/documents/newdoc", MongoDBController, :insert_document)
+    post("/Mongodb/documents/newdoc", MongoDBController, :create)
 
     get("/documents/:db_name", MongoDBController, :fetch_documents)
 
