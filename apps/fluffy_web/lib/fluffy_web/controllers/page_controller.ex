@@ -103,6 +103,11 @@ defmodule FluffyWeb.PageController do
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
 
+  def uploadpage(conn, _params) do
+    # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
+    render(conn, :home, layout: false, js_file: conn.private[:javascript])
+  end
+
   def index(conn, _params) do
     base_url = FluffyWeb.Endpoint.url()
     oauth_google_url = ElixirAuthGoogle.generate_oauth_url(base_url)

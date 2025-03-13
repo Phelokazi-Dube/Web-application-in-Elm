@@ -65,93 +65,104 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   def create(conn, %{"photos" => photos} = _params) do
-    # Process uploaded photos using GridFS
-    processed_photos =
-      photos
-      |> Enum.map(fn %Plug.Upload{path: file_path, filename: filename} ->
-        case File.read(file_path) do
-          {:ok, binary_data} ->
-            # Log the metadata being passed to the upload function
-            Logger.debug(
-              "Uploading image with metadata: #{inspect(%{content_type: "image/png"})}"
-            )
+    # Fetch the authenticated user's email from the session
+    email = get_session(conn, :email)
 
-            # Upload image with the correct metadata
-            case MongoDBClient.upload_image(filename, binary_data, %{content_type: "image/png"}) do
-              {:ok, file_id} ->
-                # Return the ObjectId of the uploaded image (as a BSON ID)
-                BSON.ObjectId.encode!(file_id)
+    # If the email exists, proceed with adding it to the default values
+    if email do
+      # Process uploaded photos using GridFS
+      processed_photos =
+        photos
+        |> Enum.map(fn %Plug.Upload{path: file_path, filename: filename} ->
+          case File.read(file_path) do
+            {:ok, binary_data} ->
+              # Log the metadata being passed to the upload function
+              Logger.debug(
+                "Uploading image with metadata: #{inspect(%{content_type: "image/png"})}"
+              )
 
-              {:error, reason} ->
-                Logger.error("Failed to upload photo: #{inspect(reason)}")
-                nil
-            end
+              # Upload image with the correct metadata
+              case MongoDBClient.upload_image(filename, binary_data, %{content_type: "image/png"}) do
+                {:ok, file_id} ->
+                  # Return the ObjectId of the uploaded image (as a BSON ID)
+                  BSON.ObjectId.encode!(file_id)
 
-          {:error, reason} ->
-            Logger.error("Failed to read photo file: #{inspect(reason)}")
-            nil
-        end
-      end)
-      # Exclude failed uploads (nil values)
-      |> Enum.filter(&(&1 != nil))
+                {:error, reason} ->
+                  Logger.error("Failed to upload photo: #{inspect(reason)}")
+                  nil
+              end
 
-    # Default values for the document to be inserted into the "Surveys" collection
-    default_values = %{
-      "location" => "",
-      "userLogin" => "",
-      "controlAgent" => "",
-      "targetWeedName" => "",
-      "targetWeedRank" => "",
-      "targetWeedId" => "",
-      "targetWeedTaxonName" => "",
-      "weather" => "",
-      "water" => "",
-      # List of processed photo IDs
-      "photos" => processed_photos,
-      "province" => "",
-      "sitename" => "PMB Botanical Gardens",
-      "date" => "",
-      "noLeaves" => "",
-      "noStems" => "",
-      "noFlowers" => "",
-      "noCapsules" => "",
-      "maxHeight" => "",
-      "noRamets" => "",
-      "sizeOfInf" => "",
-      "percentCover" => "",
-      "description" => "💝",
-      "created_at" => System.os_time(:second)
-    }
+            {:error, reason} ->
+              Logger.error("Failed to read photo file: #{inspect(reason)}")
+              nil
+          end
+        end)
+        # Exclude failed uploads (nil values)
+        |> Enum.filter(&(&1 != nil))
 
-    # Insert the document into the "Surveys" collection
-    case MongoDBClient.insert_document("Surveys", default_values) do
-      {:ok, %{inserted_id: bson_id}} ->
-        # Fetch the inserted document to return
-        case MongoDBClient.get_document_by_id("Surveys", bson_id) do
-          nil ->
-            conn
-            |> put_status(:not_found)
-            |> json(%{error: "Document not found after insertion"})
+      # Default values for the document to be inserted into the "Surveys" collection
+      default_values = %{
+        "location" => "",
+        "userLogin" => email,
+        "controlAgent" => "",
+        "targetWeedName" => "",
+        "targetWeedRank" => "",
+        "targetWeedId" => "",
+        "targetWeedTaxonName" => "",
+        "weather" => "",
+        "water" => "",
+        # List of processed photo IDs
+        "photos" => processed_photos,
+        "province" => "",
+        "sitename" => "PMB Botanical Gardens",
+        "date" => "",
+        "noLeaves" => "",
+        "noStems" => "",
+        "noFlowers" => "",
+        "noCapsules" => "",
+        "maxHeight" => "",
+        "noRamets" => "",
+        "sizeOfInf" => "",
+        "percentCover" => "",
+        "description" => "💝",
+        "created_at" => System.os_time(:second)
+      }
 
-          {:ok, doc} ->
-            document =
-              normalize_mongo_id(doc)
-              |> Jason.encode!()
+      # Insert the document into the "Surveys" collection
+      case MongoDBClient.insert_document("Surveys", default_values) do
+        {:ok, %{inserted_id: bson_id}} ->
+          # Fetch the inserted document to return
+          case MongoDBClient.get_document_by_id("Surveys", bson_id) do
+            nil ->
+              conn
+              |> put_status(:not_found)
+              |> json(%{error: "Document not found after insertion"})
 
-            conn
-            |> put_status(:created)
-            |> json(%{message: "Document created successfully", document: document})
+            {:ok, doc} ->
+              document =
+                normalize_mongo_id(doc)
+                |> Jason.encode!()
 
-          {:error, _} ->
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{error: "Failed to fetch created document"})
-        end
+              conn
+              |> put_status(:created)
+              |> json(%{message: "Document created successfully", document: document})
 
-      {:error, reason} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Failed to create document", reason: reason})
+            {:error, _} ->
+              conn
+              |> put_status(:unprocessable_entity)
+              |> json(%{error: "Failed to fetch created document"})
+          end
+
+        {:error, reason} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: "Failed to create document", reason: reason})
+      end
+    else
+      # If the email is not found in the session, return an unauthorized error
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "User not authenticated"})
     end
   end
 

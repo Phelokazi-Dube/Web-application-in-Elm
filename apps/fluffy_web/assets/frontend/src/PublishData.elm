@@ -101,7 +101,7 @@ view model =
                 , p [ class "ff-title" ] [ text "A CBC Data Curator will review your submission and respond ASAP." ]
                 , p [ class "ff-title" ] [ text "Or, if you prefer, you can import a CSV file directly from "
                 , a [ href "/map", class "import-link" ] [ text "here" ], text "." ]
-                , a [ href "/", class "loggin-btn" ] [ text "Login with Google" ]
+                , a [ href "/auth/google/page", class "loggin-btn" ] [ text "Login with Google" ]
                 ]
             , section [ id "bg-image", class "second-main" ]
                 [ h2 [ class "second-title" ] [ text "Biological Control Research" ]

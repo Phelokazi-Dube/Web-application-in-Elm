@@ -92,6 +92,10 @@ view model =
                         , li []
                             -- User link
                             [ a [ href "/auth/google/page", class "nav-link" ] [ text "USER" ] ]
+
+                        , li []
+                            -- User link
+                            [ a [ href "/uploadpage", class "nav-link" ] [ text "PAGE" ] ]
                         ]
                     ]
                 ]

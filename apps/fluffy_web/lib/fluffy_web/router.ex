@@ -18,6 +18,11 @@ defmodule FluffyWeb.Router do
   # Then you can throw ALL of your authenticated routes into that, and you shouldn't need to worry
   # about manually authenticated a user.
 
+  pipeline :authenticated do
+    plug(:fetch_session)
+    plug FluffyWeb.Plugs.Authentication
+  end
+
   scope "/", FluffyWeb do
     pipe_through(:browser)
 
@@ -26,15 +31,20 @@ defmodule FluffyWeb.Router do
     get("/home", PageController, :home, private: %{:javascript => "home"})
     get("/contact", PageController, :home, private: %{:javascript => "contact"})
     get("/sites", PageController, :home, private: %{:javascript => "sites"})
-    get("/uploading", PageController, :home, private: %{:javascript => "uploading_data"})
-    post("/uploading", PageController, :upload)
     get("/downloading", PageController, :home, private: %{:javascript => "downloading_data"})
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
-    get("/map", PageController, :home, private: %{:javascript => "map"})
-    post("/map", PageController, :upload_csv)
     get("/auth/google/callback", GoogleAuthController, :index)
     get("/auth/google/page", PageController, :home, private: %{:javascript => "new"})
+  end
+
+  scope "/", FluffyWeb do
+    pipe_through([:browser, :authenticated]) # Requires authentication
+    get("/uploading", PageController, :home, private: %{:javascript => "uploading_data"})
+    post("/uploading", PageController, :upload)
+    get("/map", PageController, :home, private: %{:javascript => "map"})
+    post("/map", PageController, :upload_csv)
     get("/profile", PageController, :home, private: %{:javascript => "profile"})
+    get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
   end
 
   # Other scopes may use custom stacks.
