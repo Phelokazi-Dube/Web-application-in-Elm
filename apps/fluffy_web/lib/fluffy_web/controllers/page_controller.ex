@@ -10,6 +10,7 @@ defmodule FluffyWeb.PageController do
 
   def upload(conn, params) do
     photos = params["photos"] || []
+    profile = get_session(conn, :profile)
 
     # Process the photos and get their file IDs or any metadata
     processed_photos =
@@ -44,9 +45,12 @@ defmodule FluffyWeb.PageController do
       |> IO.inspect(label: "Processed photo ObjectIds")
 
     # Remove the CSRF token from the params (it should not be inserted into the database)
-    cleaned_params = Map.delete(params, "_csrf_token")
-    # Insert the survey data along with processed photo IDs into the "Surveys" collection
-    cleaned_params = Map.put(cleaned_params, "photos", processed_photos)
+    cleaned_params =
+      Map.delete(params, "_csrf_token")
+      # Insert the survey data along with processed photo IDs into the "Surveys" collection
+      |> Map.put("photos", processed_photos)
+      # Store the user email
+      |> Map.put("userLogin", Map.get(profile, :email))
 
     case MongoDBClient.insert_document("Surveys", cleaned_params) do
       {:ok, %{inserted_id: bson_id}} ->
