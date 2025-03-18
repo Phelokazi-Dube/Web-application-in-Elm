@@ -125,6 +125,7 @@ defmodule FluffyWeb.MongoDBController do
         "sizeOfInf" => "",
         "percentCover" => "",
         "description" => "💝",
+        "approved" => false,   # Field marks the document as unapproved initially
         "created_at" => System.os_time(:second)
       }
 
@@ -243,5 +244,50 @@ defmodule FluffyWeb.MongoDBController do
 
   def to_calender(conn, _params) do
     redirect(conn, external: "https://calendar.google.com/calendar/embed?src=phelokazidube%40gmail.com&ctz=Africa%2FJohannesburg")
+  end
+
+  # Function to fetch unapproved documents
+  def approve(conn, %{"id" => id}) do
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        # Update the "approved" field to true
+        case MongoDBClient.update_document("Surveys", bson_id, %{"approved" => true}) do
+          {:ok, doc} ->
+            document = normalize_mongo_id(doc)
+            conn
+            |> put_status(:ok)
+            |> json(%{message: "Document approved successfully", document: document})
+
+          {:error, reason} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: "Failed to approve document", reason: reason})
+        end
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid ID format"})
+    end
+  end
+
+  # Function to approved documents
+  def unapproved(conn, _params) do
+    documents = MongoDBClient.get_all_documents("Surveys", %{"approved" => false})
+
+    # Return the documents as JSON
+    conn
+    |> put_status(:ok)
+    |> json(%{documents: documents})
+  end
+
+  # Function to fetch approved documents
+  def approved(conn, _params) do
+    documents = MongoDBClient.get_all_documents("Surveys", %{"approved" => true})
+
+    # Return the documents as JSON
+    conn
+    |> put_status(:ok)
+    |> json(%{documents: documents})
   end
 end

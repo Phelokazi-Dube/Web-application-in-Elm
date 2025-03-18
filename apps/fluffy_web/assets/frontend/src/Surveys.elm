@@ -3,7 +3,7 @@ module Surveys exposing (..)
 import Browser exposing (element)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
 
@@ -13,16 +13,19 @@ import Json.Decode as Decode
 
 
 type alias Document =
-    { id : String
+    { id : Maybe String
     , date : Maybe String
     , notes : Maybe String
     , site : Maybe String
     , province : Maybe String
+    , approved : Bool
     }
 
 
 type alias Model =
     { documents : List Document
+    , filteredDocuments : List Document
+    , searchText : String
     , error : Maybe String
     , currentPage : Int
     , itemsPerPage : Int
@@ -32,11 +35,14 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { documents = []
+      , filteredDocuments = []
+      , searchText = ""
       , error = Nothing
       , currentPage = 1
-      , itemsPerPage = 11
+      , itemsPerPage = 12
       }
-    , fetchDocuments
+    , fetchDocuments ""
+      -- Fetch all documents initially
     )
 
 
@@ -47,26 +53,52 @@ init =
 type Msg
     = FetchDocuments
     | DocumentsFetched (Result Http.Error (List Document))
+    | SearchTextChanged String
+    | ClearSearch
     | NextPage
     | PrevPage
+    | ApproveDocument String
+    | DocumentApproved (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         FetchDocuments ->
-            ( model, fetchDocuments )
+            ( model, fetchDocuments model.searchText )
+
+        ApproveDocument docId ->
+            ( model, approveDocument docId )
+
+        DocumentApproved (Ok _) ->
+            ( model, fetchDocuments model.searchText ) -- Fetch documents again after approval
+
+        DocumentApproved (Err err) ->
+            ( { model | error = Just (errorToString err) }, Cmd.none )
 
         DocumentsFetched (Ok docs) ->
-            ( { model | documents = docs, error = Nothing }, Cmd.none )
+            ( { model | documents = docs, filteredDocuments = docs, error = Nothing }, Cmd.none )
 
         DocumentsFetched (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
 
+        SearchTextChanged text ->
+            let
+                filteredDocs =
+                    if String.isEmpty text then
+                        model.documents
+                    else
+                        List.filter (\doc -> String.contains (String.toLower text) (Maybe.withDefault "" doc.notes)) model.documents
+            in
+            ( { model | searchText = text, filteredDocuments = filteredDocs }, fetchDocuments model.searchText )
+
+        ClearSearch ->
+            ( { model | searchText = "", filteredDocuments = model.documents }, Cmd.none )
+
         NextPage ->
             let
                 totalPages =
-                    (List.length model.documents + model.itemsPerPage - 1) // model.itemsPerPage
+                    (List.length model.filteredDocuments + model.itemsPerPage - 1) // model.itemsPerPage
             in
             ( { model | currentPage = Basics.min (model.currentPage + 1) totalPages }, Cmd.none )
 
@@ -85,7 +117,7 @@ view model =
             (model.currentPage - 1) * model.itemsPerPage
 
         paginatedDocuments =
-            List.drop start model.documents
+            List.drop start model.filteredDocuments
                 |> List.take model.itemsPerPage
     in
     div [ class "flex flex-col min-h-screen" ]
@@ -94,7 +126,7 @@ view model =
             , attribute "href" "styles.css"
             ]
             []
-        , nav [ class "bg-neutral-100 shadow-sm", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
+        , nav [ class "bg-neutral-100 shadow-sm mb-5", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
             [ div [ class "container mx-auto px-4 py-3 flex items-center justify-between" ]
                 [ div [ class "brand-container" ]
                     [ img [ Html.Attributes.src "images/images.png", Html.Attributes.alt "Logo", class "logo" ] []
@@ -120,20 +152,37 @@ view model =
                     ]
                 ]
             ]
-        , div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 container mx-auto px-4 py-8 flex-grow" ]
-            (List.map documentCard paginatedDocuments)
-        , div [ class "pagination mt-4 flex justify-between container mx-auto px-4" ]
-            [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn" ] [ text "Previous" ]
-            , span [] [ text ("Page " ++ String.fromInt model.currentPage) ]
-            , button [ onClick NextPage, disabled ((model.currentPage * model.itemsPerPage) >= List.length model.documents), class "btn" ] [ text "Next" ]
+        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Survey Collections" ]
+        , div [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
+            [ input
+                [ class "search-input flex-grow px-2 py-1 border rounded-md"
+                , type_ "text"
+                , placeholder "Search by text"
+                , value model.searchText
+                , onInput SearchTextChanged
+                ]
+                []
+            , div [ class "this flex space-x-2 ml-auto" ]
+                [ button [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick FetchDocuments ] [ text "Search" ]
+                , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
+                ]
+            ]
+        , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200" ]
+            [ div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
+                (List.map documentCard paginatedDocuments)
+            , div [ class "pagination mt-4 flex justify-between" ]
+                [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Previous" ]
+                , span [ class "px-4 py-2 text-gray-700" ] [ text ("Page " ++ String.fromInt model.currentPage) ]
+                , button [ onClick NextPage, disabled ((model.currentPage * model.itemsPerPage) >= List.length model.filteredDocuments), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Next" ]
+                ]
             ]
         , case model.error of
             Just errorMsg ->
-                div [] [ text ("Error: " ++ errorMsg) ]
+                div [ class "error-msg text-red-500 mt-4" ] [ text ("Error: " ++ errorMsg) ]
 
             Nothing ->
                 text ""
-        , footer [ class "footer" ]
+        , footer [ class "footer mt-8" ]
             [ div [ class "container mx-auto" ]
                 [ div [ class "footer-content" ]
                     [ div [ class "footer-section" ]
@@ -171,9 +220,9 @@ view model =
 
 documentCard : Document -> Html Msg
 documentCard doc =
-    div [ class "border rounded shadow p-4 bg-white" ]
+    div [ class "border rounded shadow p-4 bg-white flex-grow" ]
         [ div [ class "flex items-center justify-between mb-4" ]
-            [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ doc.id) ]
+            [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ Maybe.withDefault "Unknown" doc.id) ]
             , span [ class "badge active" ] [ text "Active" ]
             ]
         , div [ class "mb-2" ]
@@ -184,30 +233,54 @@ documentCard doc =
             [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
         , div [ class "mb-4" ]
             [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
-        , a [ href ("api/Mongodb/documents/" ++ doc.id), class "btn btn-primary" ] [ text "View Document" ]
+        , a [ href ("api/Mongodb/documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
+        , case (doc.id, doc.approved) of
+            (Just id, False) ->  -- Only show the button if approved is False
+                button [ onClick (ApproveDocument id), class "btn btn-success" ] [ text "Approve" ]
+            _ ->
+                text "" -- Do not render the button if the document is already approved
         ]
 
+-- Approved documents
+approveDocument : String -> Cmd Msg
+approveDocument docId =
+    Http.post
+        { url = "http://localhost:4000/api/Mongodb/approve_document/" ++ docId
+        , body = Http.emptyBody
+        , expect = Http.expectString (always (DocumentApproved (Ok docId)))
+        }
 
 
--- HTTP REQUEST
 
+-- HTTP REQUESTS
+fetchDocuments : String -> Cmd Msg
+fetchDocuments searchString =
+    let
+        url =
+            if String.isEmpty searchString then
+                "http://localhost:4000/api/Mongodb/document"
+                -- Fetch all documents initially
 
-fetchDocuments : Cmd Msg
-fetchDocuments =
+            else
+                "http://localhost:4000/api/Mongodb/document/search?search=" ++ searchString
+
+        -- Fetch documents based on search
+    in
     Http.get
-        { url = "http://localhost:4000/api/Mongodb/document"
+        { url = url
         , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.list documentDecoder))
         }
 
 
 documentDecoder : Decode.Decoder Document
 documentDecoder =
-    Decode.map5 Document
-        (Decode.field "_id" Decode.string)
-        (Decode.maybe (Decode.field "Date" Decode.string))
-        (Decode.maybe (Decode.field "Notes" Decode.string))
-        (Decode.maybe (Decode.field "Site" Decode.string))
-        (Decode.maybe (Decode.field "Province" Decode.string))
+    Decode.map6 Document
+        (Decode.maybe (Decode.field "_id" Decode.string))
+        (Decode.maybe (Decode.field "date" Decode.string))
+        (Decode.maybe (Decode.field "notes" Decode.string))
+        (Decode.maybe (Decode.field "site" Decode.string))
+        (Decode.maybe (Decode.field "province" Decode.string))
+        (Decode.maybe (Decode.field "approved" Decode.bool) |> Decode.map (Maybe.withDefault False))  -- New field added for approval status
 
 
 errorToString : Http.Error -> String
