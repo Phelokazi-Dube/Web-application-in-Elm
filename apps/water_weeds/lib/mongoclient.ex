@@ -227,8 +227,11 @@ defmodule WaterWeeds.MongoDBClient do
            update,
            return_document: :after
          ) do
-      {:ok, doc} ->
+      {:ok, %Mongo.FindAndModifyResult{value: doc}} when not is_nil(doc) ->
         {:reply, {:ok, doc}, state}
+
+      {:ok, _} ->
+        {:reply, {:error, "Document not found or not modified"}, state}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
