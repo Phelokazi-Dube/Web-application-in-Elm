@@ -2,10 +2,11 @@
 <div><%= @extra_prepend %></div>
 <% end %>
 
-<%= if IO.inspect(@profile) == nil do %>
-<.login_link oauth_url={ElixirAuthGoogle.generate_oauth_url(@conn)} />
+<% IO.inspect(@profile, label: "Profile Data") %>
+<%= if @profile do %>
+  <.profile {@profile} />
 <% else %>
-<.profile {@profile} />
+  <.login_link oauth_url={ElixirAuthGoogle.generate_oauth_url(@conn)} />
 <% end %>
 
 <div id="myapp"></div>

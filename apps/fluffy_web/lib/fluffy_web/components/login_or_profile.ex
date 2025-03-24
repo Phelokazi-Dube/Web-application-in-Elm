@@ -16,6 +16,7 @@ defmodule FluffyWeb.LoginOrProfile do
   def profile(assigns) do
     ~H"""
         Logged in as <%= @given_name %> <img width="32px" src={@picture} class="rounded-[50%] inline align-middle">
+        <a href="/logout" class="ml-2 text-red-500">Logout</a>
       """
   end
 

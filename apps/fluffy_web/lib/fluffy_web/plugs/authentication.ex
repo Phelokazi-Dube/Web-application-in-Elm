@@ -1,6 +1,8 @@
 defmodule FluffyWeb.Plugs.Authentication do
   import Plug.Conn
-  use Phoenix.Controller
+  import Phoenix.Controller
+
+  @admin_emails ["y.motara@ru.ac.za", "phelokazidube@gmail.com"]  # List of admin emails
 
   def init(opts), do: opts
 
@@ -12,8 +14,24 @@ defmodule FluffyWeb.Plugs.Authentication do
         |> redirect(to: "/")
         |> halt()
 
-      profile ->
-        Plug.Conn.assign(conn, :current_user, profile)
+      %{"email" => email} = profile ->
+        role = fetch_user_role(email)  # Assign role dynamically
+        updated_profile = Map.put(profile, "role", role)  # Add role to profile
+
+        conn
+        |> assign(:current_user, updated_profile)
+        |> assign(:role, role)
+        |> assign(:is_admin, role == "admin")  # Add a helper flag
+
+      _ ->
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: "Unauthorized"})
+        |> halt()
     end
+  end
+
+  defp fetch_user_role(email) do
+    if email in @admin_emails, do: "admin", else: "user"
   end
 end

@@ -246,32 +246,51 @@ defmodule FluffyWeb.MongoDBController do
     redirect(conn, external: "https://calendar.google.com/calendar/embed?src=phelokazidube%40gmail.com&ctz=Africa%2FJohannesburg")
   end
 
-  # Function to fetch unapproved documents
+  # Function that approves the documents
   def approve(conn, %{"id" => id}) do
-    case BSON.ObjectId.decode(id) do
-      {:ok, bson_id} ->
-        # Update the "approved" field to true
-        case MongoDBClient.update_document("Surveys", bson_id, %{"approved" => true}) do
-          {:ok, doc} ->
-            document = normalize_mongo_id(doc)
-            conn
-            |> put_status(:ok)
-            |> json(%{message: "Document approved successfully", document: document})
+    role = conn.assigns[:role] || "user"
+    IO.inspect(role, label: "Role in approve function")
 
-          {:error, reason} ->
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{error: "Failed to approve document", reason: reason})
-        end
+    if role == "admin" do
+      case BSON.ObjectId.decode(id) do
+        {:ok, bson_id} ->
+          IO.inspect(bson_id, label: "Decoded BSON ID")
 
-      {:error, _reason} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid ID format"})
+          case MongoDBClient.update_document("Surveys", bson_id, %{"approved" => true}) do
+            {:ok, doc} ->
+              IO.inspect(doc, label: "Updated Document")
+              document = normalize_mongo_id(doc)
+
+              conn
+              |> put_status(:ok)
+              |> json(%{message: "Document approved successfully", document: document})
+
+            {:error, reason} ->
+              IO.inspect(reason, label: "MongoDB Update Error")
+
+              conn
+              |> put_status(:unprocessable_entity)
+              |> json(%{error: "Failed to approve document", reason: reason})
+          end
+
+        {:error, reason} ->
+          IO.inspect(reason, label: "Invalid BSON ID")
+
+          conn
+          |> put_status(:bad_request)
+          |> json(%{error: "Invalid ID format"})
+      end
+    else
+      IO.puts("Approval denied: User is not admin")
+
+      conn
+      |> put_status(:forbidden)
+      |> json(%{error: "Only admins can approve documents"})
     end
   end
 
-  # Function to approved documents
+
+  # Function to fetch unapproved documents
   def unapproved(conn, _params) do
     documents = MongoDBClient.get_all_documents("Surveys", %{"approved" => false})
 

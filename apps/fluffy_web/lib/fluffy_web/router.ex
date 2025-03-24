@@ -23,6 +23,13 @@ defmodule FluffyWeb.Router do
     plug FluffyWeb.Plugs.Authentication
   end
 
+  pipeline :admin_only do
+    plug(:fetch_session)
+    plug FluffyWeb.Plugs.Authentication
+    plug FluffyWeb.Plugs.RequireAdmin
+  end
+
+
   scope "/", FluffyWeb do
     pipe_through(:browser)
 
@@ -35,6 +42,7 @@ defmodule FluffyWeb.Router do
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
     get("/auth/google/callback", GoogleAuthController, :index)
     get("/auth/google/page", PageController, :home, private: %{:javascript => "new"})
+    get "/logout", GoogleAuthController, :logout
   end
 
   scope "/", FluffyWeb do
@@ -47,12 +55,16 @@ defmodule FluffyWeb.Router do
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
   end
 
+  scope "/" do
+    pipe_through(:admin_only)
+    post "api/Mongodb/approve_document/:id", MongoDBController, :approve
+  end
+
   # Other scopes may use custom stacks.
   scope "/api", FluffyWeb do
     pipe_through(:api)
 
     # Route for searching documents for text
-    # get "/documentIdsByText", MongoDBController, :search
     get("/Mongodb/document/search", MongoDBController, :search)
 
     # Route for retrieving a document
@@ -82,7 +94,7 @@ defmodule FluffyWeb.Router do
     get("/calender", MongoDBController, :to_calender)
 
     # Handle document approvals by setting the approved field to true
-    post "/Mongodb/approve_document/:id", MongoDBController, :approve
+    # post "/Mongodb/approve_document/:id", MongoDBController, :approve
 
     # Get approved documents
     get "/Mongodb/approved_documents", MongoDBController, :approved
