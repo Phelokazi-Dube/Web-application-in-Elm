@@ -20,13 +20,15 @@ defmodule FluffyWeb.Router do
 
   pipeline :authenticated do
     plug(:fetch_session)
+    plug(:fetch_live_flash)
     plug FluffyWeb.Plugs.Authentication
   end
 
   pipeline :admin_only do
     plug(:fetch_session)
+    plug(:fetch_live_flash)
     plug FluffyWeb.Plugs.Authentication
-    plug FluffyWeb.Plugs.RequireAdmin
+    plug FluffyWeb.Plugs.AdminOnly
   end
 
 
@@ -55,7 +57,7 @@ defmodule FluffyWeb.Router do
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
   end
 
-  scope "/" do
+  scope "/", FluffyWeb do
     pipe_through(:admin_only)
     post "api/Mongodb/approve_document/:id", MongoDBController, :approve
   end

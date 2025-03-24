@@ -1,5 +1,6 @@
 defmodule FluffyWeb.GoogleAuthController do
   use FluffyWeb, :controller
+  require Logger
 
   @admin_emails ["phelokazidube@gmail.com", "y.motara@ru.ac.za"] # Add actual admin emails here
 
@@ -8,11 +9,13 @@ defmodule FluffyWeb.GoogleAuthController do
       {:ok, token} ->
         case ElixirAuthGoogle.get_user_profile(token.access_token) do
           {:ok, profile} ->
-            email = profile["email"]
+            # Logger.debug("Profile: #{inspect(profile)}")
+            email = profile[:email]
+            # Logger.debug("Obtained email: #{email}")
             role = if email in @admin_emails, do: "admin", else: "user"
 
             conn
-            |> put_session(:email, email)
+            |> put_session(:profile, profile)
             |> put_session(:role, role)  # Store user role in session
             |> IO.inspect()
             |> redirect(to: "/")

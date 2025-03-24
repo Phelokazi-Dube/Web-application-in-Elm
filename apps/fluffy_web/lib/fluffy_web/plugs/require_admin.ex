@@ -5,9 +5,10 @@ defmodule FluffyWeb.Plugs.AdminOnly do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    case conn.assigns[:role] do
+    # The :role key is added to the session in the GoogleAuthController
+    case get_session(conn, :role) do
       "admin" ->
-        IO.inspect(conn)
+        conn
 
       _ ->
         conn

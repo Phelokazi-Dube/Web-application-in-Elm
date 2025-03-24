@@ -248,7 +248,7 @@ defmodule FluffyWeb.MongoDBController do
 
   # Function that approves the documents
   def approve(conn, %{"id" => id}) do
-    role = conn.assigns[:role] || "user"
+    role = get_session(conn, :role) || "user"
     IO.inspect(role, label: "Role in approve function")
 
     if role == "admin" do
