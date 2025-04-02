@@ -14,11 +14,16 @@ defmodule FluffyWeb.GoogleAuthController do
             # Logger.debug("Obtained email: #{email}")
             role = if email in @admin_emails, do: "admin", else: "user"
 
+            # Retrieve the stored redirect path or default to "/"
+            redirect_path = get_session(conn, :redirect_after_login) || "/"
+
             conn
+            |> configure_session(renew: true)  # Renew the session for security
             |> put_session(:profile, profile)
             |> put_session(:role, role)  # Store user role in session
             |> IO.inspect()
-            |> redirect(to: "/")
+            |> delete_session(:redirect_after_login)  # Remove the session key after use
+            |> redirect(to: redirect_path)
 
           {:error, reason} ->
             conn |> put_status(:unauthorized) |> json(%{error: reason})

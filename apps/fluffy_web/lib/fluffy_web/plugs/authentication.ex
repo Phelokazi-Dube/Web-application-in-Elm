@@ -8,7 +8,9 @@ defmodule FluffyWeb.Plugs.Authentication do
     # The :role key is added to the session in the GoogleAuthController
     case get_session(conn, :role) do
       nil ->
+        # Store the current path before redirecting
         conn
+        |> put_session(:redirect_after_login, conn.request_path)
         |> put_flash(:error, "You must be logged in to access this page.")
         |> redirect(to: "/")
         |> halt()
