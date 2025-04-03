@@ -37,6 +37,7 @@ defmodule FluffyWeb.Router do
 
     get("/", PageController, :home, private: %{:javascript => "home"})
     get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
+    get("/help", PageController, :home, private: %{:javascript => "help"})
     get("/home", PageController, :home, private: %{:javascript => "home"})
     get("/contact", PageController, :home, private: %{:javascript => "contact"})
     get("/sites", PageController, :home, private: %{:javascript => "sites"})
@@ -54,6 +55,7 @@ defmodule FluffyWeb.Router do
     get("/map", PageController, :home, private: %{:javascript => "map"})
     post("/map", PageController, :upload_csv)
     get("/profile", PageController, :home, private: %{:javascript => "profile"})
+    # get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
   end
 
