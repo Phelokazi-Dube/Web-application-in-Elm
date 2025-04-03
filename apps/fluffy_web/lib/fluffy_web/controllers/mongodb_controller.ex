@@ -126,6 +126,8 @@ defmodule FluffyWeb.MongoDBController do
         "percentCover" => "",
         "description" => "💝",
         "approved" => false,   # Field marks the document as unapproved initially
+        "approved_by" => nil,   # Initially no one has approved it
+        "approved_at" => nil,   # No approval timestamp yet
         "created_at" => System.os_time(:second)
       }
 
@@ -249,21 +251,38 @@ defmodule FluffyWeb.MongoDBController do
   # Function that approves the documents
   def approve(conn, %{"id" => id}) do
     role = get_session(conn, :role) || "user"
+    profile = get_session(conn, :profile)
+    admin_email = profile && Map.get(profile, :email) # Get the email from profile
     IO.inspect(role, label: "Role in approve function")
+    IO.inspect(admin_email, label: "Admin Email in approve function")
 
-    if role == "admin" do
+    if role == "admin" and admin_email do
       case BSON.ObjectId.decode(id) do
         {:ok, bson_id} ->
           IO.inspect(bson_id, label: "Decoded BSON ID")
 
-          case MongoDBClient.update_document("Surveys", bson_id, %{"approved" => true}) do
-            {:ok, doc} ->
-              IO.inspect(doc, label: "Updated Document")
-              document = normalize_mongo_id(doc)
+          update_fields = %{
+            "approved" => true,
+            "approved_by" => admin_email, # Store admin's email
+            "approved_at" => System.os_time(:second) # Timestamp of approval
+          }
 
-              conn
-              |> put_status(:ok)
-              |> json(%{message: "Document approved successfully", document: document})
+          case MongoDBClient.update_document("Surveys", bson_id, update_fields) do
+            {:ok, _} ->
+              # Fetch the updated document after approval
+              case MongoDBClient.get_document_by_id("Surveys", bson_id) do
+                {:ok, updated_doc} when not is_nil(updated_doc) ->
+                  document = normalize_mongo_id(updated_doc)
+
+                  conn
+                  |> put_status(:ok)
+                  |> json(%{message: "Document approved successfully", document: document})
+
+                _ ->
+                  conn
+                  |> put_status(:ok)
+                  |> json(%{message: "Document approved, but fetching updated document failed."})
+              end
 
             {:error, reason} ->
               IO.inspect(reason, label: "MongoDB Update Error")
@@ -281,7 +300,7 @@ defmodule FluffyWeb.MongoDBController do
           |> json(%{error: "Invalid ID format"})
       end
     else
-      IO.puts("Approval denied: User is not admin")
+      IO.puts("Approval denied: User is not admin or email missing")
 
       conn
       |> put_status(:forbidden)
