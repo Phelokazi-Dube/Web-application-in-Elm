@@ -34,6 +34,9 @@ view _ =
                                 ]
                             ]
                         , li [] [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
+                        , li []
+                            -- User link
+                            [ a [ href "/help", class "nav-link" ] [ text "HELP" ] ]
                         ]
                     ]
                 ]
