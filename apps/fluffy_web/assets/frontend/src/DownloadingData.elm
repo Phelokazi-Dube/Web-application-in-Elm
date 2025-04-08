@@ -15,8 +15,8 @@ import Json.Decode as Decode
 type alias Document =
     { id : Maybe String
     , date : Maybe String
-    , notes : Maybe String
-    , site : Maybe String
+    , description : Maybe String
+    , sitename : Maybe String
     , province : Maybe String
     }
 
@@ -77,7 +77,7 @@ update msg model =
                         model.documents
 
                     else
-                        List.filter (\doc -> String.contains (String.toLower text) (Maybe.withDefault "" doc.notes)) model.documents
+                        List.filter (\doc -> String.contains (String.toLower text) (Maybe.withDefault "" doc.description)) model.documents
             in
             ( { model | searchText = text, filteredDocuments = filteredDocs }, fetchDocuments model.searchText )
 
@@ -220,11 +220,11 @@ documentCard doc =
         , div [ class "mb-2" ]
             [ text ("Created: " ++ Maybe.withDefault "No Date" doc.date) ]
         , div [ class "mb-2" ]
-            [ text ("Location: " ++ Maybe.withDefault "No Site" doc.site) ]
+            [ text ("Location: " ++ Maybe.withDefault "No Site" doc.sitename) ]
         , div [ class "mb-2" ]
             [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
         , div [ class "mb-4" ]
-            [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
+            [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.description) ]
         , a [ href ("api/Mongodb/documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
         ]
 
@@ -257,8 +257,8 @@ documentDecoder =
     Decode.map5 Document
         (Decode.maybe (Decode.field "_id" Decode.string))
         (Decode.maybe (Decode.field "date" Decode.string))
-        (Decode.maybe (Decode.field "notes" Decode.string))
-        (Decode.maybe (Decode.field "site" Decode.string))
+        (Decode.maybe (Decode.field "description" Decode.string))
+        (Decode.maybe (Decode.field "sitename" Decode.string))
         (Decode.maybe (Decode.field "province" Decode.string))
 
 

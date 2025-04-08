@@ -43,14 +43,19 @@ view _ =
             ]
         
         -- Main Content
-        , main_ [ class "flex-grow container mx-auto px-4 py-8" ]
-            [ h2 [] [ text "Welcome! You're logged in." ]
-            , div [] [ text "Now that you're logged in, you can either upload by filling in your document here, or you can upload a CSV file here." ]
-            , div []
-                [ a [ href "/uploading", class "bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Fill in Document" ]
-                , a [ href "/map", class "bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Upload CSV File" ]
-                ]
+        , main_ [ class "flex-grow container mx-auto px-4 py-12 text-center" ]
+            [ h1 [ class "text-5xl font-bold mb-4 text-gray-800" ]
+                [ text "Upload Survey Data" ]
+            , p [ class "text-x1 mb-8 text-gray-900" ]
+                [ text "You're logged in! Choose how you'd like to upload your data:" ]
+            , div [ class "flex justify-center gap-6 flex-wrap" ]
+                [ a [ href "/uploading", class "bg-blue-700 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition" ]
+                    [ text "Fill in Online Form" ]
+                , a [ href "/map", class "bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition" ]
+                    [ text "Upload CSV File" ]
+              ]
             ]
+
 
         -- Footer
         , footer [ class "footer" ]
