@@ -145,7 +145,7 @@ view model =
                         [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
                         , ul [ class "dropdown" ]
                             [ li [] [ a [ href "/map", class "dropdown-link" ] [ text "Map" ] ]
-                            , li [] [ a [ href "/surveys", class "dropdown-link" ] [ text "Survey Collection" ] ]
+                            , li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Collection" ] ]
                             ]
                         ]
                     , li [] [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]

@@ -200,45 +200,60 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   # Action to upload and process a CSV file with dynamic fields
+  @spec upload_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}}) do
-    # Read the CSV file and decode it with dynamic headers (headers: true)
-    csv_data =
-      file_path
-      |> File.stream!()
-      # Use comma as the delimiter and read headers dynamically
-      |> CSV.decode(separator: ?,, headers: true)
-      |> Enum.map(fn
-        {:ok, row} ->  normalize_keys(row)  # Convert CSV headers to camelCase
-        # Handle any errors in CSV decoding
-        {:error, reason} -> {:error, reason}
-      end)
+    # Ensure session is fetched before trying to get data from it
+    conn = fetch_session(conn)
 
-    # Filter out any rows that had errors
-    documents = Enum.filter(csv_data, &is_map/1)
+    profile = get_session(conn, :profile)
+    email = profile && Map.get(profile, :email)
 
-    # Insert the documents into MongoDB
-    case MongoDBClient.insert_many_documents("Surveys", documents) do
-      {:ok, result} ->
-        # Fetch inserted documents by their BSON ObjectIds and normalize _id to id
-        inserted_documents =
-          Enum.map(result.inserted_ids, fn bson_obj ->
-            MongoDBClient.get_document_by_id("Surveys", bson_obj)
-          end)
-          # Filter out any nil results
-          |> Enum.filter(&(&1 != nil))
-          # Normalize BSON _id to id
-          |> Enum.map(&normalize_mongo_id/1)
+    if email do
+      # Read and parse the CSV file
+      csv_data =
+        file_path
+        |> File.stream!()
+        |> CSV.decode(separator: ?,, headers: true)
+        |> Enum.map(fn
+          {:ok, row} ->
+            row
+            |> normalize_keys()
+            |> Map.put("userLogin", email)  # Add user email to each row
 
-        conn
-        |> put_status(:created)
-        |> json(%{message: "CSV data inserted successfully", documents: inserted_documents})
+          {:error, reason} ->
+            {:error, reason}
+        end)
 
-      {:error, reason} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Failed to insert CSV data", reason: reason})
+      # Filter out rows that failed to decode
+      documents = Enum.filter(csv_data, &is_map/1)
+
+      # Insert the documents into MongoDB
+      case MongoDBClient.insert_many_documents("Surveys", documents) do
+        {:ok, result} ->
+          inserted_documents =
+            Enum.map(result.inserted_ids, fn bson_obj ->
+              MongoDBClient.get_document_by_id("Surveys", bson_obj)
+            end)
+            |> Enum.filter(&(&1 != nil))
+            |> Enum.map(&normalize_mongo_id/1)
+
+          conn
+          |> put_status(:created)
+          |> json(%{message: "CSV data inserted successfully", documents: inserted_documents})
+
+        {:error, reason} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: "Failed to insert CSV data", reason: reason})
+      end
+    else
+      # If not logged in, reject the upload
+      conn
+      |> put_status(:unauthorized)
+      |> json(%{error: "User not authenticated"})
     end
   end
+
 
   def to_rhodes(conn, _params) do
     redirect(conn, external: "https://www.ru.ac.za/centreforbiologicalcontrol/")
