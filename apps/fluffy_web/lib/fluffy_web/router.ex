@@ -59,7 +59,7 @@ defmodule FluffyWeb.Router do
   end
 
   scope "/", FluffyWeb do
-    pipe_through(:admin_only)
+    pipe_through([:browser, :admin_only])
     post "api/Mongodb/approve_document/:id", MongoDBController, :approve
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
   end
