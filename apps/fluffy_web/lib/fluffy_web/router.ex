@@ -10,6 +10,7 @@ defmodule FluffyWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
+
   pipeline :api do
     plug(:accepts, ["json"])
   end
@@ -27,6 +28,7 @@ defmodule FluffyWeb.Router do
   pipeline :admin_only do
     plug(:fetch_session)
     plug(:fetch_live_flash)
+    plug(:put_secure_browser_headers)
     plug FluffyWeb.Plugs.Authentication
     plug FluffyWeb.Plugs.AdminOnly
   end
@@ -59,8 +61,12 @@ defmodule FluffyWeb.Router do
   end
 
   scope "/", FluffyWeb do
-    pipe_through([:browser, :admin_only])
+    pipe_through(:admin_only)
     post "api/Mongodb/approve_document/:id", MongoDBController, :approve
+  end
+
+  scope "/", FluffyWeb do
+    pipe_through([:browser, :admin_only])
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
   end
 
