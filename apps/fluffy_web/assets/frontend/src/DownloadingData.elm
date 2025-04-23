@@ -133,7 +133,7 @@ view model =
                     , li [ class "group" ]
                         [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
                         , ul [ class "dropdown" ]
-                            [ li [] [ a [ href "/map", class "dropdown-link" ] [ text "Map" ] ]
+                            [ li [] [ a [ href "/csvupload", class "dropdown-link" ] [ text "Csv Upload" ] ]
                             , li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Collection" ] ]
                             ]
                         ]

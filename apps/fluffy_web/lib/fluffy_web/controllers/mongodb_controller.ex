@@ -199,6 +199,70 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
+  def show_html(conn, %{"id" => id}) do
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        case MongoDBClient.get_document_by_id("Surveys", bson_id) do
+          nil ->
+            conn
+            |> put_flash(:error, "Document not found")
+            |> redirect(to: "/")
+
+          %{} = doc ->
+            normalized = normalize_mongo_id(doc)
+            render(conn, :show, document: normalized)
+
+          {:error, _} ->
+            conn
+            |> put_flash(:error, "Could not retrieve document")
+            |> redirect(to: "/")
+        end
+
+      {:error, _reason} ->
+        conn
+        |> put_flash(:error, "Invalid document ID")
+        |> redirect(to: "/")
+    end
+  end
+
+  def get_image(conn, %{"id" => id}) do
+    with {:ok, bson_id} <- BSON.ObjectId.decode(id),
+         %{bucket: bucket} <- :sys.get_state(WaterWeeds.MongoDBClient),
+         {{:ok, stream}, file_doc} <- Mongo.GridFs.Download.find_and_stream(bucket, bson_id) do
+
+      content_type =
+        case Path.extname(file_doc["filename"]) do
+          ".jpg" -> "image/jpeg"
+          ".jpeg" -> "image/jpeg"
+          ".png" -> "image/png"
+          ".gif" -> "image/gif"
+          _ -> "application/octet-stream"
+        end
+
+      conn = conn
+      |> put_resp_content_type(content_type)
+      |> send_chunked(200)
+
+      Enum.reduce_while(stream, conn, fn chunk, conn ->
+        case Plug.Conn.chunk(conn, chunk) do
+          {:ok, conn} -> {:cont, conn}
+          {:error, _} -> {:halt, conn}
+        end
+      end)
+    else
+      _ -> send_resp(conn, 404, "Image not found")
+    end
+  end
+
+  defp stream_chunks(conn, stream) do
+    Enum.reduce_while(stream, conn, fn chunk, conn_acc ->
+      case Plug.Conn.chunk(conn_acc, chunk) do
+        {:ok, conn_acc} -> {:cont, conn_acc}
+        {:error, _} -> {:halt, conn_acc}
+      end
+    end)
+  end
+
   # Action to upload and process a CSV file with dynamic fields
   @spec upload_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}}) do

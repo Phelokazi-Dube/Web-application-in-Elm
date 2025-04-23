@@ -33,6 +33,27 @@ defmodule WaterWeeds.MongoDBClient do
     end
   end
 
+  defp ensure_indexes(conn) do
+    case Mongo.command(conn, %{
+           "createIndexes" => "Surveys",
+           "indexes" => [
+             %{
+               "key" => %{"title" => "text", "description" => "text"},
+               "name" => "TextIndex"
+             }
+           ]
+         }) do
+      {:ok, _} ->
+        Logger.info("Text index created on Surveys collection")
+
+      {:error, %Mongo.Error{code: 85}} ->
+        Logger.info("ℹ️ Index already exists")
+
+      {:error, reason} ->
+        Logger.error("Failed to create text index: #{inspect(reason)}")
+    end
+  end
+
   # Function to get all documents from a collection
   def get_all_documents(collection_name) do
     GenServer.call(__MODULE__, {:get_all_documents, collection_name})

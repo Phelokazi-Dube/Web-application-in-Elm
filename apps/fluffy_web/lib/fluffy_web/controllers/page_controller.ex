@@ -120,20 +120,20 @@ defmodule FluffyWeb.PageController do
   end
 
   def upload_csv(conn, params) do
-    MongoDBClient.insert_many_documents("Sana", Map.delete(params, "csrf_token"))
+    MongoDBClient.insert_many_documents("Surveys", Map.delete(params, "csrf_token"))
     # Expected: the _id of the new document.
     |> IO.inspect(label: "Documents stored with ID")
 
     conn
     |> put_status(:ok)
-    |> render(:home,
+    |> render(:upload_success,
       layout: false,
-      js_file: "map",
+      js_file: "csvupload",
       extra_prepend: "The CSV file has been successfully uploaded"
     )
   end
 
-  def map(conn, _params) do
+  def csvupload(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end

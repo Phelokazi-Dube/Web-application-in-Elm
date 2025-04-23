@@ -1,8 +1,12 @@
 module Surveys exposing (..)
 
-import Browser exposing (element)
+import Browser
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Url exposing (Url)
+import Url.Parser as Parser exposing (Parser, (<?>), Query, query, string, top)
+import Url.Parser.Query as Query
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
@@ -23,7 +27,8 @@ type alias Document =
 
 
 type alias Model =
-    { documents : List Document
+    { key : Nav.Key
+    , documents : List Document
     , filteredDocuments : List Document
     , searchText : String
     , error : Maybe String
@@ -32,18 +37,29 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { documents = []
+init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init _ url navKey =
+    let
+        searchText =
+            case Parser.parse searchParser url of
+                Just text -> text
+                Nothing -> ""
+    in
+    ( { key = navKey
+      , documents = []
       , filteredDocuments = []
-      , searchText = ""
+      , searchText = searchText
       , error = Nothing
       , currentPage = 1
       , itemsPerPage = 12
       }
-    , fetchDocuments ""
-      -- Fetch all documents initially
+    , fetchDocuments searchText
     )
+
+searchParser : Parser.Parser (Maybe String)
+searchParser =
+    Parser.top
+        <?> Query.map identity (Query.string "search")
 
 
 
@@ -59,11 +75,30 @@ type Msg
     | PrevPage
     | ApproveDocument String
     | DocumentApproved (Result Http.Error String)
+    | UrlChanged Url
+    | LinkClicked Browser.UrlRequest
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model, Nav.pushUrl model.key (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Nav.load href )
+
+        UrlChanged url ->
+            let
+                searchText =
+                    case Parser.parse searchParser url of
+                        Just text -> text
+                        Nothing -> ""
+            in
+            ( { model | searchText = searchText }, fetchDocuments searchText )
+
         FetchDocuments ->
             ( model, fetchDocuments model.searchText )
 
@@ -71,7 +106,7 @@ update msg model =
             ( model, approveDocument docId )
 
         DocumentApproved (Ok _) ->
-            ( model, fetchDocuments model.searchText ) -- Fetch documents again after approval
+            ( model, fetchDocuments model.searchText )
 
         DocumentApproved (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
@@ -84,13 +119,34 @@ update msg model =
 
         SearchTextChanged text ->
             let
+                lowerSearch =
+                    String.toLower text
+
+                matchesSearch doc =
+                    let
+                        notes = String.toLower (Maybe.withDefault "" doc.notes)
+                        site = String.toLower (Maybe.withDefault "" doc.site)
+                        province = String.toLower (Maybe.withDefault "" doc.province)
+                    in
+                    String.contains lowerSearch notes
+                        || String.contains lowerSearch site
+                        || String.contains lowerSearch province
+
                 filteredDocs =
                     if String.isEmpty text then
                         model.documents
                     else
-                        List.filter (\doc -> String.contains (String.toLower text) (Maybe.withDefault "" doc.notes)) model.documents
+                        List.filter matchesSearch model.documents
+
+                newUrl =
+                    if String.isEmpty text then
+                        "/surveys"
+                    else
+                        "/surveys?search=" ++ Url.percentEncode text
             in
-            ( { model | searchText = text, filteredDocuments = filteredDocs }, fetchDocuments model.searchText )
+            ( { model | searchText = text, filteredDocuments = filteredDocs }
+            , Nav.pushUrl model.key newUrl
+            )
 
         ClearSearch ->
             ( { model | searchText = "", filteredDocuments = model.documents }, Cmd.none )
@@ -144,7 +200,7 @@ view model =
                     , li [ class "group" ]
                         [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
                         , ul [ class "dropdown" ]
-                            [ li [] [ a [ href "/map", class "dropdown-link" ] [ text "Map" ] ]
+                            [ li [] [ a [ href "/csvupload", class "dropdown-link" ] [ text "Csv Upload" ] ]
                             , li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Collection" ] ]
                             ]
                         ]
@@ -236,7 +292,7 @@ documentCard doc =
             [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
         , div [ class "mb-4" ]
             [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
-        , a [ href ("api/Mongodb/documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
+        , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
         , case (doc.id, doc.approved) of
             (Just id, False) ->  -- Only show the button if approved is False
                 button [ onClick (ApproveDocument id), class "btn btn-success" ] [ text "Approve" ]
@@ -320,9 +376,11 @@ subscriptions _ =
 
 main : Program () Model Msg
 main =
-    Browser.element
-        { init = \_ -> init
+    Browser.application
+        { init = init
         , update = update
         , view = view
         , subscriptions = subscriptions
+        , onUrlChange = UrlChanged
+        , onUrlRequest = LinkClicked
         }

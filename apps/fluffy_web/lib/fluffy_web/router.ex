@@ -46,15 +46,17 @@ defmodule FluffyWeb.Router do
     get("/downloading", PageController, :home, private: %{:javascript => "downloading_data"})
     get("/auth/google/callback", GoogleAuthController, :index)
     get("/auth/google/page", PageController, :home, private: %{:javascript => "new"})
-    get "/logout", GoogleAuthController, :logout
+    get("/logout", GoogleAuthController, :logout)
+    get("/documents/:id", MongoDBController, :show_html)
+    get("/image/:id", MongoDBController, :get_image)
   end
 
   scope "/", FluffyWeb do
     pipe_through([:browser, :authenticated]) # Requires authentication
     get("/uploading", PageController, :home, private: %{:javascript => "uploading_data"})
     post("/uploading", PageController, :upload)
-    get("/map", PageController, :home, private: %{:javascript => "map"})
-    post("/map", PageController, :upload_csv)
+    get("/csvupload", PageController, :home, private: %{:javascript => "csvupload"})
+    post("/csvupload", PageController, :upload_csv)
     get("/profile", PageController, :home, private: %{:javascript => "profile"})
     # get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
