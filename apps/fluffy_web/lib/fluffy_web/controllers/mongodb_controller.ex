@@ -303,7 +303,7 @@ defmodule FluffyWeb.MongoDBController do
 
           conn
           |> put_status(:created)
-          |> json(%{message: "CSV data inserted successfully", documents: inserted_documents})
+          |> render("upload_success.html", message: "Upload successful")
 
         {:error, reason} ->
           conn

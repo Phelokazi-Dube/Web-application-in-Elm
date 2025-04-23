@@ -64,7 +64,7 @@ defmodule FluffyWeb.Router do
 
   scope "/", FluffyWeb do
     pipe_through(:admin_only)
-    post "api/Mongodb/approve_document/:id", MongoDBController, :approve
+    post "/api/Mongodb/approve_document/:id", MongoDBController, :approve
   end
 
   scope "/", FluffyWeb do

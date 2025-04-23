@@ -44,6 +44,7 @@ defmodule WaterWeeds.MixProject do
       {:swoosh, "~> 1.5"},
       {:finch, "~> 0.13"},
       {:mongodb_driver, "~> 1.4.1"},
+      {:phoenix_view, "~> 2.0"},
       {:elixir_auth_google, "~> 1.6.9"}
     ]
   end
