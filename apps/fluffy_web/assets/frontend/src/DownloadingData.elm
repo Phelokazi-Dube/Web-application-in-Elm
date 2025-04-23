@@ -225,7 +225,7 @@ documentCard doc =
             [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
         , div [ class "mb-4" ]
             [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.description) ]
-        , a [ href ("api/Mongodb/documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
+        , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
         ]
 
 
