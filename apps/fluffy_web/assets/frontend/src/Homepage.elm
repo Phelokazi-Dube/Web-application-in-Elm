@@ -11,7 +11,7 @@ import Html.Events exposing (onClick)
 
 
 type alias Model =
-    {}
+    {role : String}
 
 
 
@@ -20,7 +20,7 @@ type alias Model =
 
 init : Model
 init =
-    {}
+    {role = "user"}
 
 
 
@@ -71,7 +71,10 @@ view model =
                             [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                             , ul [ class "dropdown" ]
                                 [ li []
-                                    [ a [ href "/downloading", class "dropdown-link" ] [ text "Get Data" ] ]
+                                [ a
+                                    [ href (if model.role == "admin" then "/survey" else "/downloading"), class "dropdown-link"]
+                                    [ text "Survey Explorer" ]
+                                ]
                                 , li []
                                     [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
                                 ]
@@ -81,9 +84,9 @@ view model =
                             [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
                             , ul [ class "dropdown" ]
                                 [ li []
-                                    [ a [ href "/map", class "dropdown-link" ] [ text "Map" ] ]
+                                    [ a [ href "/csvupload", class "dropdown-link" ] [ text "Csv Upload" ] ]
                                 , li []
-                                    [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Collection" ] ]
+                                    [ a [ href "/survey", class "dropdown-link" ] [ text "Explore Data" ] ]
                                 ]
                             ]
                         , li []

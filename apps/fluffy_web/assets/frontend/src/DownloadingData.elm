@@ -126,7 +126,7 @@ view model =
                     , li [ class "group" ]
                         [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                         , ul [ class "dropdown" ]
-                            [ li [] [ a [ href "/downloading", class "dropdown-link" ] [ text "Get Data" ] ]
+                            [ li [] [ a [ href "/downloading", class "dropdown-link" ] [ text "Survey Explorer" ] ]
                             , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
                             ]
                         ]
@@ -134,7 +134,7 @@ view model =
                         [ a [ href "#", class "nav-link" ] [ text "SURVEYS" ]
                         , ul [ class "dropdown" ]
                             [ li [] [ a [ href "/csvupload", class "dropdown-link" ] [ text "Csv Upload" ] ]
-                            , li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Collection" ] ]
+                            , li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Explore Data" ] ]
                             ]
                         ]
                     , li [] [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
@@ -144,7 +144,7 @@ view model =
                     ]
                 ]
             ]
-        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Survey Collections" ]
+        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Explore Datas" ]
         , div [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
             [ input
                 [ class "search-input flex-grow px-2 py-1 border rounded-md"

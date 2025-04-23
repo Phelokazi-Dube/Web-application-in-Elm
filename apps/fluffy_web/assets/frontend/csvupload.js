@@ -1,6 +1,6 @@
-import { Elm } from './src/Map.elm';
+import { Elm } from './src/CsvUpload.elm';
 export function start_elm(flags) {
-  return Elm.Map.init({
+  return Elm.CsvUpload.init({
     node: document.getElementById("myapp"),
     flags: flags
   });

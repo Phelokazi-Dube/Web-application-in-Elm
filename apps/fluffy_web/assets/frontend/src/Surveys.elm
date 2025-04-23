@@ -193,7 +193,7 @@ view model =
                     , li [ class "group" ]
                         [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                         , ul [ class "dropdown" ]
-                            [ li [] [ a [ href "/downloading", class "dropdown-link" ] [ text "Get Data" ] ]
+                            [ li [] [ a [ href "/downloading", class "dropdown-link" ] [ text "Survey Explorer" ] ]
                             , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
                             ]
                         ]
