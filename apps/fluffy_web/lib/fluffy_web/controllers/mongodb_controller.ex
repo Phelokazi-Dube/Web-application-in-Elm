@@ -44,11 +44,12 @@ defmodule FluffyWeb.MongoDBController do
   def all(conn, _params) do
     # Fetch all documents from the "Surveys" collection
     documents = MongoDBClient.get_all_documents("Surveys")
+    isAdmin = get_session(conn, :role) == "admin"
 
     # Return the documents as JSON in the HTTP response
     conn
     |> put_status(:ok)
-    |> json(%{documents: documents})
+    |> json(%{isAdmin: isAdmin, documents: documents})
   end
 
   def search(conn, %{"search" => search_text}) do
@@ -57,11 +58,12 @@ defmodule FluffyWeb.MongoDBController do
 
     # Fetch documents that match the search text from the "Surveys" collection
     documents = MongoDBClient.search_documents_by_text(collection, search_text)
+    isAdmin = get_session(conn, :role) == "admin"
 
     # Return the documents as JSON in the HTTP response
     conn
     |> put_status(:ok)
-    |> json(%{documents: documents})
+    |> json(%{isAdmin: isAdmin, documents: documents})
   end
 
   def create(conn, %{"photos" => photos} = _params) do

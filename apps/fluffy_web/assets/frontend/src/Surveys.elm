@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, (<?>), Query, query, string, top)
+import Url.Parser as Parser exposing (Parser, (<?>), (</>), query, string, top)
 import Url.Parser.Query as Query
 import Html.Events exposing (onClick, onInput)
 import Http
@@ -34,6 +34,7 @@ type alias Model =
     , error : Maybe String
     , currentPage : Int
     , itemsPerPage : Int
+    , adminUser : Bool
     }
 
 
@@ -42,8 +43,8 @@ init _ url navKey =
     let
         searchText =
             case Parser.parse searchParser url of
-                Just text -> text
-                Nothing -> ""
+                Just (Just text) -> text
+                _ -> ""
     in
     ( { key = navKey
       , documents = []
@@ -52,14 +53,14 @@ init _ url navKey =
       , error = Nothing
       , currentPage = 1
       , itemsPerPage = 12
+      , adminUser = False
       }
     , fetchDocuments searchText
     )
 
-searchParser : Parser.Parser (Maybe String)
+searchParser : Parser.Parser (Maybe String -> Maybe String) (Maybe String)
 searchParser =
-    Parser.top
-        <?> Query.map identity (Query.string "search")
+    Parser.s "survey" <?> Query.string "search"
 
 
 
@@ -68,7 +69,7 @@ searchParser =
 
 type Msg
     = FetchDocuments
-    | DocumentsFetched (Result Http.Error (List Document))
+    | DocumentsFetched (Result Http.Error (List Document, Bool))
     | SearchTextChanged String
     | ClearSearch
     | NextPage
@@ -85,7 +86,11 @@ update msg model =
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( model, Nav.pushUrl model.key (Url.toString url) )
+                    case Parser.parse (Parser.s "survey") url of
+                        Just _ ->
+                            ( model, Nav.pushUrl model.key (Url.toString url) )
+                        _ ->
+                            ( model, Nav.load (Url.toString url) )
 
                 Browser.External href ->
                     ( model, Nav.load href )
@@ -94,8 +99,8 @@ update msg model =
             let
                 searchText =
                     case Parser.parse searchParser url of
-                        Just text -> text
-                        Nothing -> ""
+                        Just (Just text) -> text
+                        _ -> ""
             in
             ( { model | searchText = searchText }, fetchDocuments searchText )
 
@@ -111,8 +116,15 @@ update msg model =
         DocumentApproved (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
 
-        DocumentsFetched (Ok docs) ->
-            ( { model | documents = docs, filteredDocuments = docs, error = Nothing }, Cmd.none )
+        DocumentsFetched (Ok (docs, isAdmin)) ->
+            ( { model
+              | documents = docs
+              , filteredDocuments = docs
+              , error = Nothing
+              , adminUser = isAdmin
+              }
+            , Cmd.none
+            )
 
         DocumentsFetched (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
@@ -140,12 +152,12 @@ update msg model =
 
                 newUrl =
                     if String.isEmpty text then
-                        "/surveys"
+                        "/survey"
                     else
-                        "/surveys?search=" ++ Url.percentEncode text
+                        "/survey?search=" ++ Url.percentEncode text
             in
             ( { model | searchText = text, filteredDocuments = filteredDocs }
-            , Nav.pushUrl model.key newUrl
+            , Nav.replaceUrl model.key newUrl
             )
 
         ClearSearch ->
@@ -166,8 +178,8 @@ update msg model =
 -- VIEW
 
 
-view : Model -> Html Msg
-view model =
+viewContent : Model -> Html Msg
+viewContent model =
     let
         start =
             (model.currentPage - 1) * model.itemsPerPage
@@ -228,7 +240,7 @@ view model =
             ]
         , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200" ]
             [ div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
-                (List.map documentCard paginatedDocuments)
+                (List.map (documentCard model.adminUser) paginatedDocuments)
             , div [ class "pagination mt-4 flex justify-between" ]
                 [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Previous" ]
                 , span [ class "px-4 py-2 text-gray-700" ] [ text ("Page " ++ String.fromInt model.currentPage) ]
@@ -272,13 +284,17 @@ view model =
             ]
         ]
 
-
+view : Model -> Browser.Document Msg
+view model =
+    { title = "Center for Biological Control Data Portal"
+    , body = [viewContent model]
+    }
 
 -- RENDER DOCUMENT CARD
 
 
-documentCard : Document -> Html Msg
-documentCard doc =
+documentCard : Bool -> Document -> Html Msg
+documentCard isAdmin doc =
     div [ class "border rounded shadow p-4 bg-white flex-grow" ]
         [ div [ class "flex items-center justify-between mb-4" ]
             [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ Maybe.withDefault "Unknown" doc.id) ]
@@ -293,9 +309,12 @@ documentCard doc =
         , div [ class "mb-4" ]
             [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
         , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
-        , case (doc.id, doc.approved) of
-            (Just id, False) ->  -- Only show the button if approved is False
+        , case (doc.id, doc.approved, isAdmin) of
+            (Just id, False, True) ->  -- Only show the button if approved is False
                 button [ onClick (ApproveDocument id), class "btn btn-success" ] [ text "Approve" ]
+            (Just id, False, False) ->
+                span [ class "mb-2 text-red" ]
+                    [ text " NOT YET APPROVED" ]
             _ ->
                 text "" -- Do not render the button if the document is already approved
         ]
@@ -327,7 +346,11 @@ fetchDocuments searchString =
     in
     Http.get
         { url = url
-        , expect = Http.expectJson DocumentsFetched (Decode.field "documents" (Decode.list documentDecoder))
+        , expect = Http.expectJson DocumentsFetched
+            ( Decode.map2 (\a b -> ( a, b ))
+                (Decode.field "documents" (Decode.list documentDecoder))
+                (Decode.field "isAdmin" Decode.bool)
+            )
         }
 
 

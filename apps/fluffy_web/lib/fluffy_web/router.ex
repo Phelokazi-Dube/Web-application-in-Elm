@@ -12,6 +12,7 @@ defmodule FluffyWeb.Router do
 
 
   pipeline :api do
+    plug(:fetch_session)
     plug(:accepts, ["json"])
   end
 
@@ -49,6 +50,7 @@ defmodule FluffyWeb.Router do
     get("/logout", GoogleAuthController, :logout)
     get("/documents/:id", MongoDBController, :show_html)
     get("/image/:id", MongoDBController, :get_image)
+    get("/survey", PageController, :home, private: %{:javascript => "surveys"})
   end
 
   scope "/", FluffyWeb do
@@ -65,11 +67,6 @@ defmodule FluffyWeb.Router do
   scope "/", FluffyWeb do
     pipe_through(:admin_only)
     post "/api/Mongodb/approve_document/:id", MongoDBController, :approve
-  end
-
-  scope "/", FluffyWeb do
-    pipe_through([:browser, :admin_only])
-    get("/survey", PageController, :home, private: %{:javascript => "surveys"})
   end
 
   # Other scopes may use custom stacks.
