@@ -43,8 +43,6 @@ defmodule FluffyWeb.Router do
     get("/help", PageController, :home, private: %{:javascript => "help"})
     get("/home", PageController, :home, private: %{:javascript => "home"})
     get("/contact", PageController, :home, private: %{:javascript => "contact"})
-    get("/sites", PageController, :home, private: %{:javascript => "sites"})
-    get("/downloading", PageController, :home, private: %{:javascript => "downloading_data"})
     get("/auth/google/callback", GoogleAuthController, :index)
     get("/auth/google/page", PageController, :home, private: %{:javascript => "new"})
     get("/logout", GoogleAuthController, :logout)
