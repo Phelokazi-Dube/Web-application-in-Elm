@@ -98,7 +98,7 @@ defmodule FluffyWeb.Router do
     get("/rhodes", MongoDBController, :to_rhodes)
 
     # Add a route for viewing the calender
-    get("/calender", MongoDBController, :to_calender)
+    get("/calendar", MongoDBController, :to_calendar)
 
     # Handle document approvals by setting the approved field to true
     # post "/Mongodb/approve_document/:id", MongoDBController, :approve

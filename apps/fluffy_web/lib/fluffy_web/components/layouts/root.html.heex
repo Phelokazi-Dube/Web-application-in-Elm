@@ -13,10 +13,68 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-
   </head>
+
   <body>
-    <%= @inner_content %>
+    <!-- Navbar -->
+    <header class="bg-neutral-100 shadow-sm" style="background-color: rgb(17, 71, 104);">
+      <nav class="container mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="brand-container">
+          <img src="/images/images.png" alt="Logo" class="logo" />
+          <div class="brand-title">CBC</div>
+        </div>
+        <ul class="nav-items">
+          <li><a href="/home" class="nav-link">HOME</a></li>
+          <li class="group">
+            <a href="#" class="nav-link">DATA</a>
+            <ul class="dropdown">
+              <li><a href="/survey" class="dropdown-link">Survey Data</a></li>
+              <li><a href="/publish" class="dropdown-link">Publish Data</a></li>
+            </ul>
+          </li>
+          <li class="group"><a href="#" class="nav-link">RECORDS</a></li>
+          <li><a href="/contact" class="nav-link">CONTACT</a></li>
+          <li><a href="/help" class="nav-link">HELP</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Main content (Elm app and page content) -->
+    <main>
+      <%= @inner_content %>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-8">
+      <div class="container mx-auto">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h3 class="footer-title">CBC</h3>
+            <p class="footer-text">Enhancing access to biological control data</p>
+          </div>
+          <div class="footer-section">
+            <h3 class="footer-title">Quick Links</h3>
+            <ul>
+              <li><a href="#" class="footer-link">Privacy Policy</a></li>
+              <li><a href="#" class="footer-link">Terms of Service</a></li>
+              <li><a href="/contact" class="footer-link">Contact Us</a></li>
+            </ul>
+          </div>
+          <div class="footer-section">
+            <h3 class="footer-title">Connect With Us</h3>
+            <div class="social-icons">
+              <a href="#" class="fa fa-facebook"></a>
+              <a href="#" class="fa fa-twitter"></a>
+              <a href="#" class="fa fa-instagram"></a>
+              <a href="#" class="fa fa-linkedin"></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-credits">
+        <p>© 2025 Center for Biological Control. All rights reserved.</p>
+      </div>
+    </footer>
   </body>
 </html>
 

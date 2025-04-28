@@ -325,7 +325,7 @@ defmodule FluffyWeb.MongoDBController do
     redirect(conn, external: "https://www.ru.ac.za/centreforbiologicalcontrol/")
   end
 
-  def to_calender(conn, _params) do
+  def to_calendar(conn, _params) do
     redirect(conn, external: "https://calendar.google.com/calendar/embed?src=phelokazidube%40gmail.com&ctz=Africa%2FJohannesburg")
   end
 
