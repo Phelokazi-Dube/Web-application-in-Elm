@@ -5,7 +5,7 @@ defmodule FluffyWeb.PageController do
 
   def home(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
-    render(conn, :home, layout: false, js_file: conn.private[:javascript], profile: get_session(conn, :profile))
+    render(conn, :home, layout: false,conn: conn, js_file: conn.private[:javascript], profile: get_session(conn, :profile), oauth_url: ElixirAuthGoogle.generate_oauth_url(conn))
   end
 
   def upload(conn, params) do
