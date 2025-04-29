@@ -3,11 +3,6 @@
 <% end %>
 
 <% IO.inspect(@profile, label: "Profile Data") %>
-<%= if @profile do %>
-  <.profile {@profile} />
-<% else %>
-  <.login_link oauth_url={ElixirAuthGoogle.generate_oauth_url(@conn)} />
-<% end %>
 
 <div id="myapp"></div>
 <script type="module">

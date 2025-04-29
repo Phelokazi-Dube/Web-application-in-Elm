@@ -17,7 +17,7 @@
 
   <body>
     <!-- Navbar -->
-    <header class="bg-neutral-100 shadow-sm" style="background-color: rgb(17, 71, 104);">
+    <header class="bg-neutral-100 shadow-sm my-5" style="background-color: rgb(17, 71, 104);">
       <nav class="container mx-auto px-4 py-3 flex items-center justify-between">
         <div class="brand-container">
           <img src="/images/images.png" alt="Logo" class="logo" />
@@ -26,7 +26,7 @@
         <ul class="nav-items">
           <li><a href="/home" class="nav-link">HOME</a></li>
           <li class="group">
-            <a href="#" class="nav-link">DATA</a>
+            <span class="nav-link cursor-default">DATA</span>
             <ul class="dropdown">
               <li><a href="/survey" class="dropdown-link">Survey Data</a></li>
               <li><a href="/publish" class="dropdown-link">Publish Data</a></li>
@@ -38,10 +38,9 @@
         </ul>
         <div class="auth-links flex items-center space-x-4">
           <%= if @profile do %>
-            <a href="/logout" class="text-red-300 hover:text-red-500">LOGOUT</a>
-            <img src={@profile.picture} alt="Profile" class="w-10 h-10 rounded-full"/>
+            <.profile name={@profile.given_name} picture={@profile.picture} />
           <% else %>
-            <a href={@oauth_url} class="text-green-400 hover:text-green-600">LOGIN</a>
+            <.login_link oauth_url={@oauth_url} />
           <% end %>
         </div>
       </nav>
@@ -85,5 +84,3 @@
     </footer>
   </body>
 </html>
-
-
