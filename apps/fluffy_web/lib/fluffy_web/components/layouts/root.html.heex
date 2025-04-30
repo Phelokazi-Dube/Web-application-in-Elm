@@ -37,10 +37,10 @@
           <li><a href="/help" class="nav-link">HELP</a></li>
         </ul>
         <div class="auth-links flex items-center space-x-4">
-          <%= if @profile do %>
+          <%= if assigns[:profile] do %>
             <.profile name={@profile.given_name} picture={@profile.picture} />
           <% else %>
-            <.login_link oauth_url={@oauth_url} />
+            <.login_link oauth_url={assigns[:oauth_url] || "#"} />
           <% end %>
         </div>
       </nav>
