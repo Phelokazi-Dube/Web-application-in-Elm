@@ -64,7 +64,7 @@ defmodule FluffyWeb.PageController do
           layout: false,
           js_file: "uploading_data",
           extra_prepend:
-            "The observation has been uploaded.  You can add another observation below.",
+            ~s(The observation has been uploaded. You can add another observation below. Or you can return to the <a href="/uploadpage" class="text-blue-500 underline">upload page</a>.),
           profile: get_session(conn, :profile)
         )
 

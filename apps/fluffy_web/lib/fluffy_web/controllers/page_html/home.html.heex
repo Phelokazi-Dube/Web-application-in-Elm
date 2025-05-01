@@ -1,5 +1,5 @@
 <%= if Map.has_key?(assigns, :extra_prepend) do %>
-<div><%= @extra_prepend %></div>
+  <div><%= raw(@extra_prepend) %></div>
 <% end %>
 
 <% IO.inspect(@profile, label: "Profile Data") %>

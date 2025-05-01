@@ -5,7 +5,11 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
+
+
 -- The view function that creates the page
+
+
 view : () -> Html msg
 view _ =
     div [ class "flex flex-col min-h-screen" ]
@@ -23,14 +27,29 @@ view _ =
                 ]
             ]
         ]
+
+
+
 -- The update function, which handles the app's state
+
+
 update : msg -> () -> ()
-update _ model = model
+update _ model =
+    model
+
+
 
 -- The initial model (empty tuple)
+
+
 init : ()
-init = ()
+init =
+    ()
+
+
 
 -- Main entry point for the Elm app
+
+
 main =
     Browser.sandbox { init = init, update = update, view = view }

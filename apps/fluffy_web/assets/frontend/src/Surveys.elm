@@ -4,12 +4,12 @@ import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, (<?>), (</>), query, string, top)
-import Url.Parser.Query as Query
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
+import Url exposing (Url)
+import Url.Parser as Parser exposing ((</>), (<?>), Parser, query, string, top)
+import Url.Parser.Query as Query
 
 
 
@@ -43,8 +43,11 @@ init _ url navKey =
     let
         searchText =
             case Parser.parse searchParser url of
-                Just (Just text) -> text
-                _ -> ""
+                Just (Just text) ->
+                    text
+
+                _ ->
+                    ""
     in
     ( { key = navKey
       , documents = []
@@ -58,6 +61,7 @@ init _ url navKey =
     , fetchDocuments searchText
     )
 
+
 searchParser : Parser.Parser (Maybe String -> Maybe String) (Maybe String)
 searchParser =
     Parser.s "survey" <?> Query.string "search"
@@ -69,7 +73,7 @@ searchParser =
 
 type Msg
     = FetchDocuments
-    | DocumentsFetched (Result Http.Error (List Document, Bool))
+    | DocumentsFetched (Result Http.Error ( List Document, Bool ))
     | SearchTextChanged String
     | ClearSearch
     | NextPage
@@ -89,6 +93,7 @@ update msg model =
                     case Parser.parse (Parser.s "survey") url of
                         Just _ ->
                             ( model, Nav.pushUrl model.key (Url.toString url) )
+
                         _ ->
                             ( model, Nav.load (Url.toString url) )
 
@@ -99,8 +104,11 @@ update msg model =
             let
                 searchText =
                     case Parser.parse searchParser url of
-                        Just (Just text) -> text
-                        _ -> ""
+                        Just (Just text) ->
+                            text
+
+                        _ ->
+                            ""
             in
             ( { model | searchText = searchText }, fetchDocuments searchText )
 
@@ -116,12 +124,12 @@ update msg model =
         DocumentApproved (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
 
-        DocumentsFetched (Ok (docs, isAdmin)) ->
+        DocumentsFetched (Ok ( docs, isAdmin )) ->
             ( { model
-              | documents = docs
-              , filteredDocuments = docs
-              , error = Nothing
-              , adminUser = isAdmin
+                | documents = docs
+                , filteredDocuments = docs
+                , error = Nothing
+                , adminUser = isAdmin
               }
             , Cmd.none
             )
@@ -136,9 +144,14 @@ update msg model =
 
                 matchesSearch doc =
                     let
-                        notes = String.toLower (Maybe.withDefault "" doc.notes)
-                        site = String.toLower (Maybe.withDefault "" doc.site)
-                        province = String.toLower (Maybe.withDefault "" doc.province)
+                        notes =
+                            String.toLower (Maybe.withDefault "" doc.notes)
+
+                        site =
+                            String.toLower (Maybe.withDefault "" doc.site)
+
+                        province =
+                            String.toLower (Maybe.withDefault "" doc.province)
                     in
                     String.contains lowerSearch notes
                         || String.contains lowerSearch site
@@ -147,12 +160,14 @@ update msg model =
                 filteredDocs =
                     if String.isEmpty text then
                         model.documents
+
                     else
                         List.filter matchesSearch model.documents
 
                 newUrl =
                     if String.isEmpty text then
                         "/survey"
+
                     else
                         "/survey?search=" ++ Url.percentEncode text
             in
@@ -210,7 +225,7 @@ viewContent model =
                             ]
                         ]
                     , li [ class "group" ]
-                       [ a [ href "#", class "nav-link" ] [ text "RECORDS" ]]
+                        [ a [ href "#", class "nav-link" ] [ text "RECORDS" ] ]
                     , li []
                         [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
                     , li []
@@ -279,11 +294,14 @@ viewContent model =
             ]
         ]
 
+
 view : Model -> Browser.Document Msg
 view model =
     { title = "Center for Biological Control Data Portal"
-    , body = [viewContent model]
+    , body = [ viewContent model ]
     }
+
+
 
 -- RENDER DOCUMENT CARD
 
@@ -293,7 +311,11 @@ documentCard isAdmin doc =
     div [ class "border rounded shadow p-4 bg-white flex-grow" ]
         [ div [ class "flex items-center justify-between mb-4" ]
             [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ Maybe.withDefault "Unknown" doc.id) ]
-            , span [ class "badge active" ] [ text "Active" ]
+            , if doc.approved then
+                span [ class "badge active" ] [ text "Active" ]
+
+              else
+                text ""
             ]
         , div [ class "mb-2" ]
             [ text ("Created: " ++ Maybe.withDefault "No Date" doc.date) ]
@@ -304,17 +326,26 @@ documentCard isAdmin doc =
         , div [ class "mb-4" ]
             [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
         , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
-        , case (doc.id, doc.approved, isAdmin) of
-            (Just id, False, True) ->  -- Only show the button if approved is False
+        , case ( doc.id, doc.approved, isAdmin ) of
+            ( Just id, False, True ) ->
+                -- Only show the button if approved is False
                 button [ onClick (ApproveDocument id), class "btn btn-success" ] [ text "Approve" ]
-            (Just id, False, False) ->
+
+            ( Just id, False, False ) ->
                 span [ class "mb-2 text-red" ]
                     [ text " NOT YET APPROVED" ]
+
             _ ->
-                text "" -- Do not render the button if the document is already approved
+                text ""
+
+        -- Do not render the button if the document is already approved
         ]
 
+
+
 -- Approved documents
+
+
 approveDocument : String -> Cmd Msg
 approveDocument docId =
     Http.post
@@ -326,6 +357,8 @@ approveDocument docId =
 
 
 -- HTTP REQUESTS
+
+
 fetchDocuments : String -> Cmd Msg
 fetchDocuments searchString =
     let
@@ -341,11 +374,12 @@ fetchDocuments searchString =
     in
     Http.get
         { url = url
-        , expect = Http.expectJson DocumentsFetched
-            ( Decode.map2 (\a b -> ( a, b ))
-                (Decode.field "documents" (Decode.list documentDecoder))
-                (Decode.field "isAdmin" Decode.bool)
-            )
+        , expect =
+            Http.expectJson DocumentsFetched
+                (Decode.map2 (\a b -> ( a, b ))
+                    (Decode.field "documents" (Decode.list documentDecoder))
+                    (Decode.field "isAdmin" Decode.bool)
+                )
         }
 
 
@@ -357,7 +391,11 @@ documentDecoder =
         (Decode.maybe (Decode.field "notes" Decode.string))
         (Decode.maybe (Decode.field "site" Decode.string))
         (Decode.maybe (Decode.field "province" Decode.string))
-        (Decode.maybe (Decode.field "approved" Decode.bool) |> Decode.map (Maybe.withDefault False))  -- New field added for approval status
+        (Decode.maybe (Decode.field "approved" Decode.bool) |> Decode.map (Maybe.withDefault False))
+
+
+
+-- New field added for approval status
 
 
 errorToString : Http.Error -> String

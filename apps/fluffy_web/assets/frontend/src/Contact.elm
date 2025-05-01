@@ -6,7 +6,9 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 
 
+
 -- Model
+
 
 type alias Model =
     { name : String
@@ -16,7 +18,9 @@ type alias Model =
     }
 
 
+
 -- Init
+
 
 init : Model
 init =
@@ -27,7 +31,9 @@ init =
     }
 
 
+
 -- Update
+
 
 type Msg
     = Cancel

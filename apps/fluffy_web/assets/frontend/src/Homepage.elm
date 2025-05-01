@@ -5,23 +5,30 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
+
 -- Model
+
 
 type alias Model =
     ()
 
 
+
 -- Init
+
 
 init : Model
 init =
     ()
 
 
+
 -- Update
+
 
 type Msg
     = NoOp
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -33,7 +40,9 @@ subscriptions model =
     Sub.none
 
 
+
 -- View
+
 
 view : Model -> Html Msg
 view model =

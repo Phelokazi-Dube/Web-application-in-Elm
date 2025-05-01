@@ -2,11 +2,11 @@ module UploadingData exposing (..)
 
 import Browser
 import Browser.Navigation exposing (load)
-import Task
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (on, onClick)
 import Json.Decode as Decode exposing (Decoder)
+import Task
 
 
 
@@ -93,7 +93,7 @@ type Msg
     = NoOp
     | ProvinceSelected Province
     | FileUploaded String
-    | GoBack
+
 
 
 -- Update
@@ -110,9 +110,6 @@ update msg model =
 
         FileUploaded filePath ->
             ( { model | photos = filePath }, Cmd.none )
-
-        GoBack ->
-            ( model, load "/uploadpage" )  -- Use Browser.load
 
 
 
@@ -277,8 +274,6 @@ view model =
                         ]
                     ]
                 ]
-            ]
-            , div [ class "back-button-container" ][ button [ class "back-button", onClick GoBack ] [ text "Back" ]
             ]
         ]
 
