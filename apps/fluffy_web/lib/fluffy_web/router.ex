@@ -61,6 +61,8 @@ defmodule FluffyWeb.Router do
     post("/csvupload", PageController, :upload_csv)
     # get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
+    # Route for uploading CSV files
+    post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
   end
 
   scope "/", FluffyWeb do
@@ -91,9 +93,6 @@ defmodule FluffyWeb.Router do
 
     # Getting all the docs
     get("/Mongodb/document", MongoDBController, :all)
-
-    # Add a route for uploading CSV files
-    post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
 
     # Add a route for uploading CSV files
     get("/rhodes", MongoDBController, :to_rhodes)
