@@ -44,7 +44,9 @@ defmodule FluffyWeb.Router do
     get("/home", PageController, :home, private: %{:javascript => "home"})
     get("/contact", PageController, :home, private: %{:javascript => "contact"})
     get("/auth/google/callback", GoogleAuthController, :index)
-    get("/auth/google/page", PageController, :home, private: %{:javascript => "new"})
+    get("/records", PageController, :home, private: %{:javascript => "records"})
+    get("/records/profile", PageController, :home, private: %{:javascript => "profile"})
+    get("/records/countries", PageController, :home, private: %{:javascript => "countries"})
     get("/logout", GoogleAuthController, :logout)
     get("/documents/:id", MongoDBController, :show_html)
     get("/image/:id", MongoDBController, :get_image)
@@ -57,7 +59,6 @@ defmodule FluffyWeb.Router do
     post("/uploading", PageController, :upload)
     get("/csvupload", PageController, :home, private: %{:javascript => "csvupload"})
     post("/csvupload", PageController, :upload_csv)
-    get("/profile", PageController, :home, private: %{:javascript => "profile"})
     # get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
   end

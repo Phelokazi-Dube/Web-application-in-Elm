@@ -20,7 +20,9 @@ type alias Document =
     { id : Maybe String
     , date : Maybe String
     , notes : Maybe String
+    , description : Maybe String
     , site : Maybe String
+    , sitename : Maybe String
     , province : Maybe String
     , approved : Bool
     }
@@ -189,6 +191,13 @@ update msg model =
             ( { model | currentPage = Basics.max (model.currentPage - 1) 1 }, Cmd.none )
 
 
+orElse : Maybe a -> Maybe a -> Maybe a
+orElse fallback primary =
+    case primary of
+        Just val -> Just val
+        Nothing -> fallback
+
+
 
 -- VIEW
 
@@ -225,7 +234,7 @@ viewContent model =
                             ]
                         ]
                     , li [ class "group" ]
-                        [ a [ href "#", class "nav-link" ] [ text "RECORDS" ] ]
+                        [ a [ href "/records", class "nav-link" ] [ text "RECORDS" ] ]
                     , li []
                         [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
                     , li []
@@ -320,12 +329,12 @@ documentCard isAdmin doc =
         , div [ class "mb-2" ]
             [ text ("Created: " ++ Maybe.withDefault "No Date" doc.date) ]
         , div [ class "mb-2" ]
-            [ text ("Location: " ++ Maybe.withDefault "No Site" doc.site) ]
+            [ text ("Location: " ++ Maybe.withDefault "No Site" (orElse doc.sitename doc.site)) ]
         , div [ class "mb-2" ]
             [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
         , div [ class "mb-4" ]
-            [ text ("Notes: " ++ Maybe.withDefault "No Notes" doc.notes) ]
-        , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id), class "btn btn-primary" ] [ text "View Document" ]
+            [ text ("Notes: " ++ Maybe.withDefault "No Notes" (orElse doc.description doc.notes)) ]
+        , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id ++ "?collection=Surveys"), class "btn btn-primary" ] [ text "View Document" ]
         , case ( doc.id, doc.approved, isAdmin ) of
             ( Just id, False, True ) ->
                 -- Only show the button if approved is False
@@ -364,7 +373,7 @@ fetchDocuments searchString =
     let
         url =
             if String.isEmpty searchString then
-                "http://localhost:4000/api/Mongodb/document"
+                "http://localhost:4000/api/Mongodb/document?collection=Surveys"
                 -- Fetch all documents initially
 
             else
@@ -383,13 +392,17 @@ fetchDocuments searchString =
         }
 
 
+
+
 documentDecoder : Decode.Decoder Document
 documentDecoder =
-    Decode.map6 Document
+    Decode.map8 Document
         (Decode.maybe (Decode.field "_id" Decode.string))
         (Decode.maybe (Decode.field "date" Decode.string))
         (Decode.maybe (Decode.field "notes" Decode.string))
+        (Decode.maybe (Decode.field "description" Decode.string))
         (Decode.maybe (Decode.field "site" Decode.string))
+        (Decode.maybe (Decode.field "sitename" Decode.string))
         (Decode.maybe (Decode.field "province" Decode.string))
         (Decode.maybe (Decode.field "approved" Decode.bool) |> Decode.map (Maybe.withDefault False))
 

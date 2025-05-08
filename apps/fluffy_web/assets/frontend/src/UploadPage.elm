@@ -36,7 +36,7 @@ view _ =
                     [ img [ src "/images/form-icon.png", alt "Form icon", class "w-12 h-12" ] []
                     , span [] [ text "Fill in Online Form" ]
                     ]
-                , a [ href "/csvupload"
+                , a [ href "/csvupload?collection=Surveys"
                     , class "bg-green-700 text-white px-8 py-6 rounded-xl hover:bg-green-600 hover:scale-105 transition transform duration-200 shadow-md w-64 flex flex-col items-center space-y-2"
                     ]
                     [ img [ src "/images/csv-icon.png", alt "CSV icon", class "w-12 h-12" ] []

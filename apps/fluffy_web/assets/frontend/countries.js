@@ -1,6 +1,6 @@
-import { Elm } from './src/New.elm';
+import { Elm } from './src/Countries.elm';
 export function start_elm(flags) {
-  return Elm.New.init({
+  return Elm.Countries.init({
     node: document.getElementById("myapp"),
     flags: flags
   });

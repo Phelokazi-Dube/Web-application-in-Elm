@@ -3,6 +3,13 @@ defmodule FluffyWeb.MongoDBController do
   alias WaterWeeds.MongoDBClient
   use FluffyWeb, :controller
 
+  # Allowed records collections
+  @allowed_collections ~w(
+    Surveys SurveyWeedAgent Sites SiteInspections SiteInspectionWeeds Locations
+    Districts Regions Continents Countries Implementers Programs WeedNames Users
+    ControlAgents SurveyControlAgents WHMCounter WHMeasurements WHMeasurementReadings BAR
+  )
+
   # Implement Jason.Encoder for BSON.ObjectId
   defimpl Jason.Encoder, for: BSON.ObjectId do
     def encode(value, opts) do
@@ -38,19 +45,29 @@ defmodule FluffyWeb.MongoDBController do
     |> Enum.into(%{})
   end
 
-
-
   @spec all(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def all(conn, _params) do
-    # Fetch all documents from the "Surveys" collection
-    documents = MongoDBClient.get_all_documents("Surveys")
-    isAdmin = get_session(conn, :role) == "admin"
+  def all(conn, %{"collection" => collection}) do
+    # Ensure only allowed collections are queried
+    if collection in @allowed_collections do
+      documents = MongoDBClient.get_all_documents(collection)
+      isAdmin = get_session(conn, :role) == "admin"
 
-    # Return the documents as JSON in the HTTP response
-    conn
-    |> put_status(:ok)
-    |> json(%{isAdmin: isAdmin, documents: documents})
+      conn
+      |> put_status(:ok)
+      |> json(%{isAdmin: isAdmin, documents: documents})
+    else
+      conn
+      |> put_status(:bad_request)
+      |> json(%{error: "Invalid collection"})
+    end
   end
+
+  def all(conn, _params) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: "Missing collection parameter"})
+  end
+
 
   def search(conn, %{"search" => search_text}) do
     # Set the collection to "Surveys"
@@ -201,10 +218,10 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
-  def show_html(conn, %{"id" => id}) do
+  def show_html(conn, %{"id" => id, "collection" => collection}) do
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
-        case MongoDBClient.get_document_by_id("Surveys", bson_id) do
+        case MongoDBClient.get_document_by_id(collection, bson_id) do
           nil ->
             conn
             |> put_flash(:error, "Document not found")
@@ -267,59 +284,65 @@ defmodule FluffyWeb.MongoDBController do
 
   # Action to upload and process a CSV file with dynamic fields
   @spec upload_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}}) do
+  def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}, "collection" => collection}) do
     # Ensure session is fetched before trying to get data from it
     conn = fetch_session(conn)
 
     profile = get_session(conn, :profile)
     email = profile && Map.get(profile, :email)
 
-    if email do
-      # Read and parse the CSV file
-      csv_data =
-        file_path
-        |> File.stream!()
-        |> CSV.decode(separator: ?,, headers: true)
-        |> Enum.map(fn
-          {:ok, row} ->
-            row
-            |> normalize_keys()
-            |> Map.put("userLogin", email)  # Add user email to each row
+    # Validate collection name
+    if collection not in @allowed_collections do
+      conn
+      |> put_status(:unprocessable_entity)
+      |> json(%{error: "Invalid collection"})
+    else
+      if email do
+        # Read and parse the CSV file
+        csv_data =
+          file_path
+          |> File.stream!()
+          |> CSV.decode(separator: ?,, headers: true)
+          |> Enum.map(fn
+            {:ok, row} ->
+              row
+              |> normalize_keys()
+              |> Map.put("userLogin", email)  # Add user email to each row
+
+            {:error, reason} ->
+              {:error, reason}
+          end)
+
+        # Filter out rows that failed to decode
+        documents = Enum.filter(csv_data, &is_map/1)
+
+        # Insert the documents into MongoDB
+        case MongoDBClient.insert_many_documents(collection, documents) do
+          {:ok, result} ->
+            inserted_documents =
+              Enum.map(result.inserted_ids, fn bson_obj ->
+                MongoDBClient.get_document_by_id(collection, bson_obj)
+              end)
+              |> Enum.filter(&(&1 != nil))
+              |> Enum.map(&normalize_mongo_id/1)
+
+            conn
+            |> put_status(:created)
+            |> render("upload_success.html", message: "Upload successful")
 
           {:error, reason} ->
-            {:error, reason}
-        end)
-
-      # Filter out rows that failed to decode
-      documents = Enum.filter(csv_data, &is_map/1)
-
-      # Insert the documents into MongoDB
-      case MongoDBClient.insert_many_documents("Surveys", documents) do
-        {:ok, result} ->
-          inserted_documents =
-            Enum.map(result.inserted_ids, fn bson_obj ->
-              MongoDBClient.get_document_by_id("Surveys", bson_obj)
-            end)
-            |> Enum.filter(&(&1 != nil))
-            |> Enum.map(&normalize_mongo_id/1)
-
-          conn
-          |> put_status(:created)
-          |> render("upload_success.html", message: "Upload successful")
-
-        {:error, reason} ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{error: "Failed to insert CSV data", reason: reason})
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: "Failed to insert CSV data", reason: reason})
+        end
+      else
+        # If not logged in, reject the upload
+        conn
+        |> put_status(:unauthorized)
+        |> json(%{error: "User not authenticated"})
       end
-    else
-      # If not logged in, reject the upload
-      conn
-      |> put_status(:unauthorized)
-      |> json(%{error: "User not authenticated"})
     end
   end
-
 
   def to_rhodes(conn, _params) do
     redirect(conn, external: "https://www.ru.ac.za/centreforbiologicalcontrol/")
