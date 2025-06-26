@@ -7,7 +7,10 @@
 <div id="myapp"></div>
 <script type="module">
   <%= raw "import { start_elm } from \"/js/" <> @js_file <> ".js\";" %>
-  const flags = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  const flags = {
+    baseUrl: window.location.origin,
+    csrfToken: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+  };
   const app = start_elm(flags);
 </script>
 <script>

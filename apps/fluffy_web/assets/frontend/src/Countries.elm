@@ -11,6 +11,11 @@ import Json.Decode.Pipeline exposing (required)
 
 -- MODEL
 
+type alias Flags =
+    { baseUrl : String
+    }
+
+
 type alias Document =
     { id : String
     , countryId : String
@@ -28,18 +33,23 @@ type alias Model =
     , error : Maybe String
     , currentPage : Int
     , itemsPerPage : Int
+    , baseUrl : String
     }
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { documents = []
-      , isAdmin = False
-      , error = Nothing
-      , currentPage = 1
-      , itemsPerPage = 18
-      }
-    , fetchDocuments
-    )
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    let
+        model =
+            { documents = []
+            , isAdmin = False
+            , error = Nothing
+            , currentPage = 1
+            , itemsPerPage = 18
+            , baseUrl = flags.baseUrl
+            }
+    in
+    ( model, fetchDocuments model )
+
 
 
 
@@ -175,11 +185,10 @@ viewDocument doc =
         ]
 
 -- HTTP
-
-fetchDocuments : Cmd Msg
-fetchDocuments =
+fetchDocuments : Model -> Cmd Msg
+fetchDocuments model =
     Http.get
-        { url = "http://localhost:4000/api/Mongodb/document?collection=Countries"
+        { url = model.baseUrl ++"/api/Mongodb/document?collection=Countries"
         , expect = Http.expectJson GotDocuments responseDecoder
         }
 
@@ -223,7 +232,7 @@ httpErrorToString err =
 
 -- MAIN
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
