@@ -27,6 +27,8 @@ type alias Document =
     , approved : Bool
     }
 
+type alias Flags =
+    { baseUrl : String }
 
 type alias Model =
     { key : Nav.Key
@@ -37,11 +39,12 @@ type alias Model =
     , currentPage : Int
     , itemsPerPage : Int
     , adminUser : Bool
+    , baseUrl : String
     }
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url navKey =
+init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url navKey =
     let
         searchText =
             case Parser.parse searchParser url of
@@ -50,18 +53,19 @@ init _ url navKey =
 
                 _ ->
                     ""
+        model =
+            { key = navKey
+            , documents = []
+            , filteredDocuments = []
+            , searchText = searchText
+            , error = Nothing
+            , currentPage = 1
+            , itemsPerPage = 12
+            , adminUser = False
+            , baseUrl = flags.baseUrl
+            }
     in
-    ( { key = navKey
-      , documents = []
-      , filteredDocuments = []
-      , searchText = searchText
-      , error = Nothing
-      , currentPage = 1
-      , itemsPerPage = 12
-      , adminUser = False
-      }
-    , fetchDocuments searchText
-    )
+    ( model, fetchDocuments model searchText )
 
 
 searchParser : Parser.Parser (Maybe String -> Maybe String) (Maybe String)
@@ -112,16 +116,17 @@ update msg model =
                         _ ->
                             ""
             in
-            ( { model | searchText = searchText }, fetchDocuments searchText )
+            ( { model | searchText = searchText }, fetchDocuments {model | searchText = searchText} searchText )
 
         FetchDocuments ->
-            ( model, fetchDocuments model.searchText )
+            ( model, fetchDocuments model model.searchText )
 
         ApproveDocument docId ->
-            ( model, approveDocument docId )
+            ( model, approveDocument model docId )
+
 
         DocumentApproved (Ok _) ->
-            ( model, fetchDocuments model.searchText )
+            ( model, fetchDocuments model model.searchText )
 
         DocumentApproved (Err err) ->
             ( { model | error = Just (errorToString err) }, Cmd.none )
@@ -355,29 +360,29 @@ documentCard isAdmin doc =
 -- Approved documents
 
 
-approveDocument : String -> Cmd Msg
-approveDocument docId =
+approveDocument : Model -> String -> Cmd Msg
+approveDocument model docId =
     Http.post
-        { url = "http://localhost:4000/api/Mongodb/approve_document/" ++ docId
+        { url = model.baseUrl ++ "/api/Mongodb/approve_document/" ++ docId
         , body = Http.emptyBody
         , expect = Http.expectString (always (DocumentApproved (Ok docId)))
         }
 
 
 
+
 -- HTTP REQUESTS
 
 
-fetchDocuments : String -> Cmd Msg
-fetchDocuments searchString =
+fetchDocuments : Model -> String -> Cmd Msg
+fetchDocuments model searchString =
     let
         url =
             if String.isEmpty searchString then
-                "http://localhost:4000/api/Mongodb/document?collection=Surveys"
+                model.baseUrl ++ "/api/Mongodb/document?collection=Surveys"
                 -- Fetch all documents initially
-
             else
-                "http://localhost:4000/api/Mongodb/document/search?search=" ++ searchString
+                model.baseUrl ++ "/api/Mongodb/document/search?search=" ++ searchString
 
         -- Fetch documents based on search
     in
@@ -443,7 +448,7 @@ subscriptions _ =
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.application
         { init = init
@@ -453,3 +458,4 @@ main =
         , onUrlChange = UrlChanged
         , onUrlRequest = LinkClicked
         }
+
