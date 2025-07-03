@@ -105,7 +105,7 @@ view model =
                         ]
                     , Html.form
                         [ method "post"
-                        , action "/api/Mongodb/upload_csv"
+                        , action "/csvupload"
                         , enctype "multipart/form-data"
                         , class "column span-24 bg-white p-6 rounded-md shadow-sm"
                         ]
