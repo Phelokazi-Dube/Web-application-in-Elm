@@ -115,7 +115,7 @@ defmodule FluffyWeb.PageController do
   end
 
   def upload_csv(conn, params) do
-    MongoDBClient.insert_many_documents("Surveys", Map.delete(params, "csrf_token"))
+    MongoDBClient.insert_many_documents("Surveys", Map.delete(params, "_csrf_token"))
     # Expected: the _id of the new document.
     |> IO.inspect(label: "Documents stored with ID")
 

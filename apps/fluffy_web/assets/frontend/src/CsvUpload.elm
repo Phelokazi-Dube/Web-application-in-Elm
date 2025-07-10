@@ -8,6 +8,7 @@ import Html.Events exposing (onClick, onInput)
 import Url exposing (Url)
 import Url.Parser as Parser exposing (Parser, (</>), (<?>), top)
 import Url.Parser.Query as Query
+import Json.Decode as Decode
 
 
 -- MODEL
@@ -31,8 +32,8 @@ collectionParser =
 
 -- INIT
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url navKey =
+init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init json url navKey =
     let
         collection =
             Parser.parse collectionParser url
@@ -41,7 +42,11 @@ init _ url navKey =
     in
     ( { fileName = ""
       , topicId = "some_topic_id"
-      , csrfToken = "your_csrf_token"
+      , csrfToken =
+            Decode.decodeValue
+                (Decode.field "csrfToken" Decode.string)
+                json
+            |> Result.withDefault "CSRF Token not set. This WILL result in an error on the server side."
       , collection = collection
       , navKey = navKey
       , currentUrl = url
@@ -120,7 +125,7 @@ view model =
                                 []
                             ]
                         , input [ type_ "hidden", name "topic_id", value model.topicId ] []
-                        , input [ type_ "hidden", name "csrf_token", value model.csrfToken ] []
+                        , input [ type_ "hidden", name "_csrf_token", value model.csrfToken ] []
                         , input [ type_ "hidden", name "collection", value model.collection ] []
                         , div [ class "button-group flex justify-end space-x-4 mt-4" ]
                             [ button [ type_ "submit", class "btn btn-primary text-white px-4 py-2 rounded-md hover:bg-blue-600" ] [ text "Upload CSV" ]
@@ -136,7 +141,7 @@ view model =
 
 -- MAIN
 
-main : Program () Model Msg
+main : Program Decode.Value Model Msg
 main =
     Browser.application
         { init = init
