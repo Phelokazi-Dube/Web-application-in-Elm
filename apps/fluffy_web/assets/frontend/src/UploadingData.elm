@@ -10,6 +10,12 @@ import Task
 
 
 
+
+type alias Flags =
+    { baseUrl : String
+    , csrfToken : String
+    }
+
 -- Model
 
 
@@ -54,8 +60,8 @@ type alias Model =
     }
 
 
-init : String -> ( Model, Cmd Msg )
-init token =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     ( { surveyType = "Post-release or pre-release or survey"
       , location = "41.27872259999999, -72.5571845909"
       , controlAgent = "plant hopper (Megamelus scutellaris)"
@@ -79,7 +85,7 @@ init token =
       , sizeOfInf = "2x2m"
       , percentCover = 0.0
       , description = ""
-      , csrf_token = token
+      , csrf_token = flags.csrfToken
       }
     , Cmd.none
     )
@@ -278,7 +284,7 @@ view model =
         ]
 
 
-main : Program String Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init
