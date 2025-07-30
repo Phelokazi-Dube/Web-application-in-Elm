@@ -59,7 +59,6 @@ defmodule FluffyWeb.Router do
     post("/uploading", PageController, :upload)
     get("/csvupload", PageController, :home, private: %{:javascript => "csvupload"})
     post("/csvupload", MongoDBController, :upload_csv)
-    # get("/publish", PageController, :home, private: %{:javascript => "publish_data"})
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
     # Route for uploading CSV files
     post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
@@ -99,9 +98,6 @@ defmodule FluffyWeb.Router do
 
     # Add a route for viewing the calender
     get("/calendar", MongoDBController, :to_calendar)
-
-    # Handle document approvals by setting the approved field to true
-    # post "/Mongodb/approve_document/:id", MongoDBController, :approve
 
     # Get approved documents
     get "/Mongodb/approved_documents", MongoDBController, :approved

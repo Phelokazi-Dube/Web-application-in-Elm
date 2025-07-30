@@ -130,7 +130,6 @@ defmodule FluffyWeb.MongoDBController do
         "targetWeedTaxonName" => "",
         "weather" => "",
         "water" => "",
-        # List of processed photo IDs
         "photos" => processed_photos,
         "province" => "",
         "sitename" => "PMB Botanical Gardens",
@@ -143,10 +142,10 @@ defmodule FluffyWeb.MongoDBController do
         "noRamets" => "",
         "sizeOfInf" => "",
         "percentCover" => "",
-        "description" => "💝",
-        "approved" => false,   # Field marks the document as unapproved initially
-        "approved_by" => nil,   # Initially no one has approved it
-        "approved_at" => nil,   # No approval timestamp yet
+        "description" => "",
+        "approved" => false,
+        "approved_by" => nil,
+        "approved_at" => nil,
         "created_at" => System.os_time(:second)
       }
 

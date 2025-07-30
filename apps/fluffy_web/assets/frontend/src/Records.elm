@@ -61,6 +61,9 @@ referenceDataItems =
 referenceCard : (String, String) -> Html msg
 referenceCard (iconClass, label) =
     let
+        isEnabled =
+            label == "Continents" || label == "Countries"
+
         path =
             case label of
                 "Continents" ->
@@ -71,14 +74,24 @@ referenceCard (iconClass, label) =
 
                 _ ->
                     "/records/" ++ String.toLower label
+
+        baseContent =
+            [ i [ class ("fas " ++ iconClass ++ " text-7xl mb-5 text-emerald-600") ] []
+            , div [ class "text-3xl font-semibold text-gray-800 mt-2" ] [ text label ]
+            ]
     in
-    a
-        [ href path
-        , class "bg-white hover:bg-blue-100 transition p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center"
-        ]
-        [ i [ class ("fas " ++ iconClass ++ " text-7xl mb-5 text-emerald-600") ] []
-        , div [ class "text-3xl font-semibold text-gray-800 mt-2" ] [ text label ]
-        ]
+    if isEnabled then
+        a
+            [ href path
+            , class "bg-white hover:bg-blue-100 transition p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center"
+            ]
+            baseContent
+    else
+        div
+            [ class "bg-white p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center opacity-40 cursor-not-allowed select-none"
+            ]
+            baseContent
+
 
 
 -- MAIN

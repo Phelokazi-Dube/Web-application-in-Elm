@@ -47,14 +47,14 @@ type alias Model =
     , programme : String
     , sitename : String
     , date : String
-    , noLeaves : Int
-    , noStems : Int
-    , noFlowers : Int
-    , noCapsules : Int
-    , maxHeight : Int
-    , noRamets : Int
+    , noLeaves : Maybe Int
+    , noStems : Maybe Int
+    , noFlowers : Maybe Int
+    , noCapsules : Maybe Int
+    , maxHeight : Maybe Int
+    , noRamets : Maybe Int
     , sizeOfInf : String
-    , percentCover : Float
+    , percentCover : Maybe Float
     , description : String
     , csrf_token : String
     }
@@ -62,28 +62,28 @@ type alias Model =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { surveyType = "Post-release or pre-release or survey"
-      , location = "41.27872259999999, -72.5571845909"
-      , controlAgent = "plant hopper (Megamelus scutellaris)"
-      , targetWeedName = "salvinia (Salvinia molesta)"
-      , targetWeedRank = "species"
-      , targetWeedId = "12345"
-      , targetWeedTaxonName = "Salvinia molesta"
-      , weather = "13°C"
-      , water = "the water body is a river at a temperature of 18.9°C"
+    ( { surveyType = ""
+      , location = ""
+      , controlAgent = ""
+      , targetWeedName = ""
+      , targetWeedRank = ""
+      , targetWeedId = ""
+      , targetWeedTaxonName = ""
+      , weather = ""
+      , water = ""
       , photos = ""
       , province = None
-      , programme = "African Boxthorn Programme"
-      , sitename = "PMB Botanical Gardens"
-      , date = "10/18/2019"
-      , noLeaves = 114
-      , noStems = 0
-      , noFlowers = 0
-      , noCapsules = 0
-      , maxHeight = 136
-      , noRamets = 21
-      , sizeOfInf = "2x2m"
-      , percentCover = 0.0
+      , programme = ""
+      , sitename = ""
+      , date = ""
+      , noLeaves = Nothing
+      , noStems = Nothing
+      , noFlowers = Nothing
+      , noCapsules = Nothing
+      , maxHeight = Nothing
+      , noRamets = Nothing
+      , sizeOfInf = ""
+      , percentCover = Nothing
       , description = ""
       , csrf_token = flags.csrfToken
       }
@@ -183,11 +183,11 @@ view model =
                 [ Html.form [ Html.Attributes.method "post", Html.Attributes.class "form-group", Html.Attributes.enctype "multipart/form-data" ]
                     [ div [ class "field" ]
                         [ label [] [ text "Survey type" ]
-                        , input [ type_ "text", id "surveyType", name "surveyType", value model.surveyType ] []
+                        , input [ type_ "text", id "surveyType", name "surveyType", placeholder "Post-release or pre-release or survey", value model.surveyType ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Location" ]
-                        , input [ type_ "text", id "location", name "location", placeholder "Latitude, Longitude", value model.location ] []
+                        , input [ type_ "text", id "location", name "location", placeholder "Latitude(41.27872259999999), Longitude( -72.5571845909)", value model.location ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Control agent" ]
@@ -195,23 +195,23 @@ view model =
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Target weed name" ]
-                        , input [ type_ "text", id "targetWeedName", name "targetWeedName", value model.targetWeedName ] []
+                        , input [ type_ "text", id "targetWeedName", name "targetWeedName", placeholder "", value model.targetWeedName ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Target weed taxon rank" ]
-                        , input [ type_ "text", id "targetWeedRank", name "targetWeedRank", value model.targetWeedRank ] []
+                        , input [ type_ "text", id "targetWeedRank", name "targetWeedRank", placeholder "", value model.targetWeedRank ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Target weed taxon id" ]
-                        , input [ type_ "text", id "targetWeedId", name "targetWeedId", value model.targetWeedId ] []
+                        , input [ type_ "text", id "targetWeedId", name "targetWeedId", placeholder "", value model.targetWeedId ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Target weed taxon name" ]
-                        , input [ type_ "text", id "targetWeedTaxonName", name "targetWeedTaxonName", value model.targetWeedTaxonName ] []
+                        , input [ type_ "text", id "targetWeedTaxonName", name "targetWeedTaxonName", placeholder "", value model.targetWeedTaxonName ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Weather" ]
-                        , input [ type_ "text", id "weather", name "weather", value model.weather ] []
+                        , input [ type_ "text", id "weather", name "weather", placeholder "", value model.weather ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Photos" ]
@@ -219,7 +219,7 @@ view model =
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Water" ]
-                        , textarea [ id "water", name "water" ] [ text model.water ]
+                        , textarea [ id "water", name "water", placeholder "e.g., River, clear water, temp 18°C"] [ text model.water ]
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Province" ]
@@ -227,47 +227,47 @@ view model =
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Programme" ]
-                        , input [ type_ "text", id "programme", name "programme", value model.programme ] []
+                        , input [ type_ "text", id "programme", name "programme", placeholder "Aquatic Weeds Programme", value model.programme ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Sitename" ]
-                        , input [ type_ "text", id "sitename", name "sitename", value model.sitename ] []
+                        , input [ type_ "text", id "sitename", name "sitename", placeholder "Durban Botanical Gardens", value model.sitename ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Date" ]
-                        , input [ type_ "text", id "date", name "date", value model.date ] []
+                        , input [ type_ "text", id "date", name "date", placeholder "MM-DD-YYYY", value model.date ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "No. leaves" ]
-                        , input [ type_ "text", id "noLeaves", name "noLeaves", value (String.fromInt model.noLeaves) ] []
+                        , input [ type_ "text", id "noLeaves", name "noLeaves", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromInt model.noLeaves)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "No. stems" ]
-                        , input [ type_ "text", id "noStems", name "noStems", value (String.fromInt model.noStems) ] []
+                        , input [ type_ "text", id "noStems", name "noStems", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromInt model.noStems)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "No. flowers" ]
-                        , input [ type_ "text", id "noFlowers", name "noFlowers", value (String.fromInt model.noFlowers) ] []
+                        , input [ type_ "text", id "noFlowers", name "noFlowers", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromInt model.noFlowers)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "No. capsules" ]
-                        , input [ type_ "text", id "noCapsules", name "noCapsules", value (String.fromInt model.noCapsules) ] []
+                        , input [ type_ "text", id "noCapsules", name "noCapsules", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromInt model.noCapsules)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Max height" ]
-                        , input [ type_ "text", id "maxHeight", name "maxHeight", value (String.fromInt model.maxHeight) ] []
+                        , input [ type_ "text", id "maxHeight", name "maxHeight", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromInt model.maxHeight)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "No. ramets" ]
-                        , input [ type_ "text", id "noRamets", name "noRamets", value (String.fromInt model.noRamets) ] []
+                        , input [ type_ "text", id "noRamets", name "noRamets", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromInt model.noRamets)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Size of inf." ]
-                        , input [ type_ "text", id "sizeOfInf", name "sizeOfInf", value model.sizeOfInf ] []
+                        , input [ type_ "text", id "sizeOfInf", name "sizeOfInf", placeholder "", value model.sizeOfInf ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "% Cover" ]
-                        , input [ type_ "text", id "percentCover", name "percentCover", value (String.fromFloat model.percentCover) ] []
+                        , input [ type_ "text", id "percentCover", name "percentCover", placeholder "", value (Maybe.withDefault "" (Maybe.map String.fromFloat model.percentCover)) ] []
                         ]
                     , div [ class "field" ]
                         [ label [] [ text "Description" ]

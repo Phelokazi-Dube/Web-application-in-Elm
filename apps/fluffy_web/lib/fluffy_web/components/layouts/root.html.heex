@@ -15,7 +15,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
 
-  <body>
+  <body class="flex flex-col min-h-screen">
     <!-- Navbar -->
     <header class="bg-neutral-100 shadow-sm my-5" style="background-color: rgb(17, 71, 104);">
       <nav class="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -47,7 +47,7 @@
     </header>
 
     <!-- Main content (Elm app and page content) -->
-    <main>
+    <main class="flex-grow">
       <%= @inner_content %>
     </main>
 
