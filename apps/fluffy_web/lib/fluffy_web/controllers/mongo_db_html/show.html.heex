@@ -54,6 +54,12 @@
                   />
                 <% end %>
               </div>
+            
+            <% {"approved_at", ts} when is_integer(ts) -> %>
+              <%= case DateTime.from_unix(ts) do
+                {:ok, dt} -> Calendar.strftime(dt, "%d %B %Y %H:%M")
+                _ -> ts
+              end %>
 
             <% {_, v} when is_map(v) -> %>
               <pre><%= inspect(v) %></pre>
