@@ -56,10 +56,14 @@
               </div>
             
             <% {"approved_at", ts} when is_integer(ts) -> %>
-              <%= case DateTime.from_unix(ts) do
-                {:ok, dt} -> Calendar.strftime(dt, "%d %B %Y %H:%M")
-                _ -> ts
-              end %>
+              <%= with {:ok, dt} <- DateTime.from_unix(ts),
+                      {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do
+                    Calendar.strftime(sast_dt, "%d %B %Y %H:%M SAST")
+                  else
+                    _ ->
+                      {:ok, dt} = DateTime.from_unix(ts)
+                      Calendar.strftime(dt, "%d %B %Y %H:%M UTC")
+                  end %>
 
             <% {_, v} when is_map(v) -> %>
               <pre><%= inspect(v) %></pre>
