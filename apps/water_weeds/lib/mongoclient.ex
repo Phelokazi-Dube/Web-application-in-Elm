@@ -242,12 +242,13 @@ defmodule WaterWeeds.MongoDBClient do
     update = %{"$set" => update_fields}
 
     case Mongo.find_one_and_update(
-           conn,
-           collection_name,
-           %{_id: bson_id},
-           update,
-           return_document: :after
-         ) do
+       conn,
+       collection_name,
+       %{_id: bson_id},
+       %{"$set" => update_fields},
+       return_document: :after,
+       upsert: false
+     ) do
       {:ok, %Mongo.FindAndModifyResult{value: doc}} when not is_nil(doc) ->
         {:reply, {:ok, doc}, state}
 

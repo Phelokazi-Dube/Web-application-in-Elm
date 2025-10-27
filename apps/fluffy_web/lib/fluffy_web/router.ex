@@ -62,6 +62,9 @@ defmodule FluffyWeb.Router do
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
     # Route for uploading CSV files
     post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
+
+    # Route for updating a document
+    put("/Mongodb/documents/:id", MongoDBController, :update)
   end
 
   scope "/", FluffyWeb do
@@ -87,8 +90,8 @@ defmodule FluffyWeb.Router do
     # Retrives all the databases that are there
     get("/Mongodb/databases", MongoDBController, :find)
 
-    # Route for updating a document
-    put("/Mongodb/documents/:id", MongoDBController, :update)
+    # # Route for updating a document
+    # put("/Mongodb/documents/:id", MongoDBController, :update)
 
     # Getting all the docs
     get("/Mongodb/document", MongoDBController, :all)

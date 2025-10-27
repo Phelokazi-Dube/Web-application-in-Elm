@@ -26,17 +26,43 @@ defmodule FluffyWeb.MongoDBController do
     |> Map.delete("_id")
   end
 
+    # Converts almost any header string (e.g. COUNTRY_ID, DataACCESSID) into clean camelCase.
   def to_camel_case(key) when is_binary(key) do
-    key
-    |> String.replace(~r/[^a-zA-Z0-9\s]/, "")  # Remove non-alphanumeric chars (e.g., ".", "%")
-    |> String.split()                          # Split words by spaces
-    |> Enum.map(&Macro.camelize/1)             # Convert each word to PascalCase
-    |> then(fn [first | rest] ->
-      String.downcase(first) <> Enum.join(rest, "")
-    end)
+    key =
+      key
+      |> String.trim()
+      |> String.replace(~r/[^a-zA-Z0-9\s%]/, " ")  # keep % for detection but remove other special chars
+
+    words =
+      key
+      |> String.split(~r/\s+/, trim: true)
+      |> Enum.map(&String.downcase/1)
+
+    # If header contains a percent sign or the word "percent", treat it specially
+    is_percent =
+      String.contains?(key, "%") or Enum.any?(words, &(&1 == "percent"))
+
+    # Remove "percent" or "%" from the words list before camelizing
+    cleaned_words =
+      words
+      |> Enum.reject(&(&1 in ["percent", "%"]))
+
+    # Convert to camelCase
+    camel =
+      case cleaned_words do
+        [] -> ""
+        [first | rest] ->
+          first <> Enum.map_join(rest, "", &String.capitalize/1)
+      end
+    if is_percent do
+      "percent" <> String.capitalize(camel)
+    else
+      camel
+    end
   end
 
-  def normalize_keys(map) do
+  # Converts all map keys to camelCase safely
+  def normalize_keys(map) when is_map(map) do
     map
     |> Enum.map(fn {key, value} ->
       new_key = to_camel_case(to_string(key))
@@ -297,45 +323,68 @@ defmodule FluffyWeb.MongoDBController do
       |> json(%{error: "Invalid collection"})
     else
       if email do
-        # Read and parse the CSV file
-        csv_data =
-          file_path
-          |> File.stream!()
-          |> CSV.decode(separator: ?,, headers: true)
-          |> Enum.map(fn
-            {:ok, row} ->
-              row
-              |> normalize_keys()
-              |> Map.put("userLogin", email)  # Add user email to each row
+        # Read and parse the CSV file safely
+        csv_stream = File.stream!(file_path)
 
-            {:error, reason} ->
-              {:error, reason}
-          end)
+        # Check if the file is empty
+        if Enum.empty?(csv_stream) do
+          conn
+          |> put_status(:bad_request)
+          |> render("upload_empty.html", message: "CSV file is empty")
+        else
+          csv_data =
+            file_path
+            |> File.stream!()
+            |> CSV.decode(separator: ?,, headers: true)
+            |> Enum.map(fn
+              {:ok, row} ->
+                row
+                |> normalize_keys()
+                |> Map.put("userLogin", email)  # Add user email to each row
 
-        # Filter out rows that failed to decode
-        documents = Enum.filter(csv_data, &is_map/1)
+              {:error, reason} ->
+                {:error, reason}
+            end)
 
-        # Insert the documents into MongoDB
-        case MongoDBClient.insert_many_documents(collection, documents) do
-          {:ok, result} ->
-            inserted_documents =
-              Enum.map(result.inserted_ids, fn bson_obj ->
-                MongoDBClient.get_document_by_id(collection, bson_obj)
-              end)
-              |> Enum.filter(&(&1 != nil))
-              |> Enum.map(&normalize_mongo_id/1)
+          # Filter out rows that failed to decode
+          documents = Enum.filter(csv_data, &is_map/1)
 
+          if documents == [] do
             conn
-            |> put_status(:created)
-            |> render("upload_success.html", message: "Upload successful")
+            |> put_status(:bad_request)
+            |> json(%{error: "No valid data found in CSV"})
+          else
+            Logger.debug("Inserting documents into #{collection}: #{inspect(documents)}")
 
-          {:error, reason} ->
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{error: "Failed to insert CSV data", reason: reason})
+            # Insert the documents into MongoDB
+            case MongoDBClient.insert_many_documents(collection, documents) do
+              {:ok, result} ->
+                inserted_documents =
+                  Enum.map(result.inserted_ids, fn bson_obj ->
+                    MongoDBClient.get_document_by_id(collection, bson_obj)
+                  end)
+                  |> Enum.filter(&(&1 != nil))
+                  |> Enum.map(&normalize_mongo_id/1)
+
+                conn
+                |> put_status(:created)
+                |> render("upload_success.html", message: "Upload successful")
+
+              {:error, reason} ->
+                Logger.error("Failed to insert CSV: #{inspect(reason)}")
+                error_message =
+                  case reason do
+                    %Mongo.Error{message: message, code: code} -> %{message: message, code: code}
+                    _ -> %{message: inspect(reason)}
+                  end
+
+                conn
+                |> put_status(:unprocessable_entity)
+                |> json(%{error: "Failed to create document", reason: error_message})
+            end
+          end
         end
       else
-        # If not logged in, reject the upload
         conn
         |> put_status(:unauthorized)
         |> json(%{error: "User not authenticated"})
@@ -411,6 +460,78 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
+  def update(conn, %{"id" => id, "updates" => updates}) do
+    role = get_session(conn, :role) || "user"
+    profile = get_session(conn, :profile)
+    email = profile && Map.get(profile, :email)
+
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        # Fetch the existing document first
+        case MongoDBClient.get_document_by_id("Surveys", bson_id) do
+          nil ->
+            conn
+            |> put_status(:not_found)
+            |> json(%{error: "Document not found"})
+
+          %{"userLogin" => user_login} = existing_doc ->
+            # Check authorization: must be admin or document owner
+            if role == "admin" or email == user_login do
+              # Merge in the unapproval reset
+              update_fields =
+                updates
+                |> Map.merge(%{
+                  "approved" => false,
+                  "approved_by" => nil,
+                  "approved_at" => nil
+                })
+
+              case MongoDBClient.update_document("Surveys", bson_id, update_fields) do
+                {:ok, _} ->
+                  case MongoDBClient.get_document_by_id("Surveys", bson_id) do
+                    {:ok, updated_doc} ->
+                      document = normalize_mongo_id(updated_doc)
+
+                      conn
+                      |> put_status(:ok)
+                      |> json(%{
+                        message: "Document updated successfully and marked as unapproved",
+                        document: document
+                      })
+
+                    _ ->
+                      conn
+                      |> put_status(:ok)
+                      |> json(%{
+                        message: "Document updated, but fetching updated document failed"
+                      })
+                  end
+
+                {:error, reason} ->
+                  conn
+                  |> put_status(:unprocessable_entity)
+                  |> json(%{error: "Failed to update document", reason: reason})
+              end
+            else
+              conn
+              |> put_status(:forbidden)
+              |> json(%{
+                error: "You are not authorized to edit this document"
+              })
+            end
+
+          {:error, reason} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{error: "Error fetching document", reason: reason})
+        end
+
+      {:error, _reason} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid ID format"})
+    end
+  end
 
   # Function to fetch unapproved documents
   def unapproved(conn, _params) do

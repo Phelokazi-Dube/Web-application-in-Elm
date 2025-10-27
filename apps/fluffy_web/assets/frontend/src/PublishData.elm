@@ -56,7 +56,7 @@ view model =
             , attribute "href" "styles.css"
             ]
             []
-        , main_ [ class "container mx-auto flex-grow " ]
+        , main_ [ class "container mx-auto flex-grow animate-fade-in" ]
             [ section [ id "first", class "first-main" ]
                 [ h1 [ class "first-title" ] [ text "For Users" ]
                 , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]

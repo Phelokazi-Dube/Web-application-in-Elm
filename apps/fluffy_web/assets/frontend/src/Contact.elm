@@ -69,7 +69,7 @@ subscriptions _ =
 
 view : Model -> Html Msg
 view model =
-    main_ [ class "container mx-auto px-4 py-8" ]
+    main_ [ class "container mx-auto px-4 py-8 animate-fade-in" ]
         [ h1 [ class "text-6xl text-left mb-4" ] [ text "Contact Us" ]
         , div [ class "grid grid-cols-1 md:grid-cols-2 gap-8" ]
             [ section [ id "contacts" ]

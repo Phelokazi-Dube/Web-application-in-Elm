@@ -1,9 +1,10 @@
-<!-- Custom styles can go inside a <style> tag or in your CSS file -->
+<!-- Custom styles -->
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
 
   body {
     font-family: 'Quicksand', sans-serif;
+    background-color: #f8f9fa;
   }
 
   h1 {
@@ -13,6 +14,37 @@
     font-size: 2.5rem;
     margin-bottom: 1rem;
     font-weight: 700;
+    text-align: center;
+  }
+
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 1rem;
+  }
+
+  .tab {
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px 6px 0 0;
+    background: #eee;
+    transition: background-color 0.3s;
+  }
+
+  .tab.active {
+    background: #4facfe;
+    color: #fff;
+  }
+
+  .tab-content {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0 0 12px 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
 
   table th {
@@ -30,56 +62,132 @@
     border-radius: 8px;
     padding: 4px;
     background: #fff;
+    max-height: 250px;
+  }
+
+  .btn-warning {
+    background-color: #ffc107;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-warning:hover {
+    background-color: #e0a800;
+  }
+
+  .edit-button {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
   }
 </style>
 
 <h1>Document Details</h1>
 
-<table class="table table-striped table-bordered">
-  <tbody>
-    <%= for {key, value} <- @document do %>
-      <tr>
-        <th><%= Phoenix.Naming.humanize(key) %></th>
-        <td>
-          <%= case {key, value} do %>
-            <% {"photos", ids} when is_list(ids) -> %>
-              <div class="d-flex flex-wrap gap-3">
-                <%= for id <- ids do %>
-                  <img 
-                    src={~p"/image/#{id}"} 
-                    alt="Photo" 
-                    class="img-thumbnail" 
-                    style="max-height: 300px; max-width: 100%;" 
-                    onerror="this.onerror=null; this.src='/images/fallback.jpg';" 
-                  />
-                <% end %>
-              </div>
-            
-            <% {"approved_at", ts} when is_integer(ts) -> %>
-              <%= with {:ok, dt} <- DateTime.from_unix(ts),
-                      {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do
-                    Calendar.strftime(sast_dt, "%d %B %Y %H:%M SAST")
-                  else
-                    _ ->
-                      {:ok, dt} = DateTime.from_unix(ts)
-                      Calendar.strftime(dt, "%d %B %Y %H:%M UTC")
-                  end %>
+<div class="general-page container">
+  <!-- Tabs -->
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="general">General</div>
+    <div class="tab" data-tab="images">Images</div>
+    <div class="tab" data-tab="publications">Publications</div>
+  </div>
 
-            <% {_, v} when is_map(v) -> %>
-              <pre><%= inspect(v) %></pre>
+  <!-- Tab Contents -->
+  <div id="tab-general" class="tab-content active">
+    <table class="table table-striped table-bordered">
+      <tbody>
+        <%= for {key, value} <- @document do %>
+          <tr>
+            <th><%= Phoenix.Naming.humanize(key) %></th>
+            <td>
+              <%= case {key, value} do %>
+                <% {"photos", _ids} -> %>
+                  <!-- skip here, handled in Images tab -->
+                  <i>See Images tab</i>
 
-            <% {_, v} when is_list(v) -> %>
-              <ul>
-                <%= for item <- v do %>
-                  <li><%= item %></li>
-                <% end %>
-              </ul>
+                <% {"approved_at", ts} when is_integer(ts) -> %>
+                  <%= with {:ok, dt} <- DateTime.from_unix(ts),
+                          {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do
+                        Calendar.strftime(sast_dt, "%d %B %Y %H:%M SAST")
+                      else
+                        _ ->
+                          {:ok, dt} = DateTime.from_unix(ts)
+                          Calendar.strftime(dt, "%d %B %Y %H:%M UTC")
+                      end %>
 
-            <% {_, v} -> %>
-              <%= v %>
-          <% end %>
-        </td>
-      </tr>
+                <% {_, v} when is_map(v) -> %>
+                  <pre><%= inspect(v) %></pre>
+
+                <% {_, v} when is_list(v) -> %>
+                  <ul>
+                    <%= for item <- v do %>
+                      <li><%= item %></li>
+                    <% end %>
+                  </ul>
+
+                <% {_, v} -> %>
+                  <%= v %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="tab-images" class="tab-content hidden">
+    <%= if photos = Map.get(@document, "photos") do %>
+      <div class="d-flex flex-wrap gap-3 justify-content-center">
+        <%= for id <- photos do %>
+          <img 
+            src={~p"/image/#{id}"}
+            alt="Photo"
+            class="img-thumbnail"
+            onerror="this.onerror=null; this.src='/images/fallback.jpg';"
+          />
+        <% end %>
+      </div>
+    <% else %>
+      <p>No images available.</p>
     <% end %>
-  </tbody>
-</table>
+  </div>
+
+  <div id="tab-publications" class="tab-content hidden">
+    <p>This section will list any publications or links related to this record.</p>
+    <ul id="publication-list">
+      <li><i>No publications linked yet.</i></li>
+    </ul>
+  </div>
+
+  <%= if @collection && @collection != "" do %>
+    <div class="edit-button">
+      <a href={"?collection=#{@collection}&edit=true"} class="btn btn-warning">
+        ✏️ Edit Document
+      </a>
+    </div>
+  <% end %>
+</div>
+
+<!-- Tab Switching Script -->
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const contents = document.querySelectorAll('.tab-content');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active classes
+      tabs.forEach(t => t.classList.remove('active'));
+      contents.forEach(c => c.classList.add('hidden'));
+
+      // Add active classes
+      tab.classList.add('active');
+      const activeContent = document.getElementById('tab-' + tab.dataset.tab);
+      activeContent.classList.remove('hidden');
+    });
+  });
+</script>

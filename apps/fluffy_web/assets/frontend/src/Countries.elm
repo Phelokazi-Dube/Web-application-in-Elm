@@ -106,7 +106,7 @@ view model =
         isLastPage =
             model.currentPage >= totalPages
     in
-    div [ class "container mx-auto p-6" ]
+    div [ class "container mx-auto p-6 animate-fade-in" ]
         [ div [ class "flex items-center justify-between mb-6" ]
             [ h1 [ class "text-4xl font-extrabold text-emerald-700" ]
                 [ text "🌍 Countries Collection" ]

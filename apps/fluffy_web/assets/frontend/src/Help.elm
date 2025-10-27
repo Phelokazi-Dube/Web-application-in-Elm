@@ -5,7 +5,7 @@ import Html.Attributes exposing (..)
 
 
 view model =
-    div [ class "jumbotron" ]
+    div [ class "jumbotron animate-fade-in" ]
         [ h1 [] [ text "Welcome to Dunder Mifflin!" ]
         , p []
             [ text "Dunder Mifflin Inc. (stock symbol "

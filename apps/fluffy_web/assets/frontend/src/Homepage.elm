@@ -46,7 +46,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    main_ [ class "container mx-auto flex-grow" ]
+    main_ [ class "container mx-auto flex-grow animate-fade-in" ]
         [ section [ id "hero", class "hero-section" ]
             [ h1 [ class "hero-title" ] [ text "Center for Biological Control" ]
             , p [ class "hero-subtitle" ] [ text "Enhancing access to biological control data for research and collaboration." ]

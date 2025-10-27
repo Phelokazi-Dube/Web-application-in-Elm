@@ -217,7 +217,7 @@ viewContent model =
             List.drop start model.filteredDocuments
                 |> List.take model.itemsPerPage
     in
-    div [ class "flex flex-col min-h-screen" ]
+    div [ class "flex flex-col min-h-screen animate-fade-in" ]
         [ Html.node "link"
             [ attribute "rel" "stylesheet"
             , attribute "href" "styles.css"
@@ -262,7 +262,7 @@ viewContent model =
                 , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
                 ]
             ]
-        , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200" ]
+        , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
             [ div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
                 (List.map (documentCard model.adminUser) paginatedDocuments)
             , div [ class "pagination mt-4 flex justify-between" ]
@@ -322,7 +322,7 @@ view model =
 
 documentCard : Bool -> Document -> Html Msg
 documentCard isAdmin doc =
-    div [ class "border rounded shadow p-4 bg-white flex-grow" ]
+    div [ class "border rounded shadow p-4 bg-white flex-grow animate-fade-in" ]
         [ div [ class "flex items-center justify-between mb-4" ]
             [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ Maybe.withDefault "Unknown" doc.id) ]
             , if doc.approved then

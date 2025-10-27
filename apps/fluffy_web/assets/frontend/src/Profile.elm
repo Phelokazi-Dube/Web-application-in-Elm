@@ -70,7 +70,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "container mx-auto p-6" ]
+    div [ class "container mx-auto p-6 animate-fade-in" ]
         [ h1 [ class "text-3xl font-bold mb-6" ] [ text "Continents Collection" ]
         , case model.error of
             Just errMsg ->

@@ -16,7 +16,7 @@ view =
             ]
             []
         , main_
-            [ class "container mx-auto flex-grow py-10 px-4 bg-slate-200 shadow-md rounded-md"
+            [ class "container mx-auto flex-grow py-10 px-4 bg-slate-200 shadow-md rounded-md animate-fade-in"
             , style "max-width" "1200px"
             ]
             [ section [ class "text-center" ]
