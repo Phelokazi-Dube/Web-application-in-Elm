@@ -23,20 +23,23 @@ view _ =
                 , p [] [ text "📁 Use a CSV file if you're uploading many records at once." ]
                 ]
             , div [ class "mb-12 flex justify-center" ]
-                [ img [ src "/images/upload-illustration.jpg"
-                      , alt "Survey illustration"
-                      , class "max-w-md w-full mx-auto"
-                      ]
-                      []
+                [ img
+                    [ src "/images/upload-illustration.jpg"
+                    , alt "Survey illustration"
+                    , class "max-w-md w-full mx-auto"
+                    ]
+                    []
                 ]
             , div [ class "flex justify-center gap-8 flex-wrap" ]
-                [ a [ href "/uploading"
+                [ a
+                    [ href "/uploading"
                     , class "bg-blue-700 text-white px-8 py-6 rounded-xl hover:bg-blue-600 hover:scale-105 transition transform duration-200 shadow-md w-64 flex flex-col items-center space-y-2"
                     ]
                     [ img [ src "/images/form-icon.png", alt "Form icon", class "w-12 h-12" ] []
                     , span [] [ text "Fill in Online Form" ]
                     ]
-                , a [ href "/csvupload?collection=Surveys"
+                , a
+                    [ href "/csvupload?collection=Surveys"
                     , class "bg-green-700 text-white px-8 py-6 rounded-xl hover:bg-green-600 hover:scale-105 transition transform duration-200 shadow-md w-64 flex flex-col items-center space-y-2"
                     ]
                     [ img [ src "/images/csv-icon.png", alt "CSV icon", class "w-12 h-12" ] []

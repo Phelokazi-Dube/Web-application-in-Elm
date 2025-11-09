@@ -65,6 +65,8 @@ defmodule FluffyWeb.Router do
 
     # Route for updating a document
     put("/Mongodb/documents/:id", MongoDBController, :update)
+
+    post "/documents/:id/update", MongoDBController, :update_document
   end
 
   scope "/", FluffyWeb do

@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
     <title>Center for Biological Control Data Portal</title>
@@ -13,6 +14,17 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"
+      integrity="sha512-hoalWLoI8r4UszCkZ5kL8vayOGVae1oxXe/2A4AO6J9+580uKHDO3JdHb7NzwwzK5xr/Fs0W40kiNHxM9vyTtQ=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"
+      integrity="sha512-BB3hKbKWOc9Ez/TAwyWxNXeoV9c1v6FIeYiBieIWkpLjauysF18NzgR1MBNBXf8/KABdlkX68nAhlwcDFLGPCQ=="
+      crossorigin="">
+    </script>
   </head>
 
   <body class="flex flex-col min-h-screen">
@@ -24,12 +36,13 @@
           <div class="brand-title">CBC</div>
         </div>
         <ul class="nav-items">
-          <li><a href="/home" class="nav-link">HOME</a></li>
-          <li class="group">
-            <span class="nav-link cursor-default">DATA</span>
+          <li><a href="/home" class="nav-link hover:text-gray-300 transition-colors duration-200">HOME</a></li>
+          <li class="group relative">
+            <span class="nav-link cursor-default hover:text-gray-300 transition-colors duration-200">DATA</span>
             <ul class="dropdown">
               <li><a href="/survey" class="dropdown-link">Survey Data</a></li>
               <li><a href="/publish" class="dropdown-link">Publish Data</a></li>
+              <li><a href="/map" class="dropdown-link">Map</a></li>
             </ul>
           </li>
           <li class="group"><a href="/records" class="nav-link">RECORDS</a></li>
@@ -50,6 +63,8 @@
     <main class="flex-grow">
       <%= @inner_content %>
     </main>
+
+    <script phx-track-static type="text/javascript" src={~p"/assets/mapPicker.js"}></script>
 
     <!-- Footer -->
     <footer class="footer mt-8">

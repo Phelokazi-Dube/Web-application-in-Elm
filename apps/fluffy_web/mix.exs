@@ -60,6 +60,7 @@ defmodule FluffyWeb.MixProject do
       {:water_weeds, in_umbrella: true},
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.5"},
+      {:tzdata, "~> 1.1"},
       {:csv, "~> 3.2"}
     ]
   end

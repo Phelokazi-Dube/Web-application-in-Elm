@@ -9,10 +9,23 @@ defmodule FluffyWeb.PageController do
   end
 
   def upload(conn, params) do
-    photos = params["photos"] || []
+    photos_param = params["photos"] || []
     profile = get_session(conn, :profile)
+    user_email = if profile, do: Map.get(profile, :email), else: nil
 
     # Process the photos and get their file IDs or any metadata
+    photos =
+      cond do
+        is_list(photos_param) ->
+          photos_param
+        match?(%Plug.Upload{}, photos_param) -> [photos_param]
+        is_map(photos_param) ->
+          photos_param
+          |> Map.values()
+
+        true ->
+          []
+      end
     processed_photos =
       Enum.map(photos, fn %Plug.Upload{
                             path: file_path,
@@ -27,7 +40,7 @@ defmodule FluffyWeb.PageController do
             case MongoDBClient.upload_image(filename, binary_data, %{content_type: content_type}) do
               {:ok, file_id} ->
                 # Inspect and return the ObjectId of the uploaded image
-                file_id |> IO.inspect(label: "Uploaded photo ObjectId")
+                IO.inspect(file_id, label: "Uploaded photo ObjectId")
                 BSON.ObjectId.encode!(file_id)
 
               {:error, reason} ->
@@ -46,37 +59,46 @@ defmodule FluffyWeb.PageController do
 
     # Remove the CSRF token from the params (it should not be inserted into the database)
     cleaned_params =
-      Map.delete(params, "_csrf_token")
+      params
+      |> Map.delete("_csrf_token")
       # Insert the survey data along with processed photo IDs into the "Surveys" collection
       |> Map.put("photos", processed_photos)
-      # Store the user email
-      |> Map.put("userLogin", Map.get(profile, :email))
+      |> Map.put("userLogin", user_email)
+      |> FluffyWeb.MongoDBController.add_date_dt()
+      |> FluffyWeb.MongoDBController.parse_location()
 
-    case MongoDBClient.insert_document("Surveys", cleaned_params) do
-      {:ok, %{inserted_id: bson_id}} ->
-        # Inspect the document ID after insertion
-        bson_id |> IO.inspect(label: "Document stored with ID")
-        Logger.debug("Document successfully inserted.")
+    if photos == [] and Map.get(cleaned_params, "location") in [nil, ""] do
+      conn
+      |> put_status(:unprocessable_entity)
+      |> json(%{error: "Empty form submission not allowed"})
+    else
+      case MongoDBClient.insert_document("Surveys", cleaned_params) do
+        {:ok, %{inserted_id: bson_id}} ->
+          # Inspect the document ID after insertion
+          IO.inspect(bson_id, label: "Document stored with ID")
+          Logger.debug("Document successfully inserted.")
 
-        conn
-        |> put_status(:ok)
-        |> render(:home,
-          layout: false,
-          js_file: "uploading_data",
-          extra_prepend:
+          conn
+          |> put_status(:ok)
+          |> render(:home,
+            layout: false,
+            js_file: "uploading_data",
+            extra_prepend:
             ~s(The observation has been uploaded. You can add another observation below. Or you can return to the <a href="/uploadpage" class="text-blue-500 underline">upload page</a>.),
           profile: get_session(conn, :profile)
-        )
+          )
 
-      {:error, reason} ->
-        # Inspect the error reason if the insertion fails
-        reason |> IO.inspect(label: "Insertion error reason")
+        {:error, reason} ->
+          # Inspect the error reason if the insertion fails
+          IO.inspect(reason, label: "Insertion error reason")
 
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{error: "Failed to create document", reason: reason})
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: "Failed to create document", reason: reason})
+      end
     end
   end
+
 
   def uploading(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)

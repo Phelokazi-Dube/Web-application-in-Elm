@@ -102,39 +102,39 @@
     <table class="table table-striped table-bordered">
       <tbody>
         <%= for {key, value} <- @document do %>
-          <tr>
-            <th><%= Phoenix.Naming.humanize(key) %></th>
-            <td>
-              <%= case {key, value} do %>
-                <% {"photos", _ids} -> %>
-                  <!-- skip here, handled in Images tab -->
-                  <i>See Images tab</i>
+          <%= if key not in ["photos", "created_at", "date_dt"] do %>
+            <tr>
+              <th><%= Phoenix.Naming.humanize(key) %></th>
+              <td>
+                <%= case {key, value} do %>
+                  <% {"approved_at", ts} when is_integer(ts) -> %>
+                    <%= with {:ok, dt} <- DateTime.from_unix(ts),
+                            {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do
+                          Calendar.strftime(sast_dt, "%d %B %Y %H:%M SAST")
+                        else
+                          _ ->
+                            {:ok, dt} = DateTime.from_unix(ts)
+                            Calendar.strftime(dt, "%d %B %Y %H:%M UTC")
+                        end %>
+                   <% {"location", %{"coordinates" => [longitude, latitude]}} -> %>
+                    Longitude: <%= longitude %>, Latitude: <%= latitude %>
+                    
+                  <% {_, v} when is_map(v) -> %>
+                    <pre><%= inspect(v) %></pre>
 
-                <% {"approved_at", ts} when is_integer(ts) -> %>
-                  <%= with {:ok, dt} <- DateTime.from_unix(ts),
-                          {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do
-                        Calendar.strftime(sast_dt, "%d %B %Y %H:%M SAST")
-                      else
-                        _ ->
-                          {:ok, dt} = DateTime.from_unix(ts)
-                          Calendar.strftime(dt, "%d %B %Y %H:%M UTC")
-                      end %>
+                  <% {_, v} when is_list(v) -> %>
+                    <ul>
+                      <%= for item <- v do %>
+                        <li><%= item %></li>
+                      <% end %>
+                    </ul>
 
-                <% {_, v} when is_map(v) -> %>
-                  <pre><%= inspect(v) %></pre>
-
-                <% {_, v} when is_list(v) -> %>
-                  <ul>
-                    <%= for item <- v do %>
-                      <li><%= item %></li>
-                    <% end %>
-                  </ul>
-
-                <% {_, v} -> %>
-                  <%= v %>
-              <% end %>
-            </td>
-          </tr>
+                  <% {_, v} -> %>
+                    <%= v %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
         <% end %>
       </tbody>
     </table>

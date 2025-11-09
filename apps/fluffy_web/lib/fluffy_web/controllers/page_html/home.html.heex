@@ -1,5 +1,7 @@
 <%= if Map.has_key?(assigns, :extra_prepend) do %>
-  <div><%= raw(@extra_prepend) %></div>
+  <div style="margin: 1rem 0; padding: 1rem; border: 1px solid #4caf50; border-radius: 8px; background-color: #e8f5e9; color: #2e7d32;">
+    <%= raw(@extra_prepend) %>
+  </div>
 <% end %>
 
 <% IO.inspect(@profile, label: "Profile Data") %>

@@ -109,160 +109,149 @@ defmodule FluffyWeb.MongoDBController do
     |> json(%{isAdmin: isAdmin, documents: documents})
   end
 
-  def create(conn, %{"photos" => photos} = _params) do
-    # Fetch the authenticated user's email from the session
-    email = get_session(conn, :email)
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, params) do
+    Logger.info("Received survey submission with params: #{inspect(Map.keys(params))}")
 
-    # If the email exists, proceed with adding it to the default values
-    if email do
-      # Process uploaded photos using GridFS
-      processed_photos =
-        photos
-        |> Enum.map(fn %Plug.Upload{path: file_path, filename: filename} ->
-          case File.read(file_path) do
+    profile = get_session(conn, :profile)
+    email = if profile, do: Map.get(profile, :email), else: get_session(conn, :email)
+    photos = Map.get(params, "photos", [])
+
+    Logger.info("Photos param: #{inspect(Map.get(params, "photos"))}")
+
+    # --- Handle uploaded photos ---
+    processed_photos =
+      photos
+      |> Enum.map(fn
+        %Plug.Upload{path: path, filename: filename, content_type: content_type} ->
+          case File.read(path) do
             {:ok, binary_data} ->
-              # Log the metadata being passed to the upload function
-              Logger.debug(
-                "Uploading image with metadata: #{inspect(%{content_type: "image/png"})}"
-              )
-
-              # Upload image with the correct metadata
-              case MongoDBClient.upload_image(filename, binary_data, %{content_type: "image/png"}) do
-                {:ok, file_id} ->
-                  # Return the ObjectId of the uploaded image (as a BSON ID)
-                  BSON.ObjectId.encode!(file_id)
-
+              Logger.debug("Uploading photo #{filename} to GridFS")
+              case MongoDBClient.upload_image(filename, binary_data, %{content_type: content_type}) do
+                {:ok, file_id} -> BSON.ObjectId.encode!(file_id)
                 {:error, reason} ->
-                  Logger.error("Failed to upload photo: #{inspect(reason)}")
+                  Logger.error("Upload failed for #{filename}: #{inspect(reason)}")
                   nil
               end
 
             {:error, reason} ->
-              Logger.error("Failed to read photo file: #{inspect(reason)}")
+              Logger.error("Failed to read photo #{filename}: #{inspect(reason)}")
               nil
           end
-        end)
-        # Exclude failed uploads (nil values)
-        |> Enum.filter(&(&1 != nil))
 
-      # Default values for the document to be inserted into the "Surveys" collection
-      default_values = %{
-        "location" => "",
-        "userLogin" => email,
-        "controlAgent" => "",
-        "targetWeedName" => "",
-        "targetWeedRank" => "",
-        "targetWeedId" => "",
-        "targetWeedTaxonName" => "",
-        "weather" => "",
-        "water" => "",
-        "photos" => processed_photos,
-        "province" => "",
-        "sitename" => "PMB Botanical Gardens",
-        "date" => "",
-        "noLeaves" => "",
-        "noStems" => "",
-        "noFlowers" => "",
-        "noCapsules" => "",
-        "maxHeight" => "",
-        "noRamets" => "",
-        "sizeOfInf" => "",
-        "percentCover" => "",
-        "description" => "",
-        "approved" => false,
-        "approved_by" => nil,
-        "approved_at" => nil,
-        "created_at" => System.os_time(:second)
-      }
+        _ -> nil
+      end)
+      |> Enum.filter(& &1)
 
-      # Insert the document into the "Surveys" collection
-      case MongoDBClient.insert_document("Surveys", default_values) do
-        {:ok, %{inserted_id: bson_id}} ->
-          # Fetch the inserted document to return
-          case MongoDBClient.get_document_by_id("Surveys", bson_id) do
-            nil ->
-              conn
-              |> put_status(:not_found)
-              |> json(%{error: "Document not found after insertion"})
+    # --- Clean up unwanted form fields ---
+    cleaned_params =
+      params
+      |> Map.delete("_csrf_token")
+      |> Map.delete("photos")
 
-            {:ok, doc} ->
-              document =
-                normalize_mongo_id(doc)
-                |> Jason.encode!()
+    # --- Define default structure ---
+    default_values = %{
+      "location" => "",
+      "userLogin" => email,
+      "controlAgent" => "",
+      "targetWeedName" => "",
+      "targetWeedRank" => "",
+      "targetWeedId" => "",
+      "targetWeedTaxonName" => "",
+      "weather" => "",
+      "water" => "",
+      "photos" => processed_photos,
+      "province" => "",
+      "sitename" => "PMB Botanical Gardens",
+      "date" => "",
+      "noLeaves" => "",
+      "noStems" => "",
+      "noFlowers" => "",
+      "noCapsules" => "",
+      "maxHeight" => "",
+      "noRamets" => "",
+      "sizeOfInf" => "",
+      "percentCover" => "",
+      "description" => "",
+      "approved" => false,
+      "approved_by" => nil,
+      "approved_at" => nil,
+      "created_at" => System.os_time(:second)
+    }
 
-              conn
-              |> put_status(:created)
-              |> json(%{message: "Document created successfully", document: document})
+    # --- Merge defaults with form params ---
+    document = Map.merge(default_values, cleaned_params)
 
-            {:error, _} ->
-              conn
-              |> put_status(:unprocessable_entity)
-              |> json(%{error: "Failed to fetch created document"})
-          end
-
-        {:error, reason} ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{error: "Failed to create document", reason: reason})
+    # --- Convert date string to machine-friendly Date ---
+    document =
+      case parse_date_string(Map.get(document, "date")) do
+        nil -> Map.put(document, "date_dt", nil)
+        date -> Map.put(document, "date_dt", date)
       end
-    else
-      # If the email is not found in the session, return an unauthorized error
-      conn
-      |> put_status(:unauthorized)
-      |> json(%{error: "User not authenticated"})
+      |> parse_location()
+
+    # --- Insert into MongoDB ---
+    case MongoDBClient.insert_document("Surveys", document) do
+      {:ok, %{inserted_id: bson_id}} ->
+        conn
+        |> put_status(:created)
+        |> json(%{
+          message: "Survey document created successfully",
+          id: BSON.ObjectId.encode!(bson_id)
+        })
+
+      {:error, reason} ->
+        Logger.error("Failed to insert survey: #{inspect(reason)}")
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Failed to create document", reason: inspect(reason)})
     end
   end
+
 
   # Fetch a document by its ID
-  def show(conn, %{"id" => id}) do
-    case BSON.ObjectId.decode(id) do
-      {:ok, bson_id} ->
-        # Fetch the document from the "Surveys" collection by its ID
-        doc = MongoDBClient.get_document_by_id("Surveys", bson_id)
+  def show(conn, %{"id" => id, "collection" => collection}) do
+    collection = collection || "Surveys"
 
-        case doc do
-          nil ->
-            send_resp(conn, 404, "Not Found")
+    with {:ok, bson_id} <- BSON.ObjectId.decode(id),
+        doc when not is_nil(doc) <- MongoDBClient.get_document_by_id(collection, bson_id) do
+      normalized = normalize_mongo_id(doc)
+      json(conn, normalized)
+    else
+      {:error, _} ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Invalid document ID"})
 
-          %{} ->
-            # Normalize the document by replacing _id with id
-            document =
-              normalize_mongo_id(doc)
-              |> Jason.encode!()
-
-            conn
-            |> put_resp_content_type("application/json")
-            |> send_resp(200, document)
-
-          {:error, _} ->
-            send_resp(conn, 500, "Something went wrong")
-        end
-
-      {:error, _reason} ->
-        send_resp(conn, 400, "Invalid ID format")
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{error: "Document not found"})
     end
   end
 
-  def show_html(conn, %{"id" => id, "collection" => collection}) do
+  # Fetch a document as HTML
+  def show_html(conn, %{"id" => id} = params) do
+    collection = Map.get(params, "collection", "Surveys")
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
         case MongoDBClient.get_document_by_id(collection, bson_id) do
-          nil ->
+          %{} = doc ->
+            normalized = normalize_mongo_id(doc)
+            template = if params["edit"] == "true", do: :edit, else: :show
+
+            render(conn, template,
+              document: normalized,
+              collection: collection
+            )
+
+          _ ->
             conn
             |> put_flash(:error, "Document not found")
             |> redirect(to: "/")
-
-          %{} = doc ->
-            normalized = normalize_mongo_id(doc)
-            render(conn, :show, document: normalized)
-
-          {:error, _} ->
-            conn
-            |> put_flash(:error, "Could not retrieve document")
-            |> redirect(to: "/")
         end
 
-      {:error, _reason} ->
+      _ ->
         conn
         |> put_flash(:error, "Invalid document ID")
         |> redirect(to: "/")
@@ -341,6 +330,8 @@ defmodule FluffyWeb.MongoDBController do
                 row
                 |> normalize_keys()
                 |> Map.put("userLogin", email)  # Add user email to each row
+                |> add_date_dt()
+                |> parse_location()
 
               {:error, reason} ->
                 {:error, reason}
@@ -389,6 +380,82 @@ defmodule FluffyWeb.MongoDBController do
         |> put_status(:unauthorized)
         |> json(%{error: "User not authenticated"})
       end
+    end
+  end
+
+  def add_date_dt(document) do
+    date_str = Map.get(document, "date")
+    year_str = Map.get(document, "year")
+
+    parsed =
+      cond do
+        not is_nil(parse_date_string(date_str)) -> parse_date_string(date_str)
+        not is_nil(parse_date_string(year_str)) -> parse_date_string(year_str)
+        true -> nil
+      end
+    Map.put(document, "date_dt", parsed)
+  end
+
+  def parse_date_string(date_str) when is_binary(date_str) do
+    cond do
+      # Full date: MM/DD/YYYY
+      Regex.match?(~r/^\d{2}\/\d{2}\/\d{4}$/, date_str) ->
+        case Date.from_iso8601(convert_mmddyyyy_to_iso(date_str)) do
+          {:ok, date} -> date
+          _ -> nil
+        end
+
+      # Year-only: YYYY
+      Regex.match?(~r/^\d{4}$/, date_str) ->
+        case Date.from_iso8601("#{date_str}-01-01") do
+          {:ok, date} -> date
+          _ -> nil
+        end
+
+      true ->
+        nil
+    end
+  end
+
+  # Fallback for unrecognized formats
+  def parse_date_string(_), do: nil
+
+  def convert_mmddyyyy_to_iso(<<m1::binary-size(2), "/", d1::binary-size(2), "/", y1::binary-size(4)>>) do
+    "#{y1}-#{m1}-#{d1}"
+  end
+
+  def parse_location(document) do
+    cond do
+      # Case 1: separate latitude/longitude fields (CSV)
+      lat = Map.get(document, "latitude") || Map.get(document, "Latitude") ->
+        lon = Map.get(document, "longitude") || Map.get(document, "Longitude")
+        with {lat_f, ""} <- Float.parse("#{lat}"),
+            {lon_f, ""} <- Float.parse("#{lon}") do
+          document
+          |> Map.put("location", %{"type" => "Point", "coordinates" => [lon_f, lat_f]})
+          |> (fn doc -> Enum.reduce(["latitude", "Longitude", "longitude", "Latitude"], doc, &Map.delete(&2, &1)) end).()
+        else
+          _ -> document
+        end
+
+      # Case 2: single string field "lat, lon" (Form)
+      true ->
+        case Map.get(document, "location") do
+          loc_str when is_binary(loc_str) ->
+            case String.split(loc_str, ",", trim: true) do
+              [lat_s, lon_s] ->
+                # Trim spaces before parsing
+                [lat_s, lon_s] = Enum.map([lat_s, lon_s], &String.trim/1)
+
+                case {Float.parse(lat_s), Float.parse(lon_s)} do
+                  {{lat_f, ""}, {lon_f, ""}} ->
+                    Map.put(document, "location", %{"type" => "Point", "coordinates" => [lon_f, lat_f]})
+                  _ -> document
+                end
+              _ -> document
+            end
+          _ -> document
+        end
     end
   end
 
@@ -530,6 +597,34 @@ defmodule FluffyWeb.MongoDBController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: "Invalid ID format"})
+    end
+  end
+
+  # Safer update_document
+  def update_document(conn, %{"id" => id, "collection" => collection} = params) do
+    case BSON.ObjectId.decode(id) do
+      {:ok, bson_id} ->
+        update_fields =
+          params
+          |> Map.drop(["_csrf_token", "_method", "id", "collection"])
+          |> Map.put("approved", false)
+
+        case MongoDBClient.update_document(collection, bson_id, update_fields) do
+          {:ok, _} ->
+            conn
+            |> put_flash(:info, "Document updated successfully. Awaiting re-approval.")
+            |> redirect(to: ~p"/documents/#{id}?collection=#{collection}")
+
+          {:error, reason} ->
+            conn
+            |> put_flash(:error, "Failed to update document: #{inspect(reason)}")
+            |> redirect(to: ~p"/documents/#{id}?collection=#{collection}&edit=true")
+        end
+
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "Invalid document ID")
+        |> redirect(to: "/")
     end
   end
 
