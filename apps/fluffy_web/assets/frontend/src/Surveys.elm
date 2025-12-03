@@ -1,4 +1,4 @@
-module Surveys exposing (..)
+port module Surveys exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
@@ -10,6 +10,7 @@ import Json.Decode as Decode
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), (<?>), Parser, query, string, top)
 import Url.Parser.Query as Query
+port downloadCsvPort : String -> Cmd msg
 
 
 
@@ -88,6 +89,8 @@ type Msg
     | DocumentApproved (Result Http.Error String)
     | UrlChanged Url
     | LinkClicked Browser.UrlRequest
+    | ExportCSV
+
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -194,6 +197,17 @@ update msg model =
 
         PrevPage ->
             ( { model | currentPage = Basics.max (model.currentPage - 1) 1 }, Cmd.none )
+        
+        ExportCSV ->
+            ( model
+            , downloadCsvPort
+                (model.baseUrl ++ "/api/Mongodb/document/search/export"
+                    ++ if model.searchText /= "" then
+                           "?search=" ++ Url.percentEncode model.searchText
+                       else
+                           ""
+                )
+            )
 
 
 orElse : Maybe a -> Maybe a -> Maybe a
@@ -260,6 +274,7 @@ viewContent model =
             , div [ class "this flex space-x-2 ml-auto" ]
                 [ button [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick FetchDocuments ] [ text "Search" ]
                 , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
+                , button [ class "btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-500", onClick ExportCSV ] [ text "Export CSV" ]
                 ]
             ]
         , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
