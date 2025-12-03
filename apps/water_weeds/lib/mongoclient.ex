@@ -12,7 +12,13 @@ defmodule WaterWeeds.MongoDBClient do
 
     case Mongo.start_link(url: config[:url], pool_size: config[:pool_size] || 5) do
       {:ok, conn} ->
-        Task.start(fn -> ensure_indexes(conn) end)
+        Task.start(fn ->
+          try do
+            ensure_indexes(conn)
+          rescue
+            e -> Logger.error("Index creation failed: #{inspect(e)}")
+          end
+        end)
         # Initialize the GridFS Bucket
         result = Mongo.GridFs.Bucket.new(conn, name: "fs", chunk_size: 261_120)
 
@@ -43,9 +49,14 @@ defmodule WaterWeeds.MongoDBClient do
     ]
 
     case Mongo.create_indexes(conn, "Surveys", indexes) do
-      {:ok, _} -> Logger.info("Text index ensured")
-      {:error, %Mongo.Error{code: 85}} -> Logger.info("ℹ️ Index already exists, skipping")
-      {:error, reason} -> Logger.error("Failed to create text index: #{inspect(reason)}")
+      :ok ->
+        Logger.info(" Text index ensured")
+
+      {:error, %Mongo.Error{code: 85}} ->
+        Logger.info("ℹ️ Index already exists, skipping")
+
+      {:error, reason} ->
+        Logger.error(" Failed to create text index: #{inspect(reason)}")
     end
   end
 

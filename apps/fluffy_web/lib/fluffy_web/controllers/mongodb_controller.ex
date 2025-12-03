@@ -425,37 +425,51 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   def parse_location(document) do
+    lat = Map.get(document, "latitude") || Map.get(document, "Latitude")
+    lon = Map.get(document, "longitude") || Map.get(document, "Longitude")
+
     cond do
-      # Case 1: separate latitude/longitude fields (CSV)
-      lat = Map.get(document, "latitude") || Map.get(document, "Latitude") ->
-        lon = Map.get(document, "longitude") || Map.get(document, "Longitude")
-        with {lat_f, ""} <- Float.parse("#{lat}"),
-            {lon_f, ""} <- Float.parse("#{lon}") do
-          document
-          |> Map.put("location", %{"type" => "Point", "coordinates" => [lon_f, lat_f]})
-          |> (fn doc -> Enum.reduce(["latitude", "Longitude", "longitude", "Latitude"], doc, &Map.delete(&2, &1)) end).()
+      # Case 1: CSV headers exist
+      is_binary(lat) or is_binary(lon) ->
+        if lat != "" and lon != "" do
+          case {Float.parse(lat), Float.parse(lon)} do
+            {{lat_f, ""}, {lon_f, ""}} ->
+              document
+              |> Map.put("location", %{
+                "type" => "Point",
+                "coordinates" => [lon_f, lat_f]
+              })
+              |> Map.drop(["latitude", "Latitude", "longitude", "Longitude"])
+
+            _ ->
+              Map.put(document, "location", nil)
+          end
         else
-          _ -> document
+          Map.put(document, "location", nil)
         end
 
-      # Case 2: single string field "lat, lon" (Form)
-      true ->
-        case Map.get(document, "location") do
-          loc_str when is_binary(loc_str) ->
-            case String.split(loc_str, ",", trim: true) do
-              [lat_s, lon_s] ->
-                # Trim spaces before parsing
-                [lat_s, lon_s] = Enum.map([lat_s, lon_s], &String.trim/1)
+      # Case 2: Form field "location" = "lat, lon"
+      is_binary(Map.get(document, "location")) ->
+        case String.split(document["location"], ",", trim: true) do
+          [lat_s, lon_s] ->
+            case {Float.parse(String.trim(lat_s)), Float.parse(String.trim(lon_s))} do
+              {{lat_f, ""}, {lon_f, ""}} ->
+                Map.put(document, "location", %{
+                  "type" => "Point",
+                  "coordinates" => [lon_f, lat_f]
+                })
 
-                case {Float.parse(lat_s), Float.parse(lon_s)} do
-                  {{lat_f, ""}, {lon_f, ""}} ->
-                    Map.put(document, "location", %{"type" => "Point", "coordinates" => [lon_f, lat_f]})
-                  _ -> document
-                end
-              _ -> document
+              _ ->
+                Map.put(document, "location", nil)
             end
-          _ -> document
+
+          _ ->
+            Map.put(document, "location", nil)
         end
+
+      # Default: neither CSV nor Form → still enforce consistency
+      true ->
+        Map.put(document, "location", nil)
     end
   end
 
