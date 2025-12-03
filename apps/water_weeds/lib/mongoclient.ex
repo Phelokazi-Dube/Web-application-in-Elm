@@ -37,29 +37,21 @@ defmodule WaterWeeds.MongoDBClient do
   defp ensure_indexes(conn) do
     indexes = [
       %{
-        key: %{
-          title: "text",
-          description: "text"
-        },
-        name: "TextIndex"
+        key: %{"$**" => "text"},
+        name: "SurveyTextIndex"
       }
     ]
 
     case Mongo.create_indexes(conn, "Surveys", indexes) do
-      :ok ->
-        Logger.info("✅ Text index ensured on Surveys collection")
-
-      {:ok, _} ->
-        Logger.info("✅ Text index ensured on Surveys collection")
-
-      {:error, reason} ->
-        Logger.error("❌ Failed to create text index: #{inspect(reason)}")
+      {:ok, _} -> Logger.info("Text index ensured")
+      {:error, %Mongo.Error{code: 85}} -> Logger.info("ℹ️ Index already exists, skipping")
+      {:error, reason} -> Logger.error("Failed to create text index: #{inspect(reason)}")
     end
   end
 
   # Function to get all documents from a collection
-  def get_all_documents(collection_name) do
-    GenServer.call(__MODULE__, {:get_all_documents, collection_name})
+  def get_all_documents(collection_name, filter \\ %{}) do
+    GenServer.call(__MODULE__, {:get_all_documents, collection_name, filter})
   end
 
   # Function to search documents by text
@@ -112,27 +104,58 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:update_image, file_id, new_binary_data})
   end
 
-   @collection "Surveys"
+  def export(search) do
+    docs = search_documents_by_text("Surveys", search)
 
-  # Public function
-  def search_surveys(nil), do: find_all()
-  def search_surveys(""), do: find_all()
-  def search_surveys(search), do: search_by_regex(search)
-
-  defp find_all do
-    GenServer.call(__MODULE__, {:get_all_documents, @collection})
+    case docs do
+      [] -> ""
+      _ -> build_csv(docs)
+    end
   end
 
-  defp search_by_regex(search) do
-    query = %{
-      "$or" => [
-        %{"title" => %{"$regex" => search, "$options" => "i"}},
-        %{"species" => %{"$regex" => search, "$options" => "i"}}
-      ]
-    }
+  defp build_csv(docs) do
+    headers =
+      docs
+      |> Enum.flat_map(&Map.keys/1)
+      |> Enum.uniq()
+      |> Enum.reject(&(&1 == "_id"))
 
-    GenServer.call(__MODULE__, {:find_documents, @collection, query})
+    rows =
+      Enum.map(docs, fn doc ->
+        Enum.map(headers, fn header ->
+          doc
+          |> Map.get(header)
+          |> normalize_value()
+        end)
+      end)
+
+    [headers | rows]
+    |> NimbleCSV.RFC4180.dump_to_iodata()
+    |> IO.iodata_to_binary()
   end
+
+  defp normalize_value(nil), do: ""
+
+  defp normalize_value(%BSON.ObjectId{} = id),
+    do: BSON.ObjectId.encode!(id)
+
+  defp normalize_value(%Date{} = d),
+    do: Date.to_iso8601(d)
+
+  defp normalize_value(%NaiveDateTime{} = dt),
+    do: NaiveDateTime.to_iso8601(dt)
+
+  defp normalize_value(%DateTime{} = dt),
+    do: DateTime.to_iso8601(dt)
+
+  defp normalize_value(map) when is_map(map),
+    do: Jason.encode!(map)
+
+  defp normalize_value(list) when is_list(list),
+    do: Enum.map_join(list, "; ", &normalize_value/1)
+
+  defp normalize_value(value),
+      do: to_string(value)
 
   ### GenServer Callbacks ###
   def handle_call(
@@ -214,9 +237,9 @@ defmodule WaterWeeds.MongoDBClient do
     end
   end
 
-  def handle_call({:get_all_documents, collection_name}, _from, %{conn: conn} = state) do
+  def handle_call({:get_all_documents, collection_name, filter}, _from, %{conn: conn} = state) do
     # Fetch documents from the collection
-    cursor = Mongo.find(conn, collection_name, %{})
+    cursor = Mongo.find(conn, collection_name, filter)
 
     # Convert the cursor to a list and return it
     documents = cursor |> Enum.to_list()
@@ -298,10 +321,5 @@ defmodule WaterWeeds.MongoDBClient do
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
-  end
-
-  def handle_call({:find_documents, collection_name, query}, _from, %{conn: conn} = state) do
-    documents = Mongo.find(conn, collection_name, query) |> Enum.to_list()
-    {:reply, documents, state}
   end
 end
