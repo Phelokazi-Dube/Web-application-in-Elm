@@ -14,10 +14,10 @@ defmodule FluffyWeb.LoginOrProfile do
   attr :name, :string, required: true
   attr :picture, :string, required: true
   def profile(assigns) do
-    title = "Logged in as #{assigns.name}"
+    assigns = assign(assigns, :title, "Logged in as #{assigns.name}")
     ~H"""
         <a href="/logout" class="nav-link">LOGOUT</a>
-        <img width="32px" src={@picture} title={title} class="rounded-[50%] inline align-middle">
+        <img width="32px" src={@picture} title={@title} class="rounded-[50%] inline align-middle">
       """
   end
 

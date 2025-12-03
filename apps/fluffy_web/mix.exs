@@ -61,7 +61,8 @@ defmodule FluffyWeb.MixProject do
       {:jason, "~> 1.2"},
       {:bandit, "~> 1.5"},
       {:tzdata, "~> 1.1"},
-      {:csv, "~> 3.2"}
+      {:csv, "~> 3.2"},
+      {:nimble_csv, "~> 1.2"}
     ]
   end
 

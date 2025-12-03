@@ -12,6 +12,7 @@ defmodule WaterWeeds.MongoDBClient do
 
     case Mongo.start_link(url: config[:url], pool_size: config[:pool_size] || 5) do
       {:ok, conn} ->
+        Task.start(fn -> ensure_indexes(conn) end)
         # Initialize the GridFS Bucket
         result = Mongo.GridFs.Bucket.new(conn, name: "fs", chunk_size: 261_120)
 
@@ -34,23 +35,25 @@ defmodule WaterWeeds.MongoDBClient do
   end
 
   defp ensure_indexes(conn) do
-    case Mongo.command(conn, %{
-           "createIndexes" => "Surveys",
-           "indexes" => [
-             %{
-               "key" => %{"title" => "text", "description" => "text"},
-               "name" => "TextIndex"
-             }
-           ]
-         }) do
-      {:ok, _} ->
-        Logger.info("Text index created on Surveys collection")
+    indexes = [
+      %{
+        key: %{
+          title: "text",
+          description: "text"
+        },
+        name: "TextIndex"
+      }
+    ]
 
-      {:error, %Mongo.Error{code: 85}} ->
-        Logger.info("ℹ️ Index already exists")
+    case Mongo.create_indexes(conn, "Surveys", indexes) do
+      :ok ->
+        Logger.info("✅ Text index ensured on Surveys collection")
+
+      {:ok, _} ->
+        Logger.info("✅ Text index ensured on Surveys collection")
 
       {:error, reason} ->
-        Logger.error("Failed to create text index: #{inspect(reason)}")
+        Logger.error("❌ Failed to create text index: #{inspect(reason)}")
     end
   end
 
@@ -107,6 +110,28 @@ defmodule WaterWeeds.MongoDBClient do
   @spec update_image(BSON.ObjectId.t(), binary()) :: {:ok, BSON.ObjectId.t()} | {:error, any()}
   def update_image(file_id, new_binary_data) do
     GenServer.call(__MODULE__, {:update_image, file_id, new_binary_data})
+  end
+
+   @collection "Surveys"
+
+  # Public function
+  def search_surveys(nil), do: find_all()
+  def search_surveys(""), do: find_all()
+  def search_surveys(search), do: search_by_regex(search)
+
+  defp find_all do
+    GenServer.call(__MODULE__, {:get_all_documents, @collection})
+  end
+
+  defp search_by_regex(search) do
+    query = %{
+      "$or" => [
+        %{"title" => %{"$regex" => search, "$options" => "i"}},
+        %{"species" => %{"$regex" => search, "$options" => "i"}}
+      ]
+    }
+
+    GenServer.call(__MODULE__, {:find_documents, @collection, query})
   end
 
   ### GenServer Callbacks ###
@@ -273,5 +298,10 @@ defmodule WaterWeeds.MongoDBClient do
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
+  end
+
+  def handle_call({:find_documents, collection_name, query}, _from, %{conn: conn} = state) do
+    documents = Mongo.find(conn, collection_name, query) |> Enum.to_list()
+    {:reply, documents, state}
   end
 end

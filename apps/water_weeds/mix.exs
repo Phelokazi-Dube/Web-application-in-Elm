@@ -45,7 +45,8 @@ defmodule WaterWeeds.MixProject do
       {:finch, "~> 0.13"},
       {:mongodb_driver, "~> 1.4.1"},
       {:phoenix_view, "~> 2.0"},
-      {:elixir_auth_google, "~> 1.6.9"}
+      {:elixir_auth_google, "~> 1.6.9"},
+      {:nimble_csv, "~> 1.2"}
     ]
   end
 

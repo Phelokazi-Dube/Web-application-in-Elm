@@ -1,6 +1,8 @@
 defmodule FluffyWeb.MongoDBController do
   require Logger
   alias WaterWeeds.MongoDBClient
+  alias FluffyWeb.Plugs.CSVBuilder
+  alias FluffyWeb.Plugs.Normalizer
   use FluffyWeb, :controller
 
   # Allowed records collections
@@ -646,5 +648,36 @@ defmodule FluffyWeb.MongoDBController do
     conn
     |> put_status(:ok)
     |> json(%{documents: documents})
+  end
+
+ @excluded_fields ["photos", "approved_at", "approved_by"]
+
+  # Export all documents as CSV
+  def export_csv(conn, _params) do
+    collection = "Surveys"
+
+    documents =
+      MongoDBClient.get_all_documents(collection)
+      |> Enum.map(&Normalizer.normalize/1)
+
+    csv = CSVBuilder.build(documents, @excluded_fields)
+
+    conn
+    |> put_resp_content_type("text/csv")
+    |> put_resp_header("content-disposition", ~s(attachment; filename="surveys.csv"))
+    |> send_resp(200, csv)
+  end
+
+  def export_search_csv(conn, %{"search" => search}) do
+    documents =
+      MongoDBClient.search_surveys(search)
+      |> Enum.map(&Normalizer.normalize/1)
+
+    csv = CSVBuilder.build(documents, @excluded_fields)
+
+    conn
+    |> put_resp_content_type("text/csv")
+    |> put_resp_header("content-disposition", ~s(attachment; filename="surveys_export.csv"))
+    |> send_resp(200, csv)
   end
 end

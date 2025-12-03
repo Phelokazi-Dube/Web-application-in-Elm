@@ -81,6 +81,8 @@ defmodule FluffyWeb.Router do
     # Route for searching documents for text
     get("/Mongodb/document/search", MongoDBController, :search)
 
+    get("/Mongodb/document/search/export", MongoDBController, :export_search_csv)
+
     # Route for retrieving a document
     get("/Mongodb/documents/:id", MongoDBController, :show)
 
