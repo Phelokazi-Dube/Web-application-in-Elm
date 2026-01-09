@@ -28,8 +28,10 @@ type alias Document =
     , approved : Bool
     }
 
+
 type alias Flags =
     { baseUrl : String }
+
 
 type alias Model =
     { key : Nav.Key
@@ -54,6 +56,7 @@ init flags url navKey =
 
                 _ ->
                     ""
+
         model =
             { key = navKey
             , documents = []
@@ -119,14 +122,13 @@ update msg model =
                         _ ->
                             ""
             in
-            ( { model | searchText = searchText }, fetchDocuments {model | searchText = searchText} searchText )
+            ( { model | searchText = searchText }, fetchDocuments { model | searchText = searchText } searchText )
 
         FetchDocuments ->
             ( model, fetchDocuments model model.searchText )
 
         ApproveDocument docId ->
             ( model, approveDocument model docId )
-
 
         DocumentApproved (Ok _) ->
             ( model, fetchDocuments model model.searchText )
@@ -213,8 +215,11 @@ update msg model =
 orElse : Maybe a -> Maybe a -> Maybe a
 orElse fallback primary =
     case primary of
-        Just val -> Just val
-        Nothing -> fallback
+        Just val ->
+            Just val
+
+        Nothing ->
+            fallback
 
 
 
@@ -385,7 +390,6 @@ approveDocument model docId =
 
 
 
-
 -- HTTP REQUESTS
 
 
@@ -396,6 +400,7 @@ fetchDocuments model searchString =
             if String.isEmpty searchString then
                 model.baseUrl ++ "/api/Mongodb/document?collection=Surveys"
                 -- Fetch all documents initially
+
             else
                 model.baseUrl ++ "/api/Mongodb/document/search?search=" ++ searchString
 
@@ -410,8 +415,6 @@ fetchDocuments model searchString =
                     (Decode.field "isAdmin" Decode.bool)
                 )
         }
-
-
 
 
 documentDecoder : Decode.Decoder Document
@@ -473,4 +476,3 @@ main =
         , onUrlChange = UrlChanged
         , onUrlRequest = LinkClicked
         }
-

@@ -2,14 +2,16 @@ module Countries exposing (main)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, href, disabled)
+import Html.Attributes exposing (class, disabled, href)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (required)
 
 
+
 -- MODEL
+
 
 type alias Flags =
     { baseUrl : String
@@ -27,6 +29,7 @@ type alias Document =
     , userLogin : String
     }
 
+
 type alias Model =
     { documents : List Document
     , isAdmin : Bool
@@ -35,6 +38,7 @@ type alias Model =
     , itemsPerPage : Int
     , baseUrl : String
     }
+
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
@@ -52,8 +56,8 @@ init flags =
 
 
 
-
 -- MESSAGES
+
 
 type Msg
     = GotDocuments (Result Http.Error Response)
@@ -61,7 +65,9 @@ type Msg
     | PrevPage
 
 
+
 -- UPDATE
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -85,6 +91,7 @@ update msg model =
 
 
 -- VIEW
+
 
 view : Model -> Html Msg
 view model =
@@ -184,11 +191,15 @@ viewDocument doc =
             ]
         ]
 
+
+
 -- HTTP
+
+
 fetchDocuments : Model -> Cmd Msg
 fetchDocuments model =
     Http.get
-        { url = model.baseUrl ++"/api/Mongodb/document?collection=Countries"
+        { url = model.baseUrl ++ "/api/Mongodb/document?collection=Countries"
         , expect = Http.expectJson GotDocuments responseDecoder
         }
 
@@ -197,6 +208,7 @@ type alias Response =
     { isAdmin : Bool
     , documents : List Document
     }
+
 
 responseDecoder : Decode.Decoder Response
 responseDecoder =
@@ -218,19 +230,32 @@ documentDecoder =
         |> required "userLogin" Decode.string
 
 
+
 -- ERROR HANDLING
+
 
 httpErrorToString : Http.Error -> String
 httpErrorToString err =
     case err of
-        Http.BadUrl url -> "Bad URL: " ++ url
-        Http.Timeout -> "Request timed out"
-        Http.NetworkError -> "Network error"
-        Http.BadStatus status -> "Bad response: " ++ String.fromInt status
-        Http.BadBody body -> "Decoding error: " ++ body
+        Http.BadUrl url ->
+            "Bad URL: " ++ url
+
+        Http.Timeout ->
+            "Request timed out"
+
+        Http.NetworkError ->
+            "Network error"
+
+        Http.BadStatus status ->
+            "Bad response: " ++ String.fromInt status
+
+        Http.BadBody body ->
+            "Decoding error: " ++ body
+
 
 
 -- MAIN
+
 
 main : Program Flags Model Msg
 main =

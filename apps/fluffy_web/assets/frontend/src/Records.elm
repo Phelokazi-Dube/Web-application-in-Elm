@@ -5,7 +5,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
+
 -- VIEW
+
 
 view : Html msg
 view =
@@ -21,7 +23,7 @@ view =
             ]
             [ section [ class "text-center" ]
                 [ h1 [ class "text-5xl text-left font-bold mb-6 text-gray-800" ]
-                     [ text "Other Records" ]
+                    [ text "Other Records" ]
                 , p [ class "text-lg text-left text-gray-700 mb-10 max-w-3xl" ]
                     [ text "This is structured reference data related to survey operations and site monitoring." ]
                 , div [ class "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10" ]
@@ -31,35 +33,37 @@ view =
         ]
 
 
+
 -- REFERENCE DATA ITEMS
 
-referenceDataItems : List (String, String)
+
+referenceDataItems : List ( String, String )
 referenceDataItems =
-    [ ("fa-sun-plant-wilt", "Surveys")
-    , ("fa-chart-column", "Survey Weed Agent")
-    , ("fa-campground", "Sites")
-    , ("fa-clipboard-check", "Site Inspections")
-    , ("fa-wheat-awn-circle-exclamation", "Site Inspection Weeds")
-    , ("fa-location-dot", "Locations")
-    , ("fa-city", "Districts")
-    , ("fa-solid fa-map", "Regions")
-    , ("fa-globe", "Continents")
-    , ("fa-flag", "Countries")
-    , ("fa-people-group", "Implementers")
-    , ("fa-seedling", "Programs")
-    , ("fa-cannabis", "Weed Names")
-    , ("fa-users", "Users")
-    , ("fa-bugs", "Control Agents")
-    , ("fa-pen-to-square", "Survey Control Agents")
-    , ("fa-chart-simple", "WHM Counter")
-    , ("fa-file-lines", "WH Measurements")
-    , ("fa-pen-ruler", "WH Measurement Readings")
-    , ("fa-book", "BAR")
+    [ ( "fa-sun-plant-wilt", "Surveys" )
+    , ( "fa-chart-column", "Survey Weed Agent" )
+    , ( "fa-campground", "Sites" )
+    , ( "fa-clipboard-check", "Site Inspections" )
+    , ( "fa-wheat-awn-circle-exclamation", "Site Inspection Weeds" )
+    , ( "fa-location-dot", "Locations" )
+    , ( "fa-city", "Districts" )
+    , ( "fa-solid fa-map", "Regions" )
+    , ( "fa-globe", "Continents" )
+    , ( "fa-flag", "Countries" )
+    , ( "fa-people-group", "Implementers" )
+    , ( "fa-seedling", "Programs" )
+    , ( "fa-cannabis", "Weed Names" )
+    , ( "fa-users", "Users" )
+    , ( "fa-bugs", "Control Agents" )
+    , ( "fa-pen-to-square", "Survey Control Agents" )
+    , ( "fa-chart-simple", "WHM Counter" )
+    , ( "fa-file-lines", "WH Measurements" )
+    , ( "fa-pen-ruler", "WH Measurement Readings" )
+    , ( "fa-book", "BAR" )
     ]
 
 
-referenceCard : (String, String) -> Html msg
-referenceCard (iconClass, label) =
+referenceCard : ( String, String ) -> Html msg
+referenceCard ( iconClass, label ) =
     let
         isEnabled =
             label == "Continents" || label == "Countries"
@@ -86,6 +90,7 @@ referenceCard (iconClass, label) =
             , class "bg-white hover:bg-blue-100 transition p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center"
             ]
             baseContent
+
     else
         div
             [ class "bg-white p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center opacity-40 cursor-not-allowed select-none"
@@ -95,6 +100,7 @@ referenceCard (iconClass, label) =
 
 
 -- MAIN
+
 
 main : Program () () msg
 main =

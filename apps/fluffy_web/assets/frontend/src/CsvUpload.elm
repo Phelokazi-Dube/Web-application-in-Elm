@@ -5,13 +5,15 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
-import Url exposing (Url)
-import Url.Parser as Parser exposing (Parser, (</>), (<?>), top)
-import Url.Parser.Query as Query
 import Json.Decode as Decode
+import Url exposing (Url)
+import Url.Parser as Parser exposing ((</>), (<?>), Parser, top)
+import Url.Parser.Query as Query
+
 
 
 -- MODEL
+
 
 type alias Model =
     { fileName : String
@@ -23,14 +25,18 @@ type alias Model =
     }
 
 
+
 -- URL Parsing for 'collection' query parameter
+
 
 collectionParser : Parser (Maybe String -> a) a
 collectionParser =
     Parser.map identity (Parser.s "csvupload" <?> Query.string "collection")
 
 
+
 -- INIT
+
 
 init : Decode.Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init json url navKey =
@@ -46,7 +52,7 @@ init json url navKey =
             Decode.decodeValue
                 (Decode.field "csrfToken" Decode.string)
                 json
-            |> Result.withDefault "CSRF Token not set. This WILL result in an error on the server side."
+                |> Result.withDefault "CSRF Token not set. This WILL result in an error on the server side."
       , collection = collection
       , navKey = navKey
       , currentUrl = url
@@ -55,13 +61,16 @@ init json url navKey =
     )
 
 
+
 -- UPDATE
+
 
 type Msg
     = FileSelected String
     | Cancel
     | UrlChanged Url
     | NoOp
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -79,14 +88,18 @@ update msg model =
             ( model, Cmd.none )
 
 
+
 -- SUBSCRIPTIONS
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
 
 
+
 -- VIEW
+
 
 view : Model -> Browser.Document Msg
 view model =
@@ -139,7 +152,9 @@ view model =
     }
 
 
+
 -- MAIN
+
 
 main : Program Decode.Value Model Msg
 main =

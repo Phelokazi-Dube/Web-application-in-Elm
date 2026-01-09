@@ -287,6 +287,42 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
+  def get_publication(conn, %{"id" => id}) do
+    with {:ok, bson_id} <- BSON.ObjectId.decode(id),
+        %{bucket: bucket} <- :sys.get_state(WaterWeeds.MongoDBClient),
+        {{:ok, stream}, file_doc} <-
+          Mongo.GridFs.Download.find_and_stream(bucket, bson_id) do
+
+      content_type =
+        case Path.extname(file_doc["filename"]) do
+          ".pdf" -> "application/pdf"
+          ".doc" -> "application/msword"
+          ".docx" ->
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          _ -> "application/octet-stream"
+        end
+
+      conn =
+        conn
+        |> put_resp_header(
+          "content-disposition",
+          ~s(inline; filename="#{file_doc["filename"]}")
+        )
+        |> put_resp_content_type(content_type)
+        |> send_chunked(200)
+
+      Enum.reduce_while(stream, conn, fn chunk, conn ->
+        case Plug.Conn.chunk(conn, chunk) do
+          {:ok, conn} -> {:cont, conn}
+          {:error, _} -> {:halt, conn}
+        end
+      end)
+    else
+      _ ->
+        send_resp(conn, 404, "Publication not found")
+    end
+  end
+
   defp stream_chunks(conn, stream) do
     Enum.reduce_while(stream, conn, fn chunk, conn_acc ->
       case Plug.Conn.chunk(conn_acc, chunk) do

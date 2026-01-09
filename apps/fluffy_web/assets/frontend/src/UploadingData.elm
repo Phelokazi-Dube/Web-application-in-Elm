@@ -1,12 +1,15 @@
 port module UploadingData exposing (..)
 
 import Browser
+import Browser.Navigation exposing (..)
 import File exposing (File)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick, onSubmit)
 import Http
+import Regex
 import Json.Decode as D
+import Json.Encode as E
 import Html.Keyed exposing (..)
 port receiveLocationPort : (String -> msg) -> Sub msg
 port pickLocationPort : () -> Cmd msg
@@ -61,6 +64,7 @@ type alias Model =
     , weather : String
     , water : String
     , photos : List File
+    , publications : List File
     , province : Province
     , programme : String
     , site : String
@@ -69,6 +73,7 @@ type alias Model =
     , csrf_token : String
     , weeds : List WeedEntry
     , otherWeeds : List OtherWeed
+    , baseUrl : String
     }
 
 
@@ -82,12 +87,14 @@ init flags =
       , weather = ""
       , water = ""
       , photos = []
+      , publications = []
       , province = None
       , programme = ""
       , site = ""
       , date = ""
       , notes = ""
       , csrf_token = flags.csrfToken
+      , baseUrl = flags.baseUrl
       , weeds = []
       , otherWeeds = []
       }
@@ -122,6 +129,8 @@ type Msg
     | UploadResponse (Result Http.Error String)
     | LocationPicked String
     | StartPicking
+    | PublicationsSelected (List File)
+    | RemovePublication Int
 
 
 
@@ -193,6 +202,23 @@ update msg model =
             , Cmd.none
             )
 
+        PublicationsSelected files ->
+            let
+                pdfsOnly = List.filter isPdf files
+            in
+            ( { model | publications = model.publications ++ pdfsOnly }, Cmd.none )
+
+        RemovePublication idx ->
+            ( { model
+                | publications =
+                    model.publications
+                        |> List.indexedMap Tuple.pair
+                        |> List.filter (\(i, _) -> i /= idx)
+                        |> List.map Tuple.second
+            }
+            , Cmd.none
+            )
+
         WeedPresentChanged idx present ->
             let
                 updateWeed i w =
@@ -233,35 +259,48 @@ update msg model =
             in ( { model | otherWeeds = List.indexedMap updateOther model.otherWeeds }, Cmd.none )
 
         SaveObservation ->
-            let
-                textParts =
-                    [ Http.stringPart "surveyType" model.surveyType
-                    , Http.stringPart "location" model.location
-                    , Http.stringPart "controlAgent" model.controlAgent
-                    , Http.stringPart "weather" model.weather
-                    , Http.stringPart "water" model.water
-                    , Http.stringPart "province" (provinceToString model.province)
-                    , Http.stringPart "programme" model.programme
-                    , Http.stringPart "site" model.site
-                    , Http.stringPart "date" model.date
-                    , Http.stringPart "notes" model.notes
-                    , Http.stringPart "_csrf_token" model.csrf_token
-                    ]
+            if not (isValidDate model.date) then
+                ( model, Cmd.none )
+            else
+                let
+                    -- encode weeds and other weeds as JSON strings
+                    weedsJson = encodeWeeds model.weeds
+                    otherWeedsJson = encodeOtherWeeds model.otherWeeds
+                    textParts =
+                        [ Http.stringPart "surveyType" model.surveyType
+                        , Http.stringPart "location" model.location
+                        , Http.stringPart "controlAgent" model.controlAgent
+                        , Http.stringPart "weather" model.weather
+                        , Http.stringPart "water" model.water
+                        , Http.stringPart "province" (provinceToString model.province)
+                        , Http.stringPart "programme" model.programme
+                        , Http.stringPart "site" model.site
+                        , Http.stringPart "date" model.date
+                        , Http.stringPart "notes" model.notes
+                        , Http.stringPart "weeds" weedsJson
+                        , Http.stringPart "otherWeeds" otherWeedsJson
+                        , Http.stringPart "_csrf_token" model.csrf_token
+                        ]
 
-                fileParts =
-                    List.indexedMap (\i f -> Http.filePart ("photos[" ++ String.fromInt i ++ "]") f) model.photos
+                    fileParts =
+                        List.indexedMap (\i f -> Http.filePart ("photos[" ++ String.fromInt i ++ "]") f) model.photos
 
-                request =
-                    Http.post
-                        { url = "/uploading"
-                        , body = Http.multipartBody (textParts ++ fileParts)
-                        , expect = Http.expectString UploadResponse
-                        }
-            in
-            ( model, request )
+                    publicationParts =
+                        List.indexedMap
+                            (\i f -> Http.filePart ("publications[" ++ String.fromInt i ++ "]") f)
+                            model.publications
+
+                    request =
+                        Http.post
+                            { url = model.baseUrl ++ "/uploading"
+                            , body = Http.multipartBody (textParts ++ fileParts ++ publicationParts)
+                            , expect = Http.expectString UploadResponse
+                            }
+                in
+                ( model, request )
 
 
-        UploadResponse (Ok _) -> ( { model | photos = [] }, Cmd.none )
+        UploadResponse (Ok _) -> ( { model | photos = [], publications = [] }, Cmd.none )
         UploadResponse (Err _) -> ( model, Cmd.none )
 
 
@@ -325,6 +364,53 @@ filesDecoder : D.Decoder (List File)
 filesDecoder =
     D.at [ "target", "files" ] (D.list File.decoder)
 
+isPdf : File -> Bool
+isPdf file =
+    String.endsWith ".pdf" (String.toLower (File.name file))
+
+isValidDate : String -> Bool
+isValidDate date =
+    Regex.contains (Regex.fromString "^\\d{2}/\\d{2}/\\d{4}$" |> Maybe.withDefault Regex.never) date
+
+encodeWeed : WeedEntry -> E.Value
+encodeWeed weed =
+    let
+        fields =
+            [ ("name", E.string weed.name) ]
+                |> maybeAdd "present" weed.present
+                |> maybeAdd "absent" weed.absent
+    in
+    E.object fields
+
+encodeOtherWeed : OtherWeed -> E.Value
+encodeOtherWeed weed =
+    let
+        fields =
+            [ ("name", E.string weed.name) ]
+                |> maybeAdd "present" weed.present
+                |> maybeAdd "absent" weed.absent
+    in
+    E.object fields
+
+maybeAdd : String -> Bool -> List (String, E.Value) -> List (String, E.Value)
+maybeAdd key value list =
+    if value then
+        list ++ [ ( key, E.bool True ) ]
+    else
+        list
+
+-- only include weeds that have at least one box ticked
+encodeWeeds : List WeedEntry -> String
+encodeWeeds weeds =
+    weeds
+        |> List.filter (\w -> w.present || w.absent)
+        |> (\filtered -> E.encode 0 (E.list encodeWeed filtered))
+
+encodeOtherWeeds : List OtherWeed -> String
+encodeOtherWeeds weeds =
+    weeds
+        |> List.filter (\w -> w.present || w.absent)
+        |> (\filtered -> E.encode 0 (E.list encodeOtherWeed filtered))
 
 viewPhotos : Model -> Html Msg
 viewPhotos model =
@@ -333,6 +419,7 @@ viewPhotos model =
          , input
             [ type_ "file"
             , name "photos"
+            , accept "image/*"
             , multiple True
             , Html.Events.on "change" (D.map FilesSelected filesDecoder)
             ]
@@ -354,6 +441,32 @@ viewPhotos model =
                )
         )
 
+viewPublications : Model -> Html Msg
+viewPublications model =
+    div [ class "field publications" ]
+        [ label [] [ text "Publications (PDF only)" ]
+        , input
+            [ type_ "file"
+            , multiple True
+            , accept "application/pdf"
+            , Html.Events.on "change" (D.map PublicationsSelected filesDecoder)
+            ]
+            []
+        , div [ class "publication-list" ]
+            (List.indexedMap
+                (\i f ->
+                    div []
+                        [ text (File.name f)
+                        , button
+                            [ type_ "button"
+                            , onClick (RemovePublication i)
+                            ]
+                            [ text "❌ Remove" ]
+                        ]
+                )
+                model.publications
+            )
+        ]
 
 -- VIEW OTHER WEEDS
 
@@ -425,6 +538,7 @@ view model =
                                 , textarea [ name "water", placeholder "e.g., River, clear water, temp 18°C", onInput WaterChanged ] [ text model.water ]
                                 ]
                         , viewPhotos model
+                        , viewPublications model
                         , div [ class "field" ]
                                 [ label [] [ text "Province" ]
                                 , provinceDropdown model.province
@@ -447,7 +561,7 @@ view model =
                                 ]
                         , input [ type_ "hidden", name "_csrf_token", value model.csrf_token ] []
                         ]
-                        ++ (List.indexedMap
+                            ++ (List.indexedMap
                                 (\i weed ->
                                     div [ class "weed-entry" ]
                                         [ text weed.name

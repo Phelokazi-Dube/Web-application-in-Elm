@@ -42,7 +42,6 @@
             <ul class="dropdown">
               <li><a href="/survey" class="dropdown-link">Survey Data</a></li>
               <li><a href="/publish" class="dropdown-link">Publish Data</a></li>
-              <li><a href="/map" class="dropdown-link">Map</a></li>
             </ul>
           </li>
           <li class="group"><a href="/records" class="nav-link">RECORDS</a></li>
@@ -58,6 +57,23 @@
         </div>
       </nav>
     </header>
+    <%= if Phoenix.Flash.get(@flash, :error) do %>
+      <div
+        id="login-popup"
+        class="fixed top-20 right-6 z-50 bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-4"
+      >
+        <span>
+          <%= Phoenix.Flash.get(@flash, :error) %>
+        </span>
+
+        <a
+          href={assigns[:oauth_url] || "#"}
+          class="underline font-semibold text-blue-700 hover:text-blue-900"
+        >
+          Login
+        </a>
+      </div>
+    <% end %>
 
     <!-- Main content (Elm app and page content) -->
     <main class="flex-grow">

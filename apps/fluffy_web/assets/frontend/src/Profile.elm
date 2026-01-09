@@ -8,14 +8,18 @@ import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (required)
 
 
+
 -- FLAGS
+
 
 type alias Flags =
     { baseUrl : String
     }
 
 
+
 -- MODEL
+
 
 type alias Document =
     { id : String
@@ -26,6 +30,7 @@ type alias Document =
     , dataStatusId : String
     , userLogin : String
     }
+
 
 type alias Model =
     { documents : List Document
@@ -48,13 +53,17 @@ init flags =
     ( model, fetchDocuments model )
 
 
+
 -- MESSAGES
+
 
 type Msg
     = GotDocuments (Result Http.Error Response)
 
 
+
 -- UPDATE
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -66,7 +75,9 @@ update msg model =
             ( { model | error = Just (httpErrorToString err) }, Cmd.none )
 
 
+
 -- VIEW
+
 
 view : Model -> Html Msg
 view model =
@@ -121,7 +132,9 @@ viewDocument doc =
         ]
 
 
+
 -- HTTP
+
 
 fetchDocuments : Model -> Cmd Msg
 fetchDocuments model =
@@ -135,6 +148,7 @@ type alias Response =
     { isAdmin : Bool
     , documents : List Document
     }
+
 
 responseDecoder : Decode.Decoder Response
 responseDecoder =
@@ -155,19 +169,32 @@ documentDecoder =
         |> required "userLogin" Decode.string
 
 
+
 -- ERROR HANDLING
+
 
 httpErrorToString : Http.Error -> String
 httpErrorToString err =
     case err of
-        Http.BadUrl url -> "Bad URL: " ++ url
-        Http.Timeout -> "Request timed out"
-        Http.NetworkError -> "Network error"
-        Http.BadStatus status -> "Bad response: " ++ String.fromInt status
-        Http.BadBody body -> "Decoding error: " ++ body
+        Http.BadUrl url ->
+            "Bad URL: " ++ url
+
+        Http.Timeout ->
+            "Request timed out"
+
+        Http.NetworkError ->
+            "Network error"
+
+        Http.BadStatus status ->
+            "Bad response: " ++ String.fromInt status
+
+        Http.BadBody body ->
+            "Decoding error: " ++ body
+
 
 
 -- MAIN
+
 
 main : Program Flags Model Msg
 main =

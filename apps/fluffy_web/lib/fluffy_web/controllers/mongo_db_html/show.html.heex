@@ -85,6 +85,32 @@
     justify-content: center;
     margin-top: 1.5rem;
   }
+
+  .pdf-card {
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .pdf-preview {
+    font-size: 10rem;
+    background: #f1f5f9;
+    border-radius: 12px;
+    width: 100%;
+    height: 160px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #ef4444;
+    margin-bottom: 0.75rem;
+  }
+
 </style>
 
 <h1>Document Details</h1>
@@ -102,7 +128,7 @@
     <table class="table table-striped table-bordered">
       <tbody>
         <%= for {key, value} <- @document do %>
-          <%= if key not in ["photos", "created_at", "date_dt"] do %>
+          <%= if key not in ["photos", "created_at", "date_dt", "publications"] do %>
             <tr>
               <th><%= Phoenix.Naming.humanize(key) %></th>
               <td>
@@ -158,10 +184,27 @@
   </div>
 
   <div id="tab-publications" class="tab-content hidden">
-    <p>This section will list any publications or links related to this record.</p>
-    <ul id="publication-list">
-      <li><i>No publications linked yet.</i></li>
-    </ul>
+    <%= if publications = Map.get(@document, "publications") do %>
+      <div class="d-flex flex-wrap gap-4 justify-content-center">
+        <%= for id <- publications do %>
+          <div class="pdf-card border rounded-xl p-4 shadow-sm bg-white
+                      max-w-sm w-full sm:w-80 md:w-96 text-center">
+
+            <div class="pdf-preview">📄</div>
+
+            <a
+              href={~p"/publication/#{id}"}
+              target="_blank"
+              class="btn btn-warning w-full mt-2"
+            >
+              View / Download PDF
+            </a>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p><i>No publications attached.</i></p>
+    <% end %>
   </div>
 
   <%= if @collection && @collection != "" do %>

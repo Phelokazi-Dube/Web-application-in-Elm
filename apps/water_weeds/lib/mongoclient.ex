@@ -115,6 +115,11 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:update_image, file_id, new_binary_data})
   end
 
+  @spec upload_file(String.t(), binary(), map() | nil, BSON.ObjectId.t() | nil) :: {:ok, BSON.ObjectId.t()} | {:error, any()}
+  def upload_file(filename, binary_data, metadata \\ nil, file_id \\ nil) do
+    GenServer.call(__MODULE__, {:upload_file, filename, binary_data, metadata, file_id})
+  end
+
   def export(search) do
     docs = search_documents_by_text("Surveys", search)
 
@@ -224,24 +229,24 @@ defmodule WaterWeeds.MongoDBClient do
         upload_stream =
           Mongo.GridFs.Upload.open_upload_stream(bucket, "updated_image", nil, file_id)
 
-        try do
-          # Stream the new binary data into the upload stream
-          Stream.resource(
-            fn -> new_binary_data end,
-            fn
-              <<>> -> {:halt, nil}
-              chunk -> {[chunk], String.slice(new_binary_data, byte_size(chunk)..-1)}
-            end,
-            fn _ -> :ok end
-          )
-          |> Stream.into(upload_stream)
-          |> Stream.run()
+        Stream.resource(
+          fn -> {new_binary_data, 0} end,
+          fn
+            {remaining, offset} when byte_size(remaining) > offset ->
+              chunk_size = 4_096
+              taken = min(byte_size(remaining) - offset, chunk_size)
+              chunk = binary_part(remaining, offset, taken)
+              {[chunk], {remaining, offset + taken}}
 
-          {:reply, {:ok, upload_stream.id}, state}
-        rescue
-          e ->
-            {:reply, {:error, e}, state}
-        end
+            _ ->
+              {:halt, nil}
+          end,
+          fn _ -> :ok end
+        )
+        |> Stream.into(upload_stream)
+        |> Stream.run()
+
+        {:reply, {:ok, upload_stream.id}, state}
 
       {:error, reason} ->
         {:reply, {:error, reason}, state}
@@ -332,5 +337,34 @@ defmodule WaterWeeds.MongoDBClient do
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
+  end
+
+  def handle_call({:upload_file, filename, binary_data, metadata, file_id},_from,%{bucket: bucket} = state) do
+    upload_stream =
+      Mongo.GridFs.Upload.open_upload_stream(
+        bucket,
+        filename,
+        metadata,
+        file_id
+      )
+
+    Stream.resource(
+      fn -> {binary_data, 0} end,
+      fn
+        {remaining, offset} when byte_size(remaining) > offset ->
+          chunk_size = 4_096
+          taken = min(byte_size(remaining) - offset, chunk_size)
+          chunk = binary_part(remaining, offset, taken)
+          {[chunk], {remaining, offset + taken}}
+
+        _ ->
+          {:halt, nil}
+      end,
+      fn _ -> :ok end
+    )
+    |> Stream.into(upload_stream)
+    |> Stream.run()
+
+    {:reply, {:ok, upload_stream.id}, state}
   end
 end

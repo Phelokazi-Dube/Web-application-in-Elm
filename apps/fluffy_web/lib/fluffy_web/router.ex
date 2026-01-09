@@ -50,6 +50,7 @@ defmodule FluffyWeb.Router do
     get("/logout", GoogleAuthController, :logout)
     get("/documents/:id", MongoDBController, :show_html)
     get("/image/:id", MongoDBController, :get_image)
+    get "/publication/:id", MongoDBController, :get_publication
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
   end
 
