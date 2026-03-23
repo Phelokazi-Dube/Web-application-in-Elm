@@ -30,12 +30,14 @@ type alias Document =
 
 
 type alias Flags =
-    { baseUrl : String }
-
+    { csrfToken : String
+    , collection : String
+    , baseUrl : String
+    , searchText : String
+    }
 
 type alias Model =
-    { key : Nav.Key
-    , documents : List Document
+    { documents : List Document
     , filteredDocuments : List Document
     , searchText : String
     , error : Maybe String
@@ -46,22 +48,13 @@ type alias Model =
     }
 
 
-init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init flags url navKey =
+init : Flags -> ( Model, Cmd Msg )
+init flags =
     let
-        searchText =
-            case Parser.parse searchParser url of
-                Just (Just text) ->
-                    text
-
-                _ ->
-                    ""
-
         model =
-            { key = navKey
-            , documents = []
+            { documents = []
             , filteredDocuments = []
-            , searchText = searchText
+            , searchText = flags.searchText
             , error = Nothing
             , currentPage = 1
             , itemsPerPage = 12
@@ -69,7 +62,7 @@ init flags url navKey =
             , baseUrl = flags.baseUrl
             }
     in
-    ( model, fetchDocuments model searchText )
+    ( model, fetchDocuments model flags.searchText )
 
 
 searchParser : Parser.Parser (Maybe String -> Maybe String) (Maybe String)
@@ -90,8 +83,6 @@ type Msg
     | PrevPage
     | ApproveDocument String
     | DocumentApproved (Result Http.Error String)
-    | UrlChanged Url
-    | LinkClicked Browser.UrlRequest
     | ExportCSV
 
 
@@ -99,33 +90,20 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        LinkClicked urlRequest ->
-            case urlRequest of
-                Browser.Internal url ->
-                    case Parser.parse (Parser.s "survey") url of
-                        Just _ ->
-                            ( model, Nav.pushUrl model.key (Url.toString url) )
-
-                        _ ->
-                            ( model, Nav.load (Url.toString url) )
-
-                Browser.External href ->
-                    ( model, Nav.load href )
-
-        UrlChanged url ->
-            let
-                searchText =
-                    case Parser.parse searchParser url of
-                        Just (Just text) ->
-                            text
-
-                        _ ->
-                            ""
-            in
-            ( { model | searchText = searchText }, fetchDocuments { model | searchText = searchText } searchText )
-
         FetchDocuments ->
-            ( model, fetchDocuments model model.searchText )
+            let
+                newUrl =
+                    if String.isEmpty model.searchText then
+                        "/survey"
+                    else
+                        "/survey?search=" ++ Url.percentEncode model.searchText
+            in
+            ( model
+            , Cmd.batch
+                [ fetchDocuments model model.searchText
+                , Nav.load newUrl
+                ]
+            )
 
         ApproveDocument docId ->
             ( model, approveDocument model docId )
@@ -172,23 +150,21 @@ update msg model =
                 filteredDocs =
                     if String.isEmpty text then
                         model.documents
-
                     else
                         List.filter matchesSearch model.documents
-
-                newUrl =
-                    if String.isEmpty text then
-                        "/survey"
-
-                    else
-                        "/survey?search=" ++ Url.percentEncode text
             in
-            ( { model | searchText = text, filteredDocuments = filteredDocs }
-            , Nav.replaceUrl model.key newUrl
+            ( { model
+                | searchText = text
+                , filteredDocuments = filteredDocs
+                , currentPage = 1
+            }
+            , Cmd.none
             )
 
         ClearSearch ->
-            ( { model | searchText = "", filteredDocuments = model.documents }, Cmd.none )
+            ( { model | searchText = "", filteredDocuments = model.documents }
+            , Nav.load "/survey"
+            )
 
         NextPage ->
             let
@@ -237,36 +213,7 @@ viewContent model =
                 |> List.take model.itemsPerPage
     in
     div [ class "flex flex-col min-h-screen animate-fade-in" ]
-        [ Html.node "link"
-            [ attribute "rel" "stylesheet"
-            , attribute "href" "styles.css"
-            ]
-            []
-        , nav [ class "bg-neutral-100 shadow-sm mb-5", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
-            [ div [ class "container mx-auto px-4 py-3 flex items-center justify-between" ]
-                [ div [ class "brand-container" ]
-                    [ img [ Html.Attributes.src "images/images.png", Html.Attributes.alt "Logo", class "logo" ] []
-                    , div [ class "brand-title" ] [ text "CBC" ]
-                    ]
-                , ul [ class "nav-items" ]
-                    [ li [] [ a [ href "/home", class "nav-link" ] [ text "HOME" ] ]
-                    , li [ class "group" ]
-                        [ a [ href "#", class "nav-link" ] [ text "DATA" ]
-                        , ul [ class "dropdown" ]
-                            [ li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Data" ] ]
-                            , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
-                            ]
-                        ]
-                    , li [ class "group" ]
-                        [ a [ href "/records", class "nav-link" ] [ text "RECORDS" ] ]
-                    , li []
-                        [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
-                    , li []
-                        [ a [ href "/help", class "nav-link" ] [ text "HELP" ] ]
-                    ]
-                ]
-            ]
-        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Survey Collections" ]
+        [ h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Survey Collections" ]
         , div [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
             [ input
                 [ class "search-input flex-grow px-2 py-1 border rounded-md"
@@ -297,43 +244,11 @@ viewContent model =
 
             Nothing ->
                 text ""
-        , footer [ class "footer mt-8" ]
-            [ div [ class "container mx-auto" ]
-                [ div [ class "footer-content" ]
-                    [ div [ class "footer-section" ]
-                        [ h3 [ class "footer-title" ] [ text "CBC" ]
-                        , p [ class "footer-text" ] [ text "Enhancing access to biological control data" ]
-                        ]
-                    , div [ class "footer-section" ]
-                        [ h3 [ class "footer-title" ] [ text "Quick Links" ]
-                        , ul []
-                            [ li [] [ a [ href "#", class "footer-link" ] [ text "Privacy Policy" ] ]
-                            , li [] [ a [ href "#", class "footer-link" ] [ text "Terms of Service" ] ]
-                            , li [] [ a [ href "/contact", class "footer-link" ] [ text "Contact Us" ] ]
-                            ]
-                        ]
-                    , div [ class "footer-section" ]
-                        [ h3 [ class "footer-title" ] [ text "Connect With Us" ]
-                        , div [ class "social-icons" ]
-                            [ a [ href "#", class "fa fa-facebook" ] []
-                            , a [ href "#", class "fa fa-twitter" ] []
-                            , a [ href "#", class "fa fa-instagram" ] []
-                            , a [ href "#", class "fa fa-linkedin" ] []
-                            ]
-                        ]
-                    ]
-                ]
-            , div [ class "footer-credits" ]
-                [ p [] [ text "© 2025 Center for Biological Control. All rights reserved." ] ]
-            ]
         ]
 
-
-view : Model -> Browser.Document Msg
+view : Model -> Html Msg
 view model =
-    { title = "Center for Biological Control Data Portal"
-    , body = [ viewContent model ]
-    }
+    viewContent model
 
 
 
@@ -468,11 +383,9 @@ subscriptions _ =
 
 main : Program Flags Model Msg
 main =
-    Browser.application
+    Browser.element
         { init = init
         , update = update
         , view = view
         , subscriptions = subscriptions
-        , onUrlChange = UrlChanged
-        , onUrlRequest = LinkClicked
         }

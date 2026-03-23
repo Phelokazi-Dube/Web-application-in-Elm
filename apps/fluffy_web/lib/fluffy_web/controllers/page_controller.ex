@@ -136,14 +136,10 @@ defmodule FluffyWeb.PageController do
 
           conn
           |> put_status(:ok)
-          |> render(:home,
-            layout: false,
-            js_file: "uploading_data",
-            submission_status: "success",
-            # extra_prepend:
-            # ~s(The observation has been uploaded. You can add another observation below. Or you can return to the <a href="/uploadpage" class="text-blue-500 underline">upload page</a>.),
-          profile: get_session(conn, :profile)
-          )
+          |> json(%{
+            status: "success",
+            id: BSON.ObjectId.encode!(bson_id)
+          })
 
         {:error, reason} ->
           # Inspect the error reason if the insertion fails

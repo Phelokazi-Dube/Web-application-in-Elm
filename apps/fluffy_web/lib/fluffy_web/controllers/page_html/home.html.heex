@@ -10,11 +10,15 @@
 <script type="module">
   <%= raw "import { start_elm } from \"/js/" <> @js_file <> ".js\";" %>
   const params = new URLSearchParams(window.location.search);
+  const collection = params.get("collection");
+  
   const flags = {
     baseUrl: window.location.origin,
     searchText: params.get("search") || "",
-    csrfToken: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    csrfToken: document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+    collection: collection || ""
   };
+
   function validateFlags(flags) {
     if (!flags) return "Flags are missing";
 
@@ -30,6 +34,10 @@
       return "csrfToken must be a string";
     }
 
+    if (typeof flags.collection !== "string") {
+      return "collection must be a string";
+      }
+
     return null;
   }
 
@@ -42,8 +50,14 @@
     document.getElementById("myapp").innerHTML =
       "<p style='color:red;'>Application failed to load. Check console.</p>";
   } else {
+    if ("<%= @js_file %>" === "csvupload" && !collection) {
+      document.getElementById("myapp").innerHTML =
+        "<p style='color:red; text-align:center; margin-top:20px;'>No collection selected. Please go back and choose where to upload.</p>";
+    }
+  else {
     app = start_elm(flags);
   }
+}
 </script>
 <script>
 </script>
