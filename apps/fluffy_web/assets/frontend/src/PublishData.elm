@@ -1,7 +1,6 @@
 module PublishData exposing (..)
 
 import Browser exposing (..)
-import Browser.Navigation exposing (load)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -50,13 +49,7 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "flex flex-col min-h-screen" ]
-        [ node "link"
-            [ attribute "rel" "stylesheet"
-            , attribute "href" "styles.css"
-            ]
-            []
-        , main_ [ class "container mx-auto flex-grow animate-fade-in" ]
+        main_ [ class "container mx-auto flex-grow animate-fade-in" ]
             [ section [ id "first", class "first-main" ]
                 [ h1 [ class "first-title" ] [ text "For Users" ]
                 , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]
@@ -69,7 +62,6 @@ view model =
                 , p [ class "some-info" ] [ text "Our research facilities include state-of-the-art greenhouses equipped for biological control experiments. These controlled environments allow researchers to study plant-pest-predator interactions in detail." ]
                 ]
             ]
-        ]
 
 
 main : Program () Model Msg

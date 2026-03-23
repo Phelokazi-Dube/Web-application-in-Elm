@@ -26,7 +26,7 @@ defmodule FluffyWeb.MongoDBController do
     |> Map.delete("_id")
   end
 
-    # Converts almost any header string (e.g. COUNTRY_ID, DataACCESSID) into clean camelCase.
+  # Converts almost any header string (e.g. COUNTRY_ID, DataACCESSID) into clean camelCase.
   def to_camel_case(key) when is_binary(key) do
     key =
       key
@@ -208,7 +208,6 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
-
   # Fetch a document by its ID
   def show(conn, %{"id" => id, "collection" => collection}) do
     collection = collection || "Surveys"
@@ -386,7 +385,7 @@ defmodule FluffyWeb.MongoDBController do
             # Insert the documents into MongoDB
             case MongoDBClient.insert_many_documents(collection, documents) do
               {:ok, result} ->
-                inserted_documents =
+                _inserted_documents =
                   Enum.map(result.inserted_ids, fn bson_obj ->
                     MongoDBClient.get_document_by_id(collection, bson_obj)
                   end)
@@ -591,7 +590,7 @@ defmodule FluffyWeb.MongoDBController do
             |> put_status(:not_found)
             |> json(%{error: "Document not found"})
 
-          %{"userLogin" => user_login} = existing_doc ->
+          %{"userLogin" => user_login} ->
             # Check authorization: must be admin or document owner
             if role == "admin" or email == user_login do
               # Merge in the unapproval reset
@@ -706,16 +705,18 @@ defmodule FluffyWeb.MongoDBController do
 
     documents =
       MongoDBClient.get_all_documents(collection)
-      |> Enum.map(&Normalizer.normalize/1)
+      # |> Enum.map(&Normalizer.normalize/1)
+      |> Enum.map(&Map.drop(&1, @excluded_fields))
 
-    csv = CSVBuilder.build(documents, @excluded_fields)
+    # csv = CSVBuilder.build(documents, @excluded_fields)
 
     conn
     |> put_resp_content_type("text/csv")
     |> put_resp_header("content-disposition", ~s(attachment; filename="surveys.csv"))
-    |> send_resp(200, csv)
+    # |> send_resp(200, csv)
   end
 
+  @spec export_search_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def export_search_csv(conn, %{"search" => search}) do
     csv = WaterWeeds.MongoDBClient.export(search)
 

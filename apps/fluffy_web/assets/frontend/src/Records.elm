@@ -6,11 +6,25 @@ import Html.Attributes exposing (..)
 
 
 
+type alias Model =
+    ()
+
+type Msg
+    = NoOp
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( (), Cmd.none )
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    ( model, Cmd.none )
+
 -- VIEW
 
 
-view : Html msg
-view =
+view : Model -> Html Msg
+view _ =
     div [ class "flex flex-col min-h-screen" ]
         [ Html.node "link"
             [ attribute "rel" "stylesheet"
@@ -97,15 +111,20 @@ referenceCard ( iconClass, label ) =
             ]
             baseContent
 
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
 
 
 -- MAIN
 
 
-main : Program () () msg
+main : Program () Model Msg
 main =
-    Browser.sandbox
-        { init = ()
-        , view = \_ -> view
-        , update = \_ model -> model
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
         }

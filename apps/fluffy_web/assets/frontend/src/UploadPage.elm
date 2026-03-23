@@ -6,11 +6,14 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 
 
+type alias Model =
+    ()
+
+type Msg
+    = NoOp
 
 -- The view function that creates the page
-
-
-view : () -> Html msg
+view : Model -> Html Msg
 view _ =
     div [ class "flex flex-col min-h-screen bg-gray-50" ]
         [ main_ [ class "flex-grow container mx-auto px-4 py-16 text-center animate-fade-in" ]
@@ -51,26 +54,28 @@ view _ =
 
 
 
--- The update function, which handles the app's state
-
-
-update : msg -> () -> ()
-update _ model =
-    model
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    ( model, Cmd.none )
 
 
 
--- The initial model (empty tuple)
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( (), Cmd.none )
 
-
-init : ()
-init =
-    ()
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
 
 
 
 -- Main entry point for the Elm app
-
-
+main : Program () Model Msg
 main =
-    Browser.sandbox { init = init, update = update, view = view }
+    Browser.element
+        { init = init
+        , update = update
+        , view = view
+        , subscriptions = subscriptions
+        }

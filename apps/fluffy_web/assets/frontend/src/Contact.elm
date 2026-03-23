@@ -1,6 +1,6 @@
 module Contact exposing (..)
 
-import Browser exposing (sandbox)
+import Browser exposing (element)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
@@ -22,13 +22,15 @@ type alias Model =
 -- Init
 
 
-init : Model
-init =
-    { name = ""
-    , surname = ""
-    , message = ""
-    , email = ""
-    }
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { name = ""
+      , surname = ""
+      , message = ""
+      , email = ""
+      }
+    , Cmd.none
+    )
 
 
 
@@ -43,23 +45,25 @@ type Msg
     | UpdateEmail String
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Cancel ->
-            { model | name = "", surname = "", message = "", email = "" }
+            ( { model | name = "", surname = "", message = "", email = "" }
+            , Cmd.none
+            )
 
         UpdateName newName ->
-            { model | name = newName }
+            ( { model | name = newName }, Cmd.none )
 
         UpdateSurname newSurname ->
-            { model | surname = newSurname }
+            ( { model | surname = newSurname }, Cmd.none )
 
         UpdateMessage newMessage ->
-            { model | message = newMessage }
+            ( { model | message = newMessage }, Cmd.none )
 
         UpdateEmail newEmail ->
-            { model | email = newEmail }
+            ( { model | email = newEmail }, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -116,8 +120,9 @@ view model =
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
+    Browser.element
         { init = init
         , update = update
         , view = view
+        , subscriptions = subscriptions
         }

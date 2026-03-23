@@ -37,6 +37,7 @@ type alias Model =
     , currentPage : Int
     , itemsPerPage : Int
     , baseUrl : String
+    , isLoading : Bool 
     }
 
 
@@ -50,9 +51,10 @@ init flags =
             , currentPage = 1
             , itemsPerPage = 18
             , baseUrl = flags.baseUrl
+            , isLoading = True
             }
     in
-    ( model, fetchDocuments model )
+    ( model, fetchDocuments model.baseUrl )
 
 
 
@@ -73,10 +75,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotDocuments (Ok response) ->
-            ( { model | documents = response.documents, isAdmin = response.isAdmin }, Cmd.none )
+            ( { model | documents = response.documents, isAdmin = response.isAdmin, isLoading = False}, Cmd.none )
 
         GotDocuments (Err err) ->
-            ( { model | error = Just (httpErrorToString err) }, Cmd.none )
+            ( { model | error = Just (httpErrorToString err), isLoading = False}, Cmd.none )
 
         NextPage ->
             let
@@ -113,56 +115,63 @@ view model =
         isLastPage =
             model.currentPage >= totalPages
     in
-    div [ class "container mx-auto p-6 animate-fade-in" ]
-        [ div [ class "flex items-center justify-between mb-6" ]
-            [ h1 [ class "text-4xl font-extrabold text-emerald-700" ]
-                [ text "🌍 Countries Collection" ]
-            , a
-                [ href "/csvupload?collection=Countries"
-                , class "bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow"
-                ]
-                [ text "+ Upload More Countries via CSV" ]
-            ]
-        , case model.error of
-            Just errMsg ->
-                div [ class "text-red-600" ] [ text errMsg ]
-
-            Nothing ->
-                div []
-                    [ table [ class "min-w-full table-auto border border-gray-300 mb-6" ]
-                        [ thead [ class "bg-gray-100" ]
-                            [ tr []
-                                [ thCell "Country ID"
-                                , thCell "Continent ID"
-                                , thCell "Country"
-                                , thCell "Data Source ID"
-                                , thCell "Data Status ID"
-                                , thCell "Data Access ID"
-                                , thCell "Submitted by"
-                                , thCell "Document"
-                                ]
-                            ]
-                        , tbody []
-                            (List.map viewDocument paginatedDocuments)
-                        ]
-                    , div [ class "pagination mt-4 flex justify-between" ]
-                        [ button
-                            [ onClick PrevPage
-                            , disabled isFirstPage
-                            , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
-                            ]
-                            [ text "Previous" ]
-                        , span [ class "px-4 py-2 text-gray-700" ]
-                            [ text ("Page " ++ String.fromInt model.currentPage ++ " of " ++ String.fromInt totalPages) ]
-                        , button
-                            [ onClick NextPage
-                            , disabled isLastPage
-                            , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
-                            ]
-                            [ text "Next" ]
-                        ]
+    div []
+        [  if model.isLoading then
+            div
+                [ class "fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50" ]
+                [ div [ class "text-xl font-semibold" ] [ text "⏳ Loading..." ] ]
+          else
+            text ""
+        ,div [ class "container mx-auto p-6 animate-fade-in" ]
+            [ div [ class "flex items-center justify-between mb-6" ]
+                [ h1 [ class "text-4xl font-extrabold text-emerald-700" ]
+                    [ text "🌍 Countries Collection" ]
+                , a
+                    [ href "/csvupload?collection=Countries"
+                    , class "bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow"
                     ]
-        ]
+                    [ text "+ Upload More Countries via CSV" ]
+                ]
+            , case model.error of
+                Just errMsg ->
+                    div [ class "text-red-600" ] [ text errMsg ]
+
+                Nothing ->
+                    div []
+                        [ table [ class "min-w-full table-auto border border-gray-300 mb-6" ]
+                            [ thead [ class "bg-gray-100" ]
+                                [ tr []
+                                    [ thCell "Country ID"
+                                    , thCell "Continent ID"
+                                    , thCell "Country"
+                                    , thCell "Data Source ID"
+                                    , thCell "Data Status ID"
+                                    , thCell "Data Access ID"
+                                    , thCell "Submitted by"
+                                    , thCell "Document"
+                                    ]
+                                ]
+                            , tbody []
+                                (List.map viewDocument paginatedDocuments)
+                            ]
+                        , div [ class "pagination mt-4 flex justify-between" ]
+                            [ button
+                                [ onClick PrevPage
+                                , disabled (isFirstPage || model.isLoading)
+                                , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                                ]
+                                [ text "Previous" ]
+                            , span [ class "px-4 py-2 text-gray-700" ]
+                                [ text ("Page " ++ String.fromInt model.currentPage ++ " of " ++ String.fromInt totalPages) ]
+                            , button
+                                [ onClick NextPage
+                                , disabled (isLastPage || model.isLoading)
+                                , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                                ]
+                                [ text "Next" ]
+                            ]
+                              ]      ]
+            ]
 
 
 thCell : String -> Html msg
@@ -178,12 +187,12 @@ tdCell value =
 viewDocument : Document -> Html msg
 viewDocument doc =
     tr []
-        [ tdCell doc.continentId
+        [ tdCell doc.countryId
+        , tdCell doc.continentId
         , tdCell doc.country
-        , tdCell doc.countryId
-        , tdCell doc.dataAccessId
         , tdCell doc.dataSourceId
         , tdCell doc.dataStatusId
+        , tdCell doc.dataAccessId
         , tdCell doc.userLogin
         , td [ class "px-4 py-2 border border-gray-300" ]
             [ a [ href ("/documents/" ++ doc.id ++ "?collection=Countries"), class "text-blue-600 underline" ]
@@ -196,10 +205,10 @@ viewDocument doc =
 -- HTTP
 
 
-fetchDocuments : Model -> Cmd Msg
-fetchDocuments model =
+fetchDocuments : String -> Cmd Msg
+fetchDocuments baseUrl =
     Http.get
-        { url = model.baseUrl ++ "/api/Mongodb/document?collection=Countries"
+        { url = baseUrl ++ "/api/Mongodb/document?collection=Countries"
         , expect = Http.expectJson GotDocuments responseDecoder
         }
 

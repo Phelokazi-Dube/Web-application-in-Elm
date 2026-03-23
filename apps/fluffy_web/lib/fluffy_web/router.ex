@@ -61,7 +61,6 @@ defmodule FluffyWeb.Router do
     get("/csvupload", PageController, :home, private: %{:javascript => "csvupload"})
     post("/csvupload", MongoDBController, :upload_csv)
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
-    # Route for uploading CSV files
     post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
 
     # Route for updating a document

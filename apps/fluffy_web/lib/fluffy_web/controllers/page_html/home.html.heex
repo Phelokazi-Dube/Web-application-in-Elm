@@ -9,11 +9,41 @@
 <div id="myapp"></div>
 <script type="module">
   <%= raw "import { start_elm } from \"/js/" <> @js_file <> ".js\";" %>
+  const params = new URLSearchParams(window.location.search);
   const flags = {
     baseUrl: window.location.origin,
+    searchText: params.get("search") || "",
     csrfToken: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
   };
-  const app = start_elm(flags);
+  function validateFlags(flags) {
+    if (!flags) return "Flags are missing";
+
+    if (typeof flags.baseUrl !== "string") {
+      return "baseUrl must be a string";
+    }
+
+    if (typeof flags.searchText !== "string") {
+      return "searchText must be a string";
+    }
+
+    if (typeof flags.csrfToken !== "string") {
+      return "csrfToken must be a string";
+    }
+
+    return null;
+  }
+
+  const error = validateFlags(flags);
+
+  let app = null;
+
+  if (error) {
+    console.error("Invalid flags:", error, flags);
+    document.getElementById("myapp").innerHTML =
+      "<p style='color:red;'>Application failed to load. Check console.</p>";
+  } else {
+    app = start_elm(flags);
+  }
 </script>
 <script>
 </script>
