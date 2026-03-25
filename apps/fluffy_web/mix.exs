@@ -62,6 +62,9 @@ defmodule FluffyWeb.MixProject do
       {:bandit, "~> 1.5"},
       {:tzdata, "~> 1.1"},
       {:csv, "~> 3.2"},
+      {:swoosh, "~> 1.12"},
+      {:gen_smtp, "~> 1.2"},
+      {:dotenvy, "~> 0.8"},
       {:nimble_csv, "~> 1.2"}
     ]
   end
