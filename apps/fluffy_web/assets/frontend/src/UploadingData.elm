@@ -13,7 +13,7 @@ import Json.Encode as E
 import Html.Keyed exposing (..)
 import Process
 import Task
-port receiveLocationPort : (String -> msg) -> Sub msg
+port receiveLocationPort : (D.Value -> msg) -> Sub msg
 port pickLocationPort : () -> Cmd msg
 port scrollToTop : () -> Cmd msg
 
@@ -59,6 +59,16 @@ type alias OtherWeed =
     , absent : Bool
     }
 
+type alias Coordinates =
+    { lat : Float
+    , lng : Float
+    }
+
+coordsDecoder : D.Decoder Coordinates
+coordsDecoder =
+    D.map2 Coordinates
+        (D.field "lat" D.float)
+        (D.field "lng" D.float)
 
 -- MODEL
 
@@ -144,7 +154,7 @@ type Msg
     | ToggleOtherWeedAbsent Int
     | SaveObservation
     | UploadResponse (Result Http.Error String)
-    | LocationPicked String
+    | LocationPicked (Result D.Error Coordinates)
     | StartPicking
     | PublicationsSelected (List File)
     | RemovePublication Int
@@ -158,7 +168,6 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp -> ( model, Cmd.none )
-        LocationPicked locStr -> ( { model | location = locStr }, Cmd.none )
         StartPicking -> ( model, pickLocationPort () )
         SurveyTypeChanged v -> ( { model | surveyType = v, success = False, error = Nothing }, Cmd.none )
         LocationChanged v -> ( { model | location = v, success = False}, Cmd.none )
@@ -368,6 +377,17 @@ update msg model =
             ( { model | success = False }
             , scrollToTop ()
             )
+        LocationPicked result ->
+            case result of
+                Ok coords ->
+                    let
+                        locStr =
+                            String.fromFloat coords.lat ++ ", " ++ String.fromFloat coords.lng
+                    in
+                    ( { model | location = locStr, error = Nothing }, Cmd.none )
+
+                Err _ ->
+                    ( { model | error = Just "Invalid location data received" }, Cmd.none )
 
 
 -- PROVINCE DROPDOWN
@@ -591,7 +611,7 @@ viewOtherWeeds model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    receiveLocationPort LocationPicked
+    receiveLocationPort (\value -> LocationPicked (D.decodeValue coordsDecoder value))
 
 
 
