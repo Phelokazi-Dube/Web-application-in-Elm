@@ -1,4 +1,5 @@
 import Config
+Dotenvy.source!(".env")
 
 if System.get_env("PHX_SERVER") do
   config :fluffy_web, FluffyWeb.Endpoint, server: true
@@ -108,6 +109,13 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+
+  config :fluffy_web, Fluffy.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_SERVER"),
+    port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+    tls: :always,
+    auth: :always
 
   config :fluffy, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 end

@@ -111,6 +111,8 @@ defmodule FluffyWeb.Router do
 
     # See unapproved documents
     get "/Mongodb/unapproved_documents", MongoDBController, :unapproved
+
+    post "/contact", ContactController, :create
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

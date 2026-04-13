@@ -14,6 +14,8 @@ import Json.Decode.Pipeline exposing (required)
 
 type alias Flags =
     { baseUrl : String
+    , csrfToken : String
+    , collection : String
     }
 
 

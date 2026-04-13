@@ -5,6 +5,13 @@ config :water_weeds, :mongodb_driver,
 url: "mongodb://localhost:27017/cbctryout",
 pool_size: 5
 
+# Configure mail server
+config :fluffy_web, Fluffy.Mailer,
+  adapter: Swoosh.Adapters.SMTP,
+  relay: "localhost",
+  port: 1025,
+  tls: :never,
+  auth: :never
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

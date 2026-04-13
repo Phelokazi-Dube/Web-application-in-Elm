@@ -48,14 +48,14 @@ export function startMapPicker(elmApp) {
             // Send location when marker dragged
             marker.on('dragend', function (e) {
               const pos = e.target.getLatLng();
-              window.opener.postMessage({ lat: pos.lat, lng: pos.lng }, "*");
+              window.opener.postMessage({ lat: pos.lat, lng: pos.lng }, window.location.origin);
               window.close();
             });
 
             // Send location when map clicked
             map.on('click', function (e) {
               marker.setLatLng(e.latlng);
-              window.opener.postMessage({ lat: e.latlng.lat, lng: e.latlng.lng }, "*");
+              window.opener.postMessage({ lat: e.latlng.lat, lng: e.latlng.lng }, window.location.origin);
               window.close();
             });
           }
@@ -74,9 +74,10 @@ export function startMapPicker(elmApp) {
       </html>
     `);
     window.addEventListener("message", (event) => {
-      if (event.data && event.data.lat && event.data.lng) {
-        const coords = event.data.lat + ", " + event.data.lng;
-        elmApp.ports.receiveLocationPort.send(coords);
+      if (event.origin !== window.location.origin) return;
+      if (event.data && typeof event.data.lat === "number"&&
+            typeof event.data.lng === "number") {
+        elmApp.ports.receiveLocationPort.send(event.data);
       }
     }, { once: true });
   };

@@ -11,8 +11,11 @@ import Regex
 import Json.Decode as D
 import Json.Encode as E
 import Html.Keyed exposing (..)
-port receiveLocationPort : (String -> msg) -> Sub msg
+import Process
+import Task
+port receiveLocationPort : (D.Value -> msg) -> Sub msg
 port pickLocationPort : () -> Cmd msg
+port scrollToTop : () -> Cmd msg
 
 
 
@@ -20,8 +23,9 @@ port pickLocationPort : () -> Cmd msg
 -- FLAGS
 
 type alias Flags =
-    { baseUrl : String
-    , csrfToken : String
+    { csrfToken : String
+    , collection : String
+    , baseUrl : String
     }
 
 
@@ -54,6 +58,16 @@ type alias OtherWeed =
     , absent : Bool
     }
 
+type alias Coordinates =
+    { lat : Float
+    , lng : Float
+    }
+
+coordsDecoder : D.Decoder Coordinates
+coordsDecoder =
+    D.map2 Coordinates
+        (D.field "lat" D.float)
+        (D.field "lng" D.float)
 
 -- MODEL
 
@@ -74,6 +88,12 @@ type alias Model =
     , weeds : List WeedEntry
     , otherWeeds : List OtherWeed
     , baseUrl : String
+    , isLoading : Bool
+    , success : Bool
+    , photoInputKey : Int
+    , publicationInputKey : Int
+    , error : Maybe String
+    , showValidation : Bool
     }
 
 
@@ -97,6 +117,12 @@ init flags =
       , baseUrl = flags.baseUrl
       , weeds = []
       , otherWeeds = []
+      , isLoading = False
+      , success = False
+      , photoInputKey = 0
+      , publicationInputKey = 0
+      , error = Nothing
+      , showValidation = False
       }
     , Cmd.none
     )
@@ -127,10 +153,11 @@ type Msg
     | ToggleOtherWeedAbsent Int
     | SaveObservation
     | UploadResponse (Result Http.Error String)
-    | LocationPicked String
+    | LocationPicked (Result D.Error Coordinates)
     | StartPicking
     | PublicationsSelected (List File)
     | RemovePublication Int
+    | ClearSuccess
 
 
 
@@ -140,10 +167,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp -> ( model, Cmd.none )
-        LocationPicked locStr -> ( { model | location = locStr }, Cmd.none )
         StartPicking -> ( model, pickLocationPort () )
-        SurveyTypeChanged v -> ( { model | surveyType = v }, Cmd.none )
-        LocationChanged v -> ( { model | location = v }, Cmd.none )
+        SurveyTypeChanged v -> ( { model | surveyType = v, success = False, error = Nothing }, Cmd.none )
+        LocationChanged v -> ( { model | location = v, success = False}, Cmd.none )
         ControlAgentChanged v -> ( { model | controlAgent = v }, Cmd.none )
         WeatherChanged v -> ( { model | weather = v }, Cmd.none )
         WaterChanged v -> ( { model | water = v }, Cmd.none )
@@ -259,8 +285,21 @@ update msg model =
             in ( { model | otherWeeds = List.indexedMap updateOther model.otherWeeds }, Cmd.none )
 
         SaveObservation ->
-            if not (isValidDate model.date) then
+            if model.isLoading then
                 ( model, Cmd.none )
+            else if
+                isEmpty model.surveyType
+                    || isEmpty model.location
+                    || isProvinceInvalid model.province
+                    || isEmpty model.date
+            then
+                ( { model | error = Just "⚠️ Please fill in all required fields", showValidation = True }
+                , scrollToTop ()
+                )
+            else if not (isValidDate model.date) then
+                ( { model | error = Just "⚠️ Invalid date format (MM/DD/YYYY)" }
+                , scrollToTop ()
+                )
             else
                 let
                     -- encode weeds and other weeds as JSON strings
@@ -294,20 +333,66 @@ update msg model =
                         Http.post
                             { url = model.baseUrl ++ "/uploading"
                             , body = Http.multipartBody (textParts ++ fileParts ++ publicationParts)
-                            , expect = Http.expectString UploadResponse
+                            , expect =
+                                Http.expectJson UploadResponse
+                                    (D.field "status" D.string)
                             }
                 in
-                ( model, request )
+                ( { model | isLoading = True, success = False, error = Nothing }, request )
 
+        UploadResponse (Ok _) ->
+            ( { model
+                | photos = []
+                , publications = []
+                , surveyType = ""
+                , location = ""
+                , controlAgent = ""
+                , weather = ""
+                , water = ""
+                , programme = ""
+                , site = ""
+                , date = ""
+                , notes = ""
+                , weeds = []
+                , otherWeeds = []
+                , isLoading = False
+                , success = True
+                , province = None
+                , photoInputKey = model.photoInputKey + 1
+                , publicationInputKey = model.publicationInputKey + 1
+                }
+            , Cmd.batch
+                [ scrollToTop ()
+                , Process.sleep 3000 |> Task.perform (\_ -> ClearSuccess)
+                ]
+            )
 
-        UploadResponse (Ok _) -> ( { model | photos = [], publications = [] }, Cmd.none )
-        UploadResponse (Err _) -> ( model, Cmd.none )
+        UploadResponse (Err _) ->
+            ( { model | isLoading = False, success = False }
+            , Cmd.none
+            )
+
+        ClearSuccess ->
+            ( { model | success = False }
+            , scrollToTop ()
+            )
+        LocationPicked result ->
+            case result of
+                Ok coords ->
+                    let
+                        locStr =
+                            String.fromFloat coords.lat ++ ", " ++ String.fromFloat coords.lng
+                    in
+                    ( { model | location = locStr, error = Nothing }, Cmd.none )
+
+                Err _ ->
+                    ( { model | error = Just "Invalid location data received" }, Cmd.none )
 
 
 -- PROVINCE DROPDOWN
 
-provinceDropdown : Province -> Html Msg
-provinceDropdown selectedProvince =
+provinceDropdown : Model -> Html Msg
+provinceDropdown model =
     let
         provinces =
             [ None, EasternCape, Gauteng, WesternCape, KwaZuluNatal, FreeState, Mpumalanga, Limpopo, NorthWest, NorthernCape ]
@@ -315,12 +400,18 @@ provinceDropdown selectedProvince =
     select
         [ name "province"
         , onInput (ProvinceSelected << stringToProvince)
+        , style "background-color"
+            (if isEmpty model.location && model.showValidation then
+                "#ffe6e6"
+            else
+                "white"
+            )
         ]
         (List.map
             (\p ->
                 option
                     [ value (provinceToString p)
-                    , selected (p == selectedProvince)
+                    , selected (p == model.province)
                     ]
                     [ text (provinceToString p) ]
             )
@@ -372,6 +463,21 @@ isValidDate : String -> Bool
 isValidDate date =
     Regex.contains (Regex.fromString "^\\d{2}/\\d{2}/\\d{4}$" |> Maybe.withDefault Regex.never) date
 
+isEmpty : String -> Bool
+isEmpty str =
+    String.trim str == ""
+
+isProvinceInvalid : Province -> Bool
+isProvinceInvalid province =
+    province == None
+
+inputClass : Bool -> String
+inputClass hasError =
+    if hasError then
+        "border border-red-500 p-2 rounded"
+    else
+        "border border-gray-300 p-2 rounded"
+
 encodeWeed : WeedEntry -> E.Value
 encodeWeed weed =
     let
@@ -416,14 +522,18 @@ viewPhotos : Model -> Html Msg
 viewPhotos model =
     div [ class "field photos" ]
         ([ label [] [ text "Photos" ]
-         , input
-            [ type_ "file"
-            , name "photos"
-            , accept "image/*"
-            , multiple True
-            , Html.Events.on "change" (D.map FilesSelected filesDecoder)
+         , Html.Keyed.node "div" []
+            [ ( String.fromInt model.photoInputKey
+            , input
+                [ type_ "file"
+                , name "photos"
+                , accept "image/*"
+                , multiple True
+                , Html.Events.on "change" (D.map FilesSelected filesDecoder)
+                ]
+                []
+                )
             ]
-            []
         ]
             ++ (if List.isEmpty model.photos then []
                 else
@@ -445,13 +555,17 @@ viewPublications : Model -> Html Msg
 viewPublications model =
     div [ class "field publications" ]
         [ label [] [ text "Publications (PDF only)" ]
-        , input
-            [ type_ "file"
-            , multiple True
-            , accept "application/pdf"
-            , Html.Events.on "change" (D.map PublicationsSelected filesDecoder)
+        , Html.Keyed.node "div" []
+            [ ( String.fromInt model.publicationInputKey
+            , input
+                    [ type_ "file"
+                    , multiple True
+                    , accept "application/pdf"
+                    , Html.Events.on "change" (D.map PublicationsSelected filesDecoder)
+                    ]
+                    []
+            )
             ]
-            []
         , div [ class "publication-list" ]
             (List.indexedMap
                 (\i f ->
@@ -496,7 +610,7 @@ viewOtherWeeds model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    receiveLocationPort LocationPicked
+    receiveLocationPort (\value -> LocationPicked (D.decodeValue coordsDecoder value))
 
 
 
@@ -504,82 +618,165 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "uploading-container" ]
-        [ div [ class "header" ] [ div [ class "navtab" ] [] ]
-        , div [ id "wrapper", class "container clear" ]
-            [ div [ id "pageheader", class "column span-26" ]
-                [ h2 [ class "add-observation" ] [ text "Add an Observation" ] ]
-            , div [ class "column span-24" ]
-                [ Html.form [ onSubmit SaveObservation, method "post", class "form-group", enctype "multipart/form-data" ]
-                    (  [ div [ class "field" ]
-                                [ label [] [ text "Survey type" ]
-                                , input [ type_ "text", name "surveyType", placeholder "Post-release or Pre-release or Survey", value model.surveyType, onInput SurveyTypeChanged ] []
-                                ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Location" ]
-                                , input [ type_ "text", name "location", placeholder "Latitude, Longitude", value model.location, onInput LocationChanged ] []
-                                ]
-                        , button
-                            [ type_ "button"
-                            , onClick StartPicking
-                            , class "map-button"
+    div []
+        [ if model.isLoading then
+            div
+                [ class "fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50" ]
+                [ div [ class "text-xl font-semibold" ] [ text "⏳ Saving observation..." ] ]
+          else
+            text ""
+        ,div [ class "uploading-container" ]
+            [ div [ class "header" ] [ div [ class "navtab" ] [] ]
+            , div [ id "wrapper", class "container clear" ]
+                [ div [ id "pageheader", class "column span-26" ]
+                    [ h2 [ class "add-observation" ] [ text "Add an Observation" ] ]
+                , if model.success then
+                        div [ class "max-w-2xl mx-auto mt-4 mb-4 p-4 rounded-md bg-green-100 text-green-800 text-center font-semibold shadow transition-opacity duration-500 opacity-100"
+                            , style "transition" "opacity 0.5s ease"  
                             ]
-                            [ text "📍 Pick on Map" ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Control agent" ]
-                                , input [ type_ "text", name "controlAgent", value model.controlAgent, onInput ControlAgentChanged ] []
+                            [ text "✅ Observation saved successfully!" ]
+                      else
+                        text ""
+                , case model.error of
+                    Just err ->
+                        div
+                            [ class "max-w-2xl mx-auto mt-4 mb-4 p-4 rounded-md bg-red-100 text-red-800 text-center font-semibold shadow" ]
+                            [ text err ]
+
+                    Nothing ->
+                        text ""
+                , div [ class "column span-24" ]
+                    [  Html.form [ onSubmit SaveObservation, class "form-group", enctype "multipart/form-data" ]
+                        (  [ div [ class "field" ]
+                                    [ label [] [ text "Survey type" ]
+                                    , input 
+                                    [ type_ "text"
+                                    , name "surveyType"
+                                    , placeholder "Post-release or Pre-release or Survey"
+                                    , value model.surveyType, onInput SurveyTypeChanged
+                                    , style "background-color"
+                                        (if isEmpty model.surveyType && model.showValidation then
+                                            "#ffe6e6"
+                                        else
+                                            "white"
+                                        )
+                                    ] []
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Location" ]
+                                    , input 
+                                    [ type_ "text"
+                                    , name "location"
+                                    , placeholder "Latitude, Longitude"
+                                    , value model.location
+                                    , onInput LocationChanged
+                                    , style "background-color"
+                                        (if isEmpty model.location && model.showValidation then
+                                            "#ffe6e6"
+                                        else
+                                            "white"
+                                        )
+                                    ]
+                                    []
+                                    ]
+                            , button
+                                [ type_ "button"
+                                , onClick StartPicking
+                                , class "map-button"
+                                , disabled model.isLoading
                                 ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Weather" ]
-                                , input [ type_ "text", name "weather", value model.weather, onInput WeatherChanged ] []
-                                ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Water" ]
-                                , textarea [ name "water", placeholder "e.g., River, clear water, temp 18°C", onInput WaterChanged ] [ text model.water ]
-                                ]
-                        , viewPhotos model
-                        , viewPublications model
-                        , div [ class "field" ]
-                                [ label [] [ text "Province" ]
-                                , provinceDropdown model.province
-                                ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Programme" ]
-                                , input [ type_ "text", name "programme", placeholder "e.g., Aquatic Weeds Programme, or General Member", value model.programme, onInput ProgrammeChanged ] []
-                                ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Site" ]
-                                , input [ type_ "text", name "site", placeholder "Site name", value model.site, onInput SiteChanged ] []
-                                ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Date" ]
-                                , input [ type_ "text", name "date", placeholder "MM-DD-YYYY", value model.date, onInput DateChanged ] []
-                                ]
-                        , div [ class "field" ]
-                                [ label [] [ text "Notes" ]
-                                , textarea [ name "notes", onInput NotesChanged ] [ text model.notes ]
-                                ]
-                        , input [ type_ "hidden", name "_csrf_token", value model.csrf_token ] []
-                        ]
-                            ++ (List.indexedMap
-                                (\i weed ->
-                                    div [ class "weed-entry" ]
-                                        [ text weed.name
-                                        , input [ type_ "checkbox", checked weed.present, onClick (WeedPresentChanged i (not weed.present)) ] []
-                                        , text " Present "
-                                        , input [ type_ "checkbox", checked weed.absent, onClick (WeedAbsentChanged i (not weed.absent)) ] []
-                                        , text " Absent "
+                                [ text "📍 Pick on Map" ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Control agent" ]
+                                    , input [ type_ "text", name "controlAgent", value model.controlAgent, onInput ControlAgentChanged ] []
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Weather" ]
+                                    , input [ type_ "text", name "weather", value model.weather, onInput WeatherChanged ] []
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Water" ]
+                                    , textarea
+                                        [ name "water"
+                                        , value model.water
+                                        , placeholder "e.g., River, clear water, temp 18°C"
+                                        , onInput WaterChanged
                                         ]
+                                        []
+                                    ]
+                            , viewPhotos model
+                            , viewPublications model
+                            , div [ class "field" ]
+                                    [ label [] [ text "Province" ]
+                                    , provinceDropdown model
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Programme" ]
+                                    , input [ type_ "text", name "programme", placeholder "e.g., Aquatic Weeds Programme, or General Member", value model.programme, onInput ProgrammeChanged ] []
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Site" ]
+                                    , input [ type_ "text", name "site", placeholder "Site name", value model.site, onInput SiteChanged ] []
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Date" ]
+                                    , input 
+                                    [ type_ "text"
+                                    , name "date"
+                                    , placeholder "MM/DD/YYYY"
+                                    , value model.date
+                                    , onInput DateChanged
+                                    , style "background-color"
+                                        (if isEmpty model.date && model.showValidation then
+                                            "#ffe6e6"
+                                        else
+                                            "white"
+                                        )
+                                    ] []
+                                    ]
+                            , div [ class "field" ]
+                                    [ label [] [ text "Notes" ]
+                                    , textarea
+                                        [ name "notes"
+                                        , value model.notes
+                                        , onInput NotesChanged
+                                        ]
+                                        []
+                                    ]
+                            , input [ type_ "hidden", name "_csrf_token", value model.csrf_token ] []
+                            ]
+                                ++ (List.indexedMap
+                                    (\i weed ->
+                                        div [ class "weed-entry" ]
+                                            [ text weed.name
+                                            , input [ type_ "checkbox", checked weed.present, onClick (WeedPresentChanged i (not weed.present)) ] []
+                                            , text " Present "
+                                            , input [ type_ "checkbox", checked weed.absent, onClick (WeedAbsentChanged i (not weed.absent)) ] []
+                                            , text " Absent "
+                                            ]
+                                    )
+                                    model.weeds
                                 )
-                                model.weeds
-                            )
-                        ++ [ viewOtherWeeds model ]
-                        ++ [ div [ class "uploading-buttons" ]
-                                [ button [ type_ "submit", class "save-observation-btn" ] [ text "Save Observation" ]
-                                , button [ type_ "button", class "cancel-observation-btn", onClick NoOp ] [ text "Cancel" ]
-                                ]
-                           ]
-                    )
+                            ++ [ viewOtherWeeds model ]
+                            ++ [ div [ class "uploading-buttons" ]
+                                    [ button
+                                        [ type_ "submit"
+                                        , class "save-observation-btn"
+                                        , disabled model.isLoading
+                                        ]
+                                        [ text (if model.isLoading then "Saving..." else "Save Observation") ]
+
+                                    , button
+                                        [ type_ "button"
+                                        , class "cancel-observation-btn"
+                                        , onClick NoOp
+                                        , disabled model.isLoading
+                                        ]
+                                        [ text "Cancel" ]
+                                    ]
+                               ]
+                        )
+                    ]
                 ]
             ]
         ]

@@ -9,8 +9,16 @@ export function start_elm(flags) {
   startMapPicker(app);
 
   // When Elm wants to open the map
-  app.ports.pickLocationPort.subscribe(() => {
-    window.pickLocation();
-  });
+  if (app.ports.pickLocationPort) {
+    app.ports.pickLocationPort.subscribe(() => {
+      window.pickLocation();
+    });
+  }
 
-};
+  if (app.ports.scrollToTop) {
+    app.ports.scrollToTop.subscribe(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+  return app;
+  }

@@ -30,7 +30,10 @@ type alias Document =
 
 
 type alias Flags =
-    { baseUrl : String }
+    { baseUrl : String 
+    , csrfToken : String
+    , collection : String
+    }
 
 
 type alias Model =

@@ -354,7 +354,7 @@ defmodule FluffyWeb.MongoDBController do
         if Enum.empty?(csv_stream) do
           conn
           |> put_status(:bad_request)
-          |> render("upload_empty.html", message: "CSV file is empty")
+          |> render("upload_empty.html", message: "CSV file is empty", collection: collection)
         else
           csv_data =
             file_path
@@ -394,7 +394,7 @@ defmodule FluffyWeb.MongoDBController do
 
                 conn
                 |> put_status(:created)
-                |> render("upload_success.html", message: "Upload successful")
+                |> render("upload_success.html", message: "Upload successful", collection: collection)
 
               {:error, reason} ->
                 Logger.error("Failed to insert CSV: #{inspect(reason)}")
