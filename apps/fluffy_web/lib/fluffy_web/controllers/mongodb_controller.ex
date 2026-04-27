@@ -241,6 +241,16 @@ defmodule FluffyWeb.MongoDBController do
             oauth_url = ElixirAuthGoogle.generate_oauth_url(FluffyWeb.Endpoint.url())
             profile = get_session(conn, :profile)
 
+            redirect_path =
+              conn.request_path <>
+                if conn.query_string != "" do
+                  "?" <> conn.query_string
+                else
+                  ""
+                end
+
+            conn = put_session(conn, :redirect_after_login, redirect_path)
+
             render(conn, template,
               document: normalized,
               collection: collection,
