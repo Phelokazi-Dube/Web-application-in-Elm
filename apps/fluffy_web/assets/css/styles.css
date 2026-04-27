@@ -644,6 +644,20 @@
     display: none;
 }
 
+header nav .nav-items {
+    display: flex !important;
+    align-items: center;
+    gap: 1.5rem;
+    list-style: none;
+    margin: 0;
+    width: auto;
+}
+
+header nav .nav-items li {
+    display: inline-flex;
+    align-items: center;
+}
+
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {

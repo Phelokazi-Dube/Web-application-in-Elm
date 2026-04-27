@@ -251,7 +251,7 @@ viewContent model =
                     [ img [ Html.Attributes.src "images/images.png", Html.Attributes.alt "Logo", class "logo" ] []
                     , div [ class "brand-title" ] [ text "CBC" ]
                     ]
-                , ul [ class "nav-items" ]
+                , ul [ class "nav-items gap-6" ]
                     [ li [] [ a [ href "/home", class "nav-link" ] [ text "HOME" ] ]
                     , li [ class "group" ]
                         [ a [ href "#", class "nav-link" ] [ text "DATA" ]
