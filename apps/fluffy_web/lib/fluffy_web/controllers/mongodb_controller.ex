@@ -238,10 +238,14 @@ defmodule FluffyWeb.MongoDBController do
           %{} = doc ->
             normalized = normalize_mongo_id(doc)
             template = if params["edit"] == "true", do: :edit, else: :show
+            oauth_url = ElixirAuthGoogle.generate_oauth_url(FluffyWeb.Endpoint.url())
+            profile = get_session(conn, :profile)
 
             render(conn, template,
               document: normalized,
-              collection: collection
+              collection: collection,
+              profile: profile,
+              oauth_url: oauth_url
             )
 
           _ ->
