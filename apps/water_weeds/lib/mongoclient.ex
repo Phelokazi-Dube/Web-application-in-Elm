@@ -255,7 +255,7 @@ defmodule WaterWeeds.MongoDBClient do
 
   def handle_call({:get_all_documents, collection_name, filter}, _from, %{conn: conn} = state) do
     # Fetch documents from the collection
-    cursor = Mongo.find(conn, collection_name, filter)
+    cursor = Mongo.find(conn, collection_name, filter, sort: %{"_id" => -1})
 
     # Convert the cursor to a list and return it
     documents = cursor |> Enum.to_list()
