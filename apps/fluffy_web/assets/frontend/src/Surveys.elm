@@ -35,6 +35,10 @@ type alias Flags =
     , collection : String
     }
 
+type alias QueryParams =
+    { search : Maybe String
+    , page : Maybe Int
+    }
 
 type alias Model =
     { key : Nav.Key
@@ -52,13 +56,21 @@ type alias Model =
 init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url navKey =
     let
-        searchText =
+        params =
             case Parser.parse searchParser url of
-                Just (Just text) ->
-                    text
+                Just queryParams ->
+                    queryParams
 
-                _ ->
-                    ""
+                Nothing ->
+                    { search = Nothing
+                    , page = Nothing
+                    }
+
+        searchText =
+            Maybe.withDefault "" params.search
+
+        currentPage =
+            Maybe.withDefault 1 params.page
 
         model =
             { key = navKey
@@ -66,7 +78,7 @@ init flags url navKey =
             , filteredDocuments = []
             , searchText = searchText
             , error = Nothing
-            , currentPage = 1
+            , currentPage = currentPage
             , itemsPerPage = 12
             , adminUser = False
             , baseUrl = flags.baseUrl
@@ -75,9 +87,11 @@ init flags url navKey =
     ( model, fetchDocuments model searchText )
 
 
-searchParser : Parser.Parser (Maybe String -> Maybe String) (Maybe String)
+searchParser : Parser.Parser (QueryParams -> a) a
 searchParser =
-    Parser.s "survey" <?> Query.string "search"
+    Parser.s "survey" <?> Query.map2 QueryParams
+                            (Query.string "search")
+                            (Query.int "page")
 
 
 
@@ -117,15 +131,28 @@ update msg model =
 
         UrlChanged url ->
             let
-                searchText =
+                params =
                     case Parser.parse searchParser url of
-                        Just (Just text) ->
-                            text
+                        Just queryParams ->
+                            queryParams
 
-                        _ ->
-                            ""
+                        Nothing ->
+                            { search = Nothing
+                            , page = Nothing
+                            }
+                searchText =
+                    Maybe.withDefault "" params.search
+                
+                currentPage =
+                    Maybe.withDefault 1 params.page
+                
+                updatedModel =
+                    { model
+                        | searchText = searchText
+                        , currentPage = currentPage
+                    }
             in
-            ( { model | searchText = searchText }, fetchDocuments { model | searchText = searchText } searchText )
+            ( updatedModel, fetchDocuments updatedModel searchText)
 
         FetchDocuments ->
             ( model, fetchDocuments model model.searchText )
@@ -181,12 +208,12 @@ update msg model =
 
                 newUrl =
                     if String.isEmpty text then
-                        "/survey"
+                        "/survey?page=1"
 
                     else
-                        "/survey?search=" ++ Url.percentEncode text
+                        "/survey?search=" ++ Url.percentEncode text ++ "&page=1"
             in
-            ( { model | searchText = text, filteredDocuments = filteredDocs }
+            ( { model | searchText = text, filteredDocuments = filteredDocs, currentPage = 1 }
             , Nav.replaceUrl model.key newUrl
             )
 
@@ -197,11 +224,27 @@ update msg model =
             let
                 totalPages =
                     (List.length model.filteredDocuments + model.itemsPerPage - 1) // model.itemsPerPage
+                newPage = 
+                    Basics.min (model.currentPage + 1) totalPages
+                newUrl =
+                    if String.isEmpty model.searchText then
+                        "/survey?page=" ++ String.fromInt newPage
+                    else
+                        "/survey?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
             in
-            ( { model | currentPage = Basics.min (model.currentPage + 1) totalPages }, Cmd.none )
+            ( { model | currentPage = newPage }, Nav.replaceUrl model.key newUrl )
 
         PrevPage ->
-            ( { model | currentPage = Basics.max (model.currentPage - 1) 1 }, Cmd.none )
+            let
+                newPage = 
+                    Basics.max (model.currentPage - 1) 1
+                newUrl =
+                    if String.isEmpty model.searchText then
+                        "/survey?page=" ++ String.fromInt newPage
+                    else
+                        "/survey?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
+            in
+            ( { model | currentPage = newPage }, Nav.replaceUrl model.key newUrl )
         
         ExportCSV ->
             ( model
