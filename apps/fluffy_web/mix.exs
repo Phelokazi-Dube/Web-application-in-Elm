@@ -65,6 +65,8 @@ defmodule FluffyWeb.MixProject do
       {:swoosh, "~> 1.12"},
       {:gen_smtp, "~> 1.2"},
       {:dotenvy, "~> 0.8"},
+      {:hackney, "~> 1.8"},
+      {:sentry, "~> 10.2.0"},
       {:nimble_csv, "~> 1.2"}
     ]
   end

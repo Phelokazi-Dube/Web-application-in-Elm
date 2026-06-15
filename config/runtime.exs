@@ -110,6 +110,13 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN"),
+    environment_name: config_env(),
+    enable_source_code_context: true,
+    root_source_code_paths: [File.cwd!()],
+    included_environments: [:dev, :prod]
+
   config :fluffy_web, Fluffy.Mailer,
     adapter: Swoosh.Adapters.SMTP,
     relay: System.get_env("SMTP_SERVER"),
