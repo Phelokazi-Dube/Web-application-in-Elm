@@ -309,7 +309,7 @@ defmodule WaterWeeds.MongoDBClient do
        conn,
        collection_name,
        %{_id: bson_id},
-       %{"$set" => update_fields},
+       update,
        return_document: :after,
        upsert: false
      ) do

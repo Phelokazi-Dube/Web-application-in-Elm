@@ -231,43 +231,92 @@ defmodule FluffyWeb.MongoDBController do
 
   # Fetch a document as HTML
   def show_html(conn, %{"id" => id} = params) do
-    collection = Map.get(params, "collection", "Surveys")
-    case BSON.ObjectId.decode(id) do
-      {:ok, bson_id} ->
-        case MongoDBClient.get_document_by_id(collection, bson_id) do
-          %{} = doc ->
-            normalized = normalize_mongo_id(doc)
-            template = if params["edit"] == "true", do: :edit, else: :show
-            oauth_url = ElixirAuthGoogle.generate_oauth_url(FluffyWeb.Endpoint.url())
-            profile = get_session(conn, :profile)
+  collection = Map.get(params, "collection", "Surveys")
 
-            redirect_path =
-              conn.request_path <>
-                if conn.query_string != "" do
-                  "?" <> conn.query_string
-                else
-                  ""
-                end
+  case BSON.ObjectId.decode(id) do
+    {:ok, bson_id} ->
+      case MongoDBClient.get_document_by_id(collection, bson_id) do
+        %{} = doc ->
+          normalized = normalize_mongo_id(doc)
+          profile = get_session(conn, :profile)
+          role = get_session(conn, :role)
+          current_user_email =
+            if profile do
+              Map.get(profile, :email)
+            else
+              nil
+            end
+          owner_email = Map.get(normalized, "userLogin")
+          can_edit =
+            role == "admin" or
+              (not is_nil(current_user_email) and current_user_email == owner_email)
 
-            conn = put_session(conn, :redirect_after_login, redirect_path)
+          editing = params["edit"] == "true"
 
-            render(conn, template,
-              document: normalized,
-              collection: collection,
-              profile: profile,
-              oauth_url: oauth_url
+          oauth_url = ElixirAuthGoogle.generate_oauth_url(FluffyWeb.Endpoint.url())
+          redirect_path =
+            conn.request_path <>
+              if conn.query_string != "" do
+                "?" <> conn.query_string
+              else
+                ""
+              end
+
+          conn =
+            put_session(
+              conn,
+              :redirect_after_login,
+              redirect_path
             )
 
-          _ ->
-            conn
-            |> put_flash(:error, "Document not found")
-            |> redirect(to: "/")
-        end
+          cond do
+            editing and is_nil(current_user_email) ->
+              conn
+              |> put_flash(:error, "You must be logged in to edit a document.")
+              |> redirect(
+                to: "/documents/#{id}?collection=#{collection}"
+              )
 
-      _ ->
-        conn
-        |> put_flash(:error, "Invalid document ID")
-        |> redirect(to: "/")
+            editing and not can_edit ->
+              conn
+              |> put_status(:forbidden)
+              |> put_flash(
+                :error,
+                "You are not authorised to edit this document."
+              )
+              |> redirect(
+                to: "/documents/#{id}?collection=#{collection}"
+              )
+
+            true ->
+              template =
+                if editing do
+                  :edit
+                else
+                  :show
+                end
+
+              render(
+                conn,
+                template,
+                document: normalized,
+                collection: collection,
+                profile: profile,
+                oauth_url: oauth_url,
+                can_edit: can_edit
+              )
+          end
+
+        _ ->
+          conn
+          |> put_flash(:error, "Document not found")
+          |> redirect(to: "/")
+      end
+
+    _ ->
+      conn
+      |> put_flash(:error, "Invalid document ID")
+      |> redirect(to: "/")
     end
   end
 
@@ -553,7 +602,7 @@ defmodule FluffyWeb.MongoDBController do
             {:ok, _} ->
               # Fetch the updated document after approval
               case MongoDBClient.get_document_by_id("Surveys", bson_id) do
-                {:ok, updated_doc} when not is_nil(updated_doc) ->
+                %{} = updated_doc ->
                   document = normalize_mongo_id(updated_doc)
 
                   conn
@@ -619,7 +668,7 @@ defmodule FluffyWeb.MongoDBController do
               case MongoDBClient.update_document("Surveys", bson_id, update_fields) do
                 {:ok, _} ->
                   case MongoDBClient.get_document_by_id("Surveys", bson_id) do
-                    {:ok, updated_doc} ->
+                    %{} = updated_doc ->
                       document = normalize_mongo_id(updated_doc)
 
                       conn
@@ -665,31 +714,102 @@ defmodule FluffyWeb.MongoDBController do
 
   # Safer update_document
   def update_document(conn, %{"id" => id, "collection" => collection} = params) do
+    role = get_session(conn, :role)
+    profile = get_session(conn, :profile)
+    current_user_email =
+      if profile do
+        Map.get(profile, :email)
+      else
+        nil
+      end
+
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
-        update_fields =
-          params
-          |> Map.drop(["_csrf_token", "_method", "id", "collection"])
-          |> Map.put("approved", false)
-
-        case MongoDBClient.update_document(collection, bson_id, update_fields) do
-          {:ok, _} ->
+        case MongoDBClient.get_document_by_id(collection, bson_id) do
+          nil ->
             conn
-            |> put_flash(:info, "Document updated successfully. Awaiting re-approval.")
-            |> redirect(to: ~p"/documents/#{id}?collection=#{collection}")
+            |> put_flash(:error, "Document not found")
+            |> redirect(to: "/")
 
-          {:error, reason} ->
-            conn
-            |> put_flash(:error, "Failed to update document: #{inspect(reason)}")
-            |> redirect(to: ~p"/documents/#{id}?collection=#{collection}&edit=true")
+          %{} = existing_document ->
+            owner_email = Map.get(existing_document, "userLogin")
+            can_edit =
+              role == "admin" or
+                (not is_nil(current_user_email) and
+                  current_user_email == owner_email)
+
+            if can_edit do
+              update_fields =
+                params
+                |> Map.drop([
+                  "_csrf_token",
+                  "_method",
+                  "id",
+                  "collection",
+                  "userLogin",
+                  "approved",
+                  "approved_by",
+                  "approved_at",
+                  "created_at",
+                  "_id"
+                ])
+                |> add_date_dt()
+                |> parse_location()
+                |> Map.merge(%{
+                  "approved" => false,
+                  "approved_by" => nil,
+                  "approved_at" => nil,
+                  "updated_by" => current_user_email,
+                  "updated_at" => System.os_time(:second)
+                })
+
+              case MongoDBClient.update_document(collection, bson_id, update_fields) do
+                {:ok, _updated_document} ->
+                  conn
+                  |> put_flash(
+                    :info,
+                    "Document updated successfully. It is awaiting re-approval."
+                  )
+                  |> redirect(
+                    to:
+                      ~p"/documents/#{id}?collection=#{collection}"
+                  )
+
+                {:error, reason} ->
+                  Logger.error(
+                    "Failed to update document: #{inspect(reason)}"
+                  )
+
+                  conn
+                  |> put_flash(
+                    :error,
+                    "Failed to update document."
+                  )
+                  |> redirect(
+                    to:
+                      ~p"/documents/#{id}?collection=#{collection}&edit=true"
+                  )
+              end
+            else
+              conn
+              |> put_status(:forbidden)
+              |> put_flash(
+                :error,
+                "You are not authorised to edit this document."
+              )
+              |> redirect(
+                to:
+                  ~p"/documents/#{id}?collection=#{collection}"
+              )
+            end
         end
 
       {:error, _} ->
         conn
         |> put_flash(:error, "Invalid document ID")
         |> redirect(to: "/")
+      end
     end
-  end
 
   # Function to fetch unapproved documents
   def unapproved(conn, _params) do

@@ -133,7 +133,7 @@
               <th><%= Phoenix.Naming.humanize(key) %></th>
               <td>
                 <%= case {key, value} do %>
-                  <% {"approved_at", ts} when is_integer(ts) -> %>
+                  <% {key, ts} when key in ["approved_at", "updated_at"] and is_integer(ts) -> %>
                     <%= with {:ok, dt} <- DateTime.from_unix(ts),
                             {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do
                           Calendar.strftime(sast_dt, "%d %B %Y %H:%M SAST")
@@ -207,7 +207,7 @@
     <% end %>
   </div>
 
-  <%= if @collection && @collection != "" do %>
+  <%= if @collection && @collection != "" && @can_edit do %>
     <div class="edit-button">
       <a href={"?collection=#{@collection}&edit=true"} class="btn btn-warning">
         ✏️ Edit Document
