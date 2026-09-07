@@ -22,10 +22,6 @@ import Config
 # at the `config/runtime.exs`.
 config :water_weeds, WaterWeeds.Mailer, adapter: Swoosh.Adapters.Local
 
-config :elixir_auth_google,
-  client_id: "104917603258-m0pjot8jhah0c07r4o6sqjpdvb0ov32v.apps.googleusercontent.com",
-  client_secret: "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"
-
 config :fluffy_web,
   # ecto_repos: [Fluffy.Repo],
   generators: [context_app: :fluffy]

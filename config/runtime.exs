@@ -1,6 +1,10 @@
 import Config
 Dotenvy.source!(".env")
 
+config :elixir_auth_google,
+  client_id: System.fetch_env!("GOOGLE_CLIENT_ID"),
+  client_secret: System.fetch_env!("GOOGLE_CLIENT_SECRET")
+
 if System.get_env("PHX_SERVER") do
   config :fluffy_web, FluffyWeb.Endpoint, server: true
 end
