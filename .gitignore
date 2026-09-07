@@ -32,3 +32,4 @@ apps/fluffy_web/assets/js/*.js
 
 .direnv
 .formatter.exs
+.env
