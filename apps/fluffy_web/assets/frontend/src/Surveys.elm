@@ -285,7 +285,7 @@ viewContent model =
     div [ class "flex flex-col min-h-screen animate-fade-in" ]
         [ Html.node "link"
             [ attribute "rel" "stylesheet"
-            , attribute "href" "styles.css"
+            , attribute "href" "/assets/app.css"
             ]
             []
         , nav [ class "bg-neutral-100 shadow-sm mb-5", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
