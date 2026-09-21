@@ -127,12 +127,19 @@
   <div id="tab-general" class="tab-content active">
     <table class="table table-striped table-bordered">
       <tbody>
-        <%= for {key, value} <- @document do %>
+        <%= for {key, value} <- Enum.sort_by(@document, fn {key, _value} -> String.downcase(key) end) do %>
           <%= if key not in ["photos", "created_at", "date_dt", "publications"] do %>
             <tr>
               <th><%= Phoenix.Naming.humanize(key) %></th>
               <td>
                 <%= case {key, value} do %>
+                   <% {"date", date_str} when is_binary(date_str) -> %>
+                    <%= case FluffyWeb.MongoDBController.parse_date_string(date_str) do %>
+                      <% %Date{} = date -> %>
+                        <%= Calendar.strftime(date, "%d %B %Y") %>
+                      <% _ -> %>
+                        <%= date_str %>
+                    <% end %>
                   <% {key, ts} when key in ["approved_at", "updated_at"] and is_integer(ts) -> %>
                     <%= with {:ok, dt} <- DateTime.from_unix(ts),
                             {:ok, sast_dt} <- DateTime.shift_zone(dt, "Africa/Johannesburg") do

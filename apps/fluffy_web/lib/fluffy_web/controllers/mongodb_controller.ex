@@ -495,17 +495,28 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   def parse_date_string(date_str) when is_binary(date_str) do
+    date_str = String.trim(date_str)
     cond do
-      # Full date: MM/DD/YYYY
-      Regex.match?(~r/^\d{2}\/\d{2}\/\d{4}$/, date_str) ->
-        case Date.from_iso8601(convert_mmddyyyy_to_iso(date_str)) do
-          {:ok, date} -> date
-          _ -> nil
+      # CBC full dates: M/D/YYYY, MM/D/YYYY, M/DD/YYYY or MM/DD/YYYY
+      Regex.match?(~r/^\d{1,2}\/\d{1,2}\/\d{4}$/, date_str) ->
+        case String.split(date_str, "/") do
+          [month_str, day_str, year_str] ->
+            with {month, ""} <- Integer.parse(month_str),
+                {day, ""} <- Integer.parse(day_str),
+                {year, ""} <- Integer.parse(year_str),
+                {:ok, date} <- Date.new(year, month, day) do
+              date
+            else
+              _ -> nil
+            end
+
+          _ ->
+            nil
         end
 
-      # Year-only: YYYY
+      # Historical CBC records where only the year is known
       Regex.match?(~r/^\d{4}$/, date_str) ->
-        case Date.from_iso8601("#{date_str}-01-01") do
+        case Date.new(String.to_integer(date_str), 1, 1) do
           {:ok, date} -> date
           _ -> nil
         end

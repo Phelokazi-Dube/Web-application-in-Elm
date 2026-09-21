@@ -134,7 +134,12 @@ defmodule WaterWeeds.MongoDBClient do
       docs
       |> Enum.flat_map(&Map.keys/1)
       |> Enum.uniq()
-      |> Enum.reject(&(&1 == "_id"))
+      |> Enum.reject(&(&1 in [
+       "_id",
+       "date_dt",
+       "photos",
+       "publications"
+       ]))
 
     rows =
       Enum.map(docs, fn doc ->
