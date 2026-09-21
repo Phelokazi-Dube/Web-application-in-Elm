@@ -49,19 +49,19 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-        main_ [ class "container mx-auto flex-grow animate-fade-in" ]
-            [ section [ id "first", class "first-main" ]
-                [ h1 [ class "first-title" ] [ text "For Users" ]
-                , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]
-                , p [ class "ff-title" ] [ text "A CBC Data Curator will review your submission and respond ASAP." ]
-                , a [ href "/uploadpage", class "loggin-btn" ] [ text "Proceed to Upload Page" ]
-                ]
-            , section [ id "bg-image", class "second-main" ]
-                [ h2 [ class "second-title" ] [ text "Biological Control Research" ]
-                , div [ class "the-bg", style "background-image" "url(images/Mass_rearings.png)" ] []
-                , p [ class "some-info" ] [ text "Our research facilities include state-of-the-art greenhouses equipped for biological control experiments. These controlled environments allow researchers to study plant-pest-predator interactions in detail." ]
-                ]
+    main_ [ class "container mx-auto flex-grow animate-fade-in" ]
+        [ section [ id "first", class "first-main" ]
+            [ h1 [ class "first-title" ] [ text "For Users" ]
+            , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]
+            , p [ class "ff-title" ] [ text "A CBC Data Curator will review your submission and respond ASAP." ]
+            , a [ href "/uploadpage", class "loggin-btn" ] [ text "Proceed to Upload Page" ]
             ]
+        , section [ id "bg-image", class "second-main" ]
+            [ h2 [ class "second-title" ] [ text "Biological Control Research" ]
+            , div [ class "the-bg", style "background-image" "url(images/Mass_rearings.png)" ] []
+            , p [ class "some-info" ] [ text "Our research facilities include state-of-the-art greenhouses equipped for biological control experiments. These controlled environments allow researchers to study plant-pest-predator interactions in detail." ]
+            ]
+        ]
 
 
 main : Program () Model Msg

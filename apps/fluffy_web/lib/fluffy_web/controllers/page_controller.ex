@@ -1,5 +1,6 @@
 defmodule FluffyWeb.PageController do
   require Logger
+  alias FluffyWeb.ContollerHelpers
   alias WaterWeeds.MongoDBClient
   use FluffyWeb, :controller
 
@@ -9,6 +10,31 @@ defmodule FluffyWeb.PageController do
   end
 
   def upload(conn, params) do
+    missing_fields = ContollerHelpers.missing_required_fields(params)
+
+    cond do
+      missing_fields != [] ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "Missing required fields",
+          fields: missing_fields
+        })
+
+      not ContollerHelpers.valid_date?(params["date"]) ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "Invalid date",
+          message: "Date must be a valid date in MM/DD/YYYY format"
+        })
+
+      true ->
+        process_upload(conn, params)
+    end
+  end
+
+  defp process_upload(conn, params) do
     photos_param = params["photos"] || []
     publications_param = params["publications"] || []
     profile = get_session(conn, :profile)
@@ -123,32 +149,26 @@ defmodule FluffyWeb.PageController do
       |> FluffyWeb.MongoDBController.add_date_dt()
       |> FluffyWeb.MongoDBController.parse_location()
 
-    if photos == [] and Map.get(cleaned_params, "location") in [nil, ""] do
-      conn
-      |> put_status(:unprocessable_entity)
-      |> json(%{error: "Empty form submission not allowed"})
-    else
-      case MongoDBClient.insert_document("Surveys", cleaned_params) do
-        {:ok, %{inserted_id: bson_id}} ->
-          # Inspect the document ID after insertion
-          IO.inspect(bson_id, label: "Document stored with ID")
-          Logger.debug("Document successfully inserted.")
+    case MongoDBClient.insert_document("Surveys", cleaned_params) do
+      {:ok, %{inserted_id: bson_id}} ->
+        # Inspect the document ID after insertion
+        IO.inspect(bson_id, label: "Document stored with ID")
+        Logger.debug("Document successfully inserted.")
 
-          conn
-          |> put_status(:ok)
-          |> json(%{
-            status: "success",
-            id: BSON.ObjectId.encode!(bson_id)
-          })
+        conn
+        |> put_status(:ok)
+        |> json(%{
+          status: "success",
+          id: BSON.ObjectId.encode!(bson_id)
+        })
 
-        {:error, reason} ->
-          # Inspect the error reason if the insertion fails
-          IO.inspect(reason, label: "Insertion error reason")
+      {:error, reason} ->
+        # Inspect the error reason if the insertion fails
+        IO.inspect(reason, label: "Insertion error reason")
 
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{error: "Failed to create document", reason: reason})
-      end
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Failed to create document", reason: reason})
     end
   end
 

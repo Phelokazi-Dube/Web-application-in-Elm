@@ -9,10 +9,15 @@ import Html.Events exposing (onClick)
 type alias Model =
     ()
 
+
 type Msg
     = NoOp
 
+
+
 -- The view function that creates the page
+
+
 view : Model -> Html Msg
 view _ =
     div [ class "flex flex-col min-h-screen bg-gray-50" ]
@@ -53,16 +58,15 @@ view _ =
         ]
 
 
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     ( model, Cmd.none )
 
 
-
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( (), Cmd.none )
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
@@ -71,6 +75,8 @@ subscriptions _ =
 
 
 -- Main entry point for the Elm app
+
+
 main : Program () Model Msg
 main =
     Browser.element

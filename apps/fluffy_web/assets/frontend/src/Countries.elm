@@ -39,7 +39,7 @@ type alias Model =
     , currentPage : Int
     , itemsPerPage : Int
     , baseUrl : String
-    , isLoading : Bool 
+    , isLoading : Bool
     }
 
 
@@ -77,10 +77,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotDocuments (Ok response) ->
-            ( { model | documents = response.documents, isAdmin = response.isAdmin, isLoading = False}, Cmd.none )
+            ( { model | documents = response.documents, isAdmin = response.isAdmin, isLoading = False }, Cmd.none )
 
         GotDocuments (Err err) ->
-            ( { model | error = Just (httpErrorToString err), isLoading = False}, Cmd.none )
+            ( { model | error = Just (httpErrorToString err), isLoading = False }, Cmd.none )
 
         NextPage ->
             let
@@ -118,13 +118,14 @@ view model =
             model.currentPage >= totalPages
     in
     div []
-        [  if model.isLoading then
+        [ if model.isLoading then
             div
                 [ class "fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50" ]
                 [ div [ class "text-xl font-semibold" ] [ text "⏳ Loading..." ] ]
+
           else
             text ""
-        ,div [ class "container mx-auto p-6 animate-fade-in" ]
+        , div [ class "container mx-auto p-6 animate-fade-in" ]
             [ div [ class "flex items-center justify-between mb-6" ]
                 [ h1 [ class "text-4xl font-extrabold text-emerald-700" ]
                     [ text "🌍 Countries Collection" ]
@@ -172,8 +173,9 @@ view model =
                                 ]
                                 [ text "Next" ]
                             ]
-                              ]      ]
+                        ]
             ]
+        ]
 
 
 thCell : String -> Html msg

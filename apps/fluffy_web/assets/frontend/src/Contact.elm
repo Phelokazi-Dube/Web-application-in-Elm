@@ -10,6 +10,8 @@ import Json.Encode as Encode
 
 
 -- Model
+
+
 type alias Flags =
     { csrfToken : String
     , collection : String
@@ -88,7 +90,7 @@ update msg model =
                 , email = ""
                 , message = ""
                 , success = True
-            }
+              }
             , Cmd.none
             )
 
@@ -99,6 +101,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
+
 
 submitRequest : Model -> Cmd Msg
 submitRequest model =
@@ -127,7 +130,8 @@ view model =
                         [ class "max-w-2xl mx-auto mt-4 mb-4 p-4 rounded-md bg-green-100 text-green-800 text-center font-semibold shadow"
                         ]
                         [ text "✅ Email sent successfully!" ]
-                else
+
+                  else
                     text ""
                 , div []
                     [ div [ class "mb-4" ]

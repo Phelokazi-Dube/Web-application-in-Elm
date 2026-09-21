@@ -10,6 +10,8 @@ import Json.Decode as Decode
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), (<?>), Parser, query, string, top)
 import Url.Parser.Query as Query
+
+
 port downloadCsvPort : String -> Cmd msg
 
 
@@ -30,15 +32,17 @@ type alias Document =
 
 
 type alias Flags =
-    { baseUrl : String 
+    { baseUrl : String
     , csrfToken : String
     , collection : String
     }
+
 
 type alias QueryParams =
     { search : Maybe String
     , page : Maybe Int
     }
+
 
 type alias Model =
     { key : Nav.Key
@@ -89,9 +93,10 @@ init flags url navKey =
 
 searchParser : Parser.Parser (QueryParams -> a) a
 searchParser =
-    Parser.s "survey" <?> Query.map2 QueryParams
-                            (Query.string "search")
-                            (Query.int "page")
+    Parser.s "survey"
+        <?> Query.map2 QueryParams
+                (Query.string "search")
+                (Query.int "page")
 
 
 
@@ -110,7 +115,6 @@ type Msg
     | UrlChanged Url
     | LinkClicked Browser.UrlRequest
     | ExportCSV
-
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -140,19 +144,20 @@ update msg model =
                             { search = Nothing
                             , page = Nothing
                             }
+
                 searchText =
                     Maybe.withDefault "" params.search
-                
+
                 currentPage =
                     Maybe.withDefault 1 params.page
-                
+
                 updatedModel =
                     { model
                         | searchText = searchText
                         , currentPage = currentPage
                     }
             in
-            ( updatedModel, fetchDocuments updatedModel searchText)
+            ( updatedModel, fetchDocuments updatedModel searchText )
 
         FetchDocuments ->
             ( model, fetchDocuments model model.searchText )
@@ -224,11 +229,14 @@ update msg model =
             let
                 totalPages =
                     (List.length model.filteredDocuments + model.itemsPerPage - 1) // model.itemsPerPage
-                newPage = 
+
+                newPage =
                     Basics.min (model.currentPage + 1) totalPages
+
                 newUrl =
                     if String.isEmpty model.searchText then
                         "/survey?page=" ++ String.fromInt newPage
+
                     else
                         "/survey?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
             in
@@ -236,24 +244,29 @@ update msg model =
 
         PrevPage ->
             let
-                newPage = 
+                newPage =
                     Basics.max (model.currentPage - 1) 1
+
                 newUrl =
                     if String.isEmpty model.searchText then
                         "/survey?page=" ++ String.fromInt newPage
+
                     else
                         "/survey?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
             in
             ( { model | currentPage = newPage }, Nav.replaceUrl model.key newUrl )
-        
+
         ExportCSV ->
             ( model
             , downloadCsvPort
-                (model.baseUrl ++ "/api/Mongodb/document/search/export"
-                    ++ if model.searchText /= "" then
-                           "?search=" ++ Url.percentEncode model.searchText
-                       else
-                           ""
+                (model.baseUrl
+                    ++ "/api/Mongodb/document/search/export"
+                    ++ (if model.searchText /= "" then
+                            "?search=" ++ Url.percentEncode model.searchText
+
+                        else
+                            ""
+                       )
                 )
             )
 

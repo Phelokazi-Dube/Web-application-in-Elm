@@ -15,7 +15,6 @@ import Url.Parser.Query as Query
 -- MODEL
 
 
-
 type alias Flags =
     { csrfToken : String
     , collection : String
@@ -32,8 +31,8 @@ type alias Model =
     }
 
 
--- INIT
 
+-- INIT
 
 
 init : Flags -> ( Model, Cmd Msg )
@@ -70,6 +69,7 @@ update msg model =
         Submit ->
             if model.isSubmitting then
                 ( model, Cmd.none )
+
             else
                 ( { model | isSubmitting = True }, Cmd.none )
 
@@ -129,8 +129,8 @@ view model =
 
 
 
-
 -- MAIN
+
 
 main : Program Flags Model Msg
 main =

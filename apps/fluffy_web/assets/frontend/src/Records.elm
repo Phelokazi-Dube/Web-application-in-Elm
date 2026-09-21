@@ -5,20 +5,24 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
-
 type alias Model =
     ()
 
+
 type Msg
     = NoOp
+
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( (), Cmd.none )
 
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     ( model, Cmd.none )
+
+
 
 -- VIEW
 
@@ -110,6 +114,7 @@ referenceCard ( iconClass, label ) =
             [ class "bg-white p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center opacity-40 cursor-not-allowed select-none"
             ]
             baseContent
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
