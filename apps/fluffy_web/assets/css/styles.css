@@ -324,6 +324,23 @@
     color: rgb(163 163 163);
 }
 
+.required-asterisk {
+    color: #d32f2f;
+    font-weight: bold;
+    margin-left: 3px;
+}
+
+.required-note {
+    color: #847878;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.required-note::first-letter {
+    color: #d32f2f;
+}
+
 /* Another page */
 .first-main {
     background-color: rgb(255 255 255);
