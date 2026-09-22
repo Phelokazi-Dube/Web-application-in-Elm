@@ -67,6 +67,7 @@ defmodule FluffyWeb.MixProject do
       {:dotenvy, "~> 0.8"},
       {:hackney, "~> 1.8"},
       {:sentry, "~> 10.2.0"},
+      {:req, "~> 0.5"},
       {:nimble_csv, "~> 1.2"}
     ]
   end

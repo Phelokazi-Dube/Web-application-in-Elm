@@ -75,6 +75,10 @@ type alias Coordinates =
     , lng : Float
     }
 
+type alias GeocodeResult =
+    { province : String
+    , country : String
+    }
 
 coordsDecoder : D.Decoder Coordinates
 coordsDecoder =
@@ -82,6 +86,11 @@ coordsDecoder =
         (D.field "lat" D.float)
         (D.field "lng" D.float)
 
+geocodeDecoder : D.Decoder GeocodeResult
+geocodeDecoder =
+    D.map2 GeocodeResult
+        (D.field "province" D.string)
+        (D.field "country" D.string)
 
 
 -- MODEL
@@ -96,6 +105,7 @@ type alias Model =
     , photos : List File
     , publications : List File
     , province : Province
+    , country : String
     , site : String
     , date : String
     , notes : String
@@ -126,6 +136,7 @@ init flags =
       , photos = []
       , publications = []
       , province = None
+      , country = ""
       , site = ""
       , date = ""
       , notes = ""
@@ -171,6 +182,7 @@ type Msg
     | SaveObservation
     | UploadResponse (Result Http.Error String)
     | LocationPicked (Result D.Error Coordinates)
+    | ReverseGeocodeResponse (Result Http.Error GeocodeResult)
     | StartPicking
     | PublicationsSelected (List File)
     | RemovePublication Int
@@ -392,6 +404,7 @@ update msg model =
                         , Http.stringPart "controlAgent" model.controlAgent
                         , Http.stringPart "weather" model.weather
                         , Http.stringPart "province" (provinceToString model.province)
+                        , Http.stringPart "country" model.country
                         , Http.stringPart "weed" model.weed
                         , Http.stringPart "site" model.site
                         , Http.stringPart "date" model.date
@@ -437,6 +450,7 @@ update msg model =
                 , isLoading = False
                 , success = True
                 , province = None
+                , country = ""
                 , photoInputKey = model.photoInputKey + 1
                 , publicationInputKey = model.publicationInputKey + 1
               }
@@ -463,14 +477,44 @@ update msg model =
                         locStr =
                             String.fromFloat coords.lat ++ ", " ++ String.fromFloat coords.lng
                     in
-                    ( { model | location = locStr, error = Nothing }, Cmd.none )
+                    ( { model | location = locStr, error = Nothing }, reverseGeocode model coords )
 
                 Err _ ->
                     ( { model | error = Just "Invalid location data received" }, Cmd.none )
 
+        ReverseGeocodeResponse result ->
+            case result of
+                Ok geocode ->
+                    ( { model
+                        | province = stringToProvince geocode.province
+                        , country = geocode.country
+                        , error = Nothing
+                    }
+                    , Cmd.none
+                    )
 
+                Err _ ->
+                    ( { model
+                        | error = Just "Could not automatically determine province and country. Please select the province manually."
+                    }
+                    , Cmd.none
+                    )
 
 -- PROVINCE DROPDOWN
+
+
+reverseGeocode : Model -> Coordinates -> Cmd Msg
+reverseGeocode model coords =
+    Http.get
+        { url =
+            model.baseUrl
+                ++ "/api/geocode/reverse?lat="
+                ++ String.fromFloat coords.lat
+                ++ "&lon="
+                ++ String.fromFloat coords.lng
+        , expect =
+            Http.expectJson ReverseGeocodeResponse geocodeDecoder
+        }
 
 
 provinceDropdown : Model -> Html Msg
@@ -915,6 +959,16 @@ view model =
                                 ]
                             , provinceDropdown model
                             ]
+                        , div [ class "field" ]
+                            [ label [] [ text "Country" ]
+                            , input
+                                [ type_ "text"
+                                , name "country"
+                                , value model.country
+                                , readonly True
+                                ]
+                                []
+                            ]  
                          , div [ class "field" ]
                             [ label [] [ text "Site" ]
                             , input [ type_ "text", name "site", placeholder "Site name", value model.site, onInput SiteChanged ] []

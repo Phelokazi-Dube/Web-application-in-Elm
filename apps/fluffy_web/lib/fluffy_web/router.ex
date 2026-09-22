@@ -113,6 +113,9 @@ defmodule FluffyWeb.Router do
     get "/Mongodb/unapproved_documents", MongoDBController, :unapproved
 
     post "/contact", ContactController, :create
+
+    # Reverse geocode coordinates into province and country
+    get("/geocode/reverse", GeocodingController, :reverse)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

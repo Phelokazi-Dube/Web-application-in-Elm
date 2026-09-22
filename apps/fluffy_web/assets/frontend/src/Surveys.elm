@@ -313,7 +313,7 @@ viewContent model =
                         [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                         , ul [ class "dropdown" ]
                             [ li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Data" ] ]
-                            , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
+                            , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Resources" ] ]
                             ]
                         ]
                     , li [ class "group" ]
