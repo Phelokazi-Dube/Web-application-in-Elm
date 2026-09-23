@@ -1,4 +1,4 @@
-module Profile exposing (main)
+module Continents exposing (main)
 
 import Browser
 import Html exposing (..)
@@ -80,60 +80,53 @@ update msg model =
 
 -- VIEW
 
-
 view : Model -> Html Msg
 view model =
     div [ class "container mx-auto p-6 animate-fade-in" ]
-        [ h1 [ class "text-3xl font-bold mb-6" ] [ text "Continents Collection" ]
+        [ h1
+            [ class "survey-title font-bold text-5xl text-left mb-6" ]
+            [ text "Continents Collection" ]
+
         , case model.error of
             Just errMsg ->
-                div [ class "text-red-600" ] [ text errMsg ]
+                div [ class "text-red-600 mb-4" ]
+                    [ text errMsg ]
 
             Nothing ->
-                table [ class "min-w-full table-auto border border-gray-300" ]
-                    [ thead [ class "bg-gray-100" ]
-                        [ tr []
-                            [ thCell "Continent"
-                            , thCell "Continent ID"
-                            , thCell "Data Access ID"
-                            , thCell "Data Source ID"
-                            , thCell "Data Status ID"
-                            , thCell "Submitted by"
-                            , thCell "Document"
-                            ]
-                        ]
-                    , tbody []
+                div
+                    [ class "px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
+                    [ div
+                        [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
                         (List.map viewDocument model.documents)
                     ]
         ]
 
 
-thCell : String -> Html msg
-thCell label =
-    th [ class "px-4 py-2 text-left font-semibold border border-gray-300" ] [ text label ]
-
-
-tdCell : String -> Html msg
-tdCell value =
-    td [ class "px-4 py-2 border border-gray-300" ] [ text value ]
-
-
 viewDocument : Document -> Html msg
 viewDocument doc =
-    tr []
-        [ tdCell doc.continent
-        , tdCell doc.continentId
-        , tdCell doc.dataAccessId
-        , tdCell doc.dataSourceId
-        , tdCell doc.dataStatusId
-        , tdCell doc.userLogin
-        , td [ class "px-4 py-2 border border-gray-300" ]
-            [ a [ href ("/documents/" ++ doc.id ++ "?collection=Continents"), class "text-blue-600 underline" ]
-                [ text "View Document" ]
+    div
+        [ class "border rounded shadow p-4 bg-white flex-grow animate-fade-in" ]
+        [ div [ class "flex items-center justify-between mb-4" ]
+            [ h2 [ class "text-lg font-semibold" ]
+                [ text ("Continent: " ++ doc.continent) ]
             ]
+
+        , div [ class "mb-2" ]
+            [ text ("Continent ID: " ++ doc.continentId) ]
+
+        , div [ class "mb-4" ]
+            [ text ("Submitted by: " ++ doc.userLogin) ]
+
+        , a
+            [ href
+                ("/documents/"
+                    ++ doc.id
+                    ++ "?collection=Continents"
+                )
+            , class "btn btn-primary"
+            ]
+            [ text "View Document" ]
         ]
-
-
 
 -- HTTP
 

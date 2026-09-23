@@ -40,23 +40,34 @@ defmodule WaterWeeds.MongoDBClient do
     end
   end
 
-  defp ensure_indexes(conn) do
+  @searchable_collections [
+    {"Surveys", "SurveyTextIndex"},
+    {"Countries", "CountryTextIndex"}
+  ]
+
+  def ensure_indexes(conn) do
+    Enum.each(@searchable_collections, fn {collection, index_name} ->
+      ensure_text_index(conn, collection, index_name)
+    end)
+  end
+
+  defp ensure_text_index(conn, collection, index_name) do
     indexes = [
       %{
         key: %{"$**" => "text"},
-        name: "SurveyTextIndex"
+        name: index_name
       }
     ]
-
-    case Mongo.create_indexes(conn, "Surveys", indexes) do
+    case Mongo.create_indexes(conn, collection, indexes) do
       :ok ->
-        Logger.info(" Text index ensured")
+        Logger.info("Text index ensured for #{collection}")
 
       {:error, %Mongo.Error{code: 85}} ->
-        Logger.info("ℹ️ Index already exists, skipping")
+        Logger.info("ℹ️ Index already exists, for #{collection}, skipping")
 
       {:error, reason} ->
-        Logger.error(" Failed to create text index: #{inspect(reason)}")
+        Logger.error("
+        Failed to create text index for #{collection}: #{inspect(reason)}")
     end
   end
 
@@ -120,8 +131,13 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:upload_file, filename, binary_data, metadata, file_id})
   end
 
-  def export(search) do
-    docs = search_documents_by_text("Surveys", search)
+  def export(collection, search) do
+    docs =
+      if String.trim(search) == "" do
+        get_all_documents(collection)
+      else
+        search_documents_by_text(collection, search)
+      end
 
     case docs do
       [] -> ""

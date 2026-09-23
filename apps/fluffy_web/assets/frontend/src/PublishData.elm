@@ -1,22 +1,15 @@
 module PublishData exposing (..)
 
-import Browser exposing (..)
+import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 
 
-
--- Model
+-- MODEL
 
 
 type alias Model =
-    -- Define your model structure here
     {}
-
-
-
--- Init
 
 
 init : Model
@@ -24,13 +17,10 @@ init =
     {}
 
 
+-- UPDATE
 
--- Update
 
-
-type
-    Msg
-    -- Define your message types here
+type Msg
     = NoOp
 
 
@@ -42,24 +32,134 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-    -- Define your subscriptions here
+subscriptions _ =
     Sub.none
 
 
+-- VIEW
+
+
 view : Model -> Html Msg
-view model =
-    main_ [ class "container mx-auto flex-grow animate-fade-in" ]
-        [ section [ id "first", class "first-main" ]
-            [ h1 [ class "first-title" ] [ text "For Users" ]
-            , p [ class "ff-title" ] [ text "Welcome to the CBC Portal, please login to describe and submit your data." ]
-            , p [ class "ff-title" ] [ text "A CBC Data Curator will review your submission and respond ASAP." ]
-            , a [ href "/uploadpage", class "loggin-btn" ] [ text "Proceed to Upload Page" ]
+view _ =
+    main_ [ class "resources-page animate-fade-in" ]
+        [ viewHero
+        , viewResources
+        , viewResearchSection
+        ]
+
+
+viewHero : Html Msg
+viewHero =
+    section [ class "resources-hero" ]
+        [ div [ class "resources-hero-overlay" ]
+            [ div [ class "resources-hero-content" ]
+                [ h1 [] [ text "Resources" ]
+                , p []
+                    [ text "Access CBC research material, publications and data resources "
+                    , text "to support biological control research and collaboration."
+                    ]
+                , div [ class "resources-title-line" ] []
+                , p [ class "resources-hero-secondary" ]
+                    [ text "Reports, articles, scientific papers and tools to help advance knowledge and share findings." ]
+                ]
             ]
-        , section [ id "bg-image", class "second-main" ]
-            [ h2 [ class "second-title" ] [ text "Biological Control Research" ]
-            , div [ class "the-bg", style "background-image" "url(images/Mass_rearings.png)" ] []
-            , p [ class "some-info" ] [ text "Our research facilities include state-of-the-art greenhouses equipped for biological control experiments. These controlled environments allow researchers to study plant-pest-predator interactions in detail." ]
+        ]
+
+
+viewResources : Html Msg
+viewResources =
+    section [ class "resources-grid animate-fade-in" ]
+        [ resourceCard
+            "reports"
+            "bi-file-earmark-bar-graph"
+            "Reports"
+            "View CBC and partner reports, project summaries and research outcomes."
+            "View Reports"
+            "#"
+
+        , resourceCard
+            "articles"
+            "bi-newspaper"
+            "Popular Articles"
+            "Explore accessible articles and news on biological control and related research."
+            "Read Articles"
+            "#"
+
+        , resourceCard
+            "papers"
+            "bi-journal-text"
+            "Papers"
+            "Access scientific papers, publications and conference material."
+            "View Papers"
+            "#"
+
+        , resourceCard
+            "publish"
+            "bi-cloud-arrow-up"
+            "Publish Data"
+            "Submit your survey data to the CBC portal using our online form or CSV upload."
+            "Go to Upload Page"
+            "/uploadpage"
+        ]
+
+
+resourceCard :
+    String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> Html Msg
+
+resourceCard cardType iconClass titleText description buttonText destination =
+    article [ class ("resource-card resource-card-" ++ cardType) ]
+        [ div [ class "resource-card-body" ]
+            [ div [ class ("resource-icon resource-icon-" ++ cardType) ]
+                [ i [ class ("bi " ++ iconClass) ] [] ]
+
+            , h2 [] [ text titleText ]
+
+            , p []
+                [ text description ]
+
+            , a
+                [ href destination
+                , class ("resource-action resource-action-" ++ cardType)
+                ]
+                [ span [] [ text buttonText ]
+                , span [ class "resource-arrow" ] [ text "→" ]
+                ]
+            ]
+        ]
+
+
+viewResearchSection : Html Msg
+viewResearchSection =
+    section [ class "research-feature" ]
+        [ div
+            [ class "research-feature-image"
+            , style "background-image" "url('/images/Mass_rearings.png')"
+            ]
+            []
+
+        , div [ class "research-feature-content" ]
+            [ h2 [] [ text "Biological Control Research" ]
+
+            , p []
+                [ text "Our research facilities include state-of-the-art greenhouses equipped for biological control experiments. "
+                , text "These controlled environments allow researchers to study plant-pest-predator interactions in detail."
+                ]
+
+            , div [ class "research-title-line" ] []
+
+            , a
+                [ href "api/rhodes"
+                , class "research-learn-more animate-fade-in"
+                ]
+                [ text "Learn More About CBC"
+                , span [] [ text " →" ]
+                ]
             ]
         ]
 

@@ -89,7 +89,7 @@ referenceCard ( iconClass, label ) =
         path =
             case label of
                 "Continents" ->
-                    "/records/profile"
+                    "/records/continents"
 
                 "Countries" ->
                     "/records/countries"

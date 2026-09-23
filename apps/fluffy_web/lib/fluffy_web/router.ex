@@ -10,7 +10,6 @@ defmodule FluffyWeb.Router do
     plug(:put_secure_browser_headers)
   end
 
-
   pipeline :api do
     plug(:fetch_session)
     plug(:accepts, ["json"])
@@ -23,17 +22,16 @@ defmodule FluffyWeb.Router do
   pipeline :authenticated do
     plug(:fetch_session)
     plug(:fetch_live_flash)
-    plug FluffyWeb.Plugs.Authentication
+    plug(FluffyWeb.Plugs.Authentication)
   end
 
   pipeline :admin_only do
     plug(:fetch_session)
     plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
-    plug FluffyWeb.Plugs.Authentication
-    plug FluffyWeb.Plugs.AdminOnly
+    plug(FluffyWeb.Plugs.Authentication)
+    plug(FluffyWeb.Plugs.AdminOnly)
   end
-
 
   scope "/", FluffyWeb do
     pipe_through(:browser)
@@ -45,33 +43,30 @@ defmodule FluffyWeb.Router do
     get("/contact", PageController, :home, private: %{:javascript => "contact"})
     get("/auth/google/callback", GoogleAuthController, :index)
     get("/records", PageController, :home, private: %{:javascript => "records"})
-    get("/records/profile", PageController, :home, private: %{:javascript => "profile"})
+    get("/records/continents", PageController, :home, private: %{:javascript => "continents"})
     get("/records/countries", PageController, :home, private: %{:javascript => "countries"})
     get("/logout", GoogleAuthController, :logout)
     get("/documents/:id", MongoDBController, :show_html)
     get("/image/:id", MongoDBController, :get_image)
-    get "/publication/:id", MongoDBController, :get_publication
+    get("/publication/:id", MongoDBController, :get_publication)
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
   end
 
   scope "/", FluffyWeb do
-    pipe_through([:browser, :authenticated]) # Requires authentication
+    # Requires authentication
+    pipe_through([:browser, :authenticated])
     get("/uploading", PageController, :home, private: %{:javascript => "uploading_data"})
     post("/uploading", PageController, :upload)
     get("/csvupload", PageController, :home, private: %{:javascript => "csvupload"})
     post("/csvupload", MongoDBController, :upload_csv)
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
     post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
-
-    # Route for updating a document
-    put("/Mongodb/documents/:id", MongoDBController, :update)
-
-    post "/documents/:id/update", MongoDBController, :update_document
+    post("/documents/:id/update", MongoDBController, :update_document)
   end
 
   scope "/", FluffyWeb do
     pipe_through(:admin_only)
-    post "/api/Mongodb/approve_document/:id", MongoDBController, :approve
+    post("/api/Mongodb/approve_document/:id", MongoDBController, :approve)
   end
 
   # Other scopes may use custom stacks.
@@ -86,16 +81,10 @@ defmodule FluffyWeb.Router do
     # Route for retrieving a document
     get("/Mongodb/documents/:id", MongoDBController, :show)
 
-    # Route for creating a document
-    post("/Mongodb/documents/newdoc", MongoDBController, :create)
-
     get("/documents/:db_name", MongoDBController, :fetch_documents)
 
     # Retrives all the databases that are there
     get("/Mongodb/databases", MongoDBController, :find)
-
-    # # Route for updating a document
-    # put("/Mongodb/documents/:id", MongoDBController, :update)
 
     # Getting all the docs
     get("/Mongodb/document", MongoDBController, :all)
@@ -107,12 +96,12 @@ defmodule FluffyWeb.Router do
     get("/calendar", MongoDBController, :to_calendar)
 
     # Get approved documents
-    get "/Mongodb/approved_documents", MongoDBController, :approved
+    get("/Mongodb/approved_documents", MongoDBController, :approved)
 
     # See unapproved documents
-    get "/Mongodb/unapproved_documents", MongoDBController, :unapproved
+    get("/Mongodb/unapproved_documents", MongoDBController, :unapproved)
 
-    post "/contact", ContactController, :create
+    post("/contact", ContactController, :create)
 
     # Reverse geocode coordinates into province and country
     get("/geocode/reverse", GeocodingController, :reverse)

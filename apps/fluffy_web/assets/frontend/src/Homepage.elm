@@ -46,13 +46,13 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    main_ [ class "container mx-auto flex-grow animate-fade-in" ]
+    main_ [ class "homepage-page animate-fade-in" ]
         [ section [ id "hero", class "hero-section" ]
             [ h1 [ class "hero-title" ] [ text "Center for Biological Control" ]
             , p [ class "hero-subtitle" ] [ text "Enhancing access to biological control data for research and collaboration." ]
-            , div [ class "hero-image", style "background-image" "url(images/Mass_rearings.png)" ] []
+            , div [ class "hero-image", style "background-image" "url(/images/Mass_rearings.png)" ] []
             ]
-        , section [ id "features", class "grid md:grid-cols-3" ]
+        , section [ id "features", class "homepage-features" ]
             [ div [ class "feature-box" ]
                 [ h2 [ class "feature-title" ] [ text "Weekly Publications" ]
                 , p [ class "feature-text" ] [ text "Stay updated with the latest news and research from the CBC." ]

@@ -134,7 +134,7 @@
               <td>
                 <%= case {key, value} do %>
                    <% {"date", date_str} when is_binary(date_str) -> %>
-                    <%= case FluffyWeb.MongoDBController.parse_date_string(date_str) do %>
+                    <%= case FluffyWeb.ControllerHelpers.parse_date_string(date_str) do %>
                       <% %Date{} = date -> %>
                         <%= Calendar.strftime(date, "%d %B %Y") %>
                       <% _ -> %>

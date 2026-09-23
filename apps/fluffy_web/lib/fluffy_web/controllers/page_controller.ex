@@ -1,16 +1,22 @@
 defmodule FluffyWeb.PageController do
   require Logger
-  alias FluffyWeb.ContollerHelpers
+  alias FluffyWeb.ControllerHelpers
   alias WaterWeeds.MongoDBClient
   use FluffyWeb, :controller
 
   def home(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
-    render(conn, :home, layout: false,conn: conn, js_file: conn.private[:javascript], profile: get_session(conn, :profile), oauth_url: ElixirAuthGoogle.generate_oauth_url(conn))
+    render(conn, :home,
+      layout: false,
+      conn: conn,
+      js_file: conn.private[:javascript],
+      profile: get_session(conn, :profile),
+      oauth_url: ElixirAuthGoogle.generate_oauth_url(conn)
+    )
   end
 
   def upload(conn, params) do
-    missing_fields = ContollerHelpers.missing_required_fields(params)
+    missing_fields = ControllerHelpers.missing_required_fields(params)
 
     cond do
       missing_fields != [] ->
@@ -21,7 +27,7 @@ defmodule FluffyWeb.PageController do
           fields: missing_fields
         })
 
-      not ContollerHelpers.valid_date?(params["date"]) ->
+      not ControllerHelpers.valid_date?(params["date"]) ->
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{
@@ -45,7 +51,10 @@ defmodule FluffyWeb.PageController do
       cond do
         is_list(photos_param) ->
           photos_param
-        match?(%Plug.Upload{}, photos_param) -> [photos_param]
+
+        match?(%Plug.Upload{}, photos_param) ->
+          [photos_param]
+
         is_map(photos_param) ->
           photos_param
           |> Map.values()
@@ -102,10 +111,10 @@ defmodule FluffyWeb.PageController do
 
     processed_publications =
       Enum.map(publications, fn %Plug.Upload{
-                                    path: file_path,
-                                    filename: filename,
-                                    content_type: content_type
-                                  } ->
+                                  path: file_path,
+                                  filename: filename,
+                                  content_type: content_type
+                                } ->
         cond do
           content_type != "application/pdf" ->
             Logger.error("Rejected non-PDF publication: #{filename}")
@@ -117,10 +126,10 @@ defmodule FluffyWeb.PageController do
                 Logger.debug("Uploading publication: #{filename}")
 
                 case MongoDBClient.upload_file(
-                      filename,
-                      binary_data,
-                      %{content_type: content_type, type: "publication"}
-                    ) do
+                       filename,
+                       binary_data,
+                       %{content_type: content_type, type: "publication"}
+                     ) do
                   {:ok, file_id} ->
                     BSON.ObjectId.encode!(file_id)
 
@@ -146,8 +155,8 @@ defmodule FluffyWeb.PageController do
       |> Map.put("photos", processed_photos)
       |> Map.put("publications", processed_publications)
       |> Map.put("userLogin", user_email)
-      |> FluffyWeb.MongoDBController.add_date_dt()
-      |> FluffyWeb.MongoDBController.parse_location()
+      |> FluffyWeb.ControllerHelpers.add_date_dt()
+      |> FluffyWeb.ControllerHelpers.parse_location()
 
     case MongoDBClient.insert_document("Surveys", cleaned_params) do
       {:ok, %{inserted_id: bson_id}} ->
@@ -205,7 +214,12 @@ defmodule FluffyWeb.PageController do
   def index(conn, _params) do
     base_url = FluffyWeb.Endpoint.url()
     oauth_google_url = ElixirAuthGoogle.generate_oauth_url(base_url)
-    render(conn, :home, layout: false, oauth_google_url: oauth_google_url, js_file: conn.private[:javascript])
+
+    render(conn, :home,
+      layout: false,
+      oauth_google_url: oauth_google_url,
+      js_file: conn.private[:javascript]
+    )
   end
 
   def upload_csv(conn, params) do
@@ -227,7 +241,7 @@ defmodule FluffyWeb.PageController do
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
 
-  def profile(conn, _params) do
+  def continents(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end

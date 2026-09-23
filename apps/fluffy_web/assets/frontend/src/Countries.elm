@@ -1,12 +1,16 @@
-module Countries exposing (main)
+port module Countries exposing (main)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (class, disabled, href)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode.Pipeline as Pipeline
+import Url
+
+
+port downloadCsvPort : String -> Cmd msg
 
 
 
@@ -29,11 +33,13 @@ type alias Document =
     , dataStatusId : String
     , dataAccessId : String
     , userLogin : String
+    , approved : Bool
     }
 
 
 type alias Model =
     { documents : List Document
+    , searchText : String
     , isAdmin : Bool
     , error : Maybe String
     , currentPage : Int
@@ -48,10 +54,11 @@ init flags =
     let
         model =
             { documents = []
+            , searchText = ""
             , isAdmin = False
             , error = Nothing
             , currentPage = 1
-            , itemsPerPage = 18
+            , itemsPerPage = 12
             , baseUrl = flags.baseUrl
             , isLoading = True
             }
@@ -64,9 +71,15 @@ init flags =
 
 
 type Msg
-    = GotDocuments (Result Http.Error Response)
+    = FetchDocuments
+    | GotDocuments (Result Http.Error Response)
+    | SearchTextChanged String
+    | ClearSearch
     | NextPage
     | PrevPage
+    | ApproveDocument String
+    | DocumentApproved (Result Http.Error String)
+    | ExportCSV
 
 
 
@@ -76,21 +89,111 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        FetchDocuments ->
+            ( { model
+                | currentPage = 1
+                , isLoading = True
+                , error = Nothing
+              }
+            , searchDocuments model.baseUrl model.searchText
+            )
+
         GotDocuments (Ok response) ->
-            ( { model | documents = response.documents, isAdmin = response.isAdmin, isLoading = False }, Cmd.none )
+            ( { model
+                | documents = response.documents
+                , isAdmin = response.isAdmin
+                , error = Nothing
+                , isLoading = False
+              }
+            , Cmd.none
+            )
 
         GotDocuments (Err err) ->
-            ( { model | error = Just (httpErrorToString err), isLoading = False }, Cmd.none )
+            ( { model
+                | error = Just (httpErrorToString err)
+                , isLoading = False
+              }
+            , Cmd.none
+            )
+
+        SearchTextChanged searchText ->
+            ( { model | searchText = searchText }
+            , Cmd.none
+            )
+
+        ClearSearch ->
+            ( { model
+                | searchText = ""
+                , currentPage = 1
+                , isLoading = True
+                , error = Nothing
+              }
+            , fetchDocuments model.baseUrl
+            )
 
         NextPage ->
             let
                 totalPages =
-                    (List.length model.documents + model.itemsPerPage - 1) // model.itemsPerPage
+                    Basics.max 1
+                        ((List.length model.documents
+                            + model.itemsPerPage
+                            - 1
+                        )
+                            // model.itemsPerPage
+                        )
+
+                nextPage =
+                    Basics.min
+                        (model.currentPage + 1)
+                        totalPages
             in
-            ( { model | currentPage = Basics.min (model.currentPage + 1) totalPages }, Cmd.none )
+            ( { model | currentPage = nextPage }
+            , Cmd.none
+            )
 
         PrevPage ->
-            ( { model | currentPage = Basics.max (model.currentPage - 1) 1 }, Cmd.none )
+            let
+                previousPage =
+                    Basics.max
+                        (model.currentPage - 1)
+                        1
+            in
+            ( { model | currentPage = previousPage }
+            , Cmd.none
+            )
+
+        ApproveDocument docId ->
+            ( model
+            , approveDocument model docId
+            )
+
+        DocumentApproved (Ok _) ->
+            ( { model | isLoading = True }
+            , searchDocuments model.baseUrl model.searchText
+            )
+
+        DocumentApproved (Err err) ->
+            ( { model
+                | error = Just (httpErrorToString err)
+                , isLoading = False
+              }
+            , Cmd.none
+            )
+
+        ExportCSV ->
+            ( model
+            , downloadCsvPort
+                (model.baseUrl
+                    ++ "/api/Mongodb/document/search/export?collection=Countries"
+                    ++ (if String.trim model.searchText /= "" then
+                            "&search="
+                                ++ Url.percentEncode model.searchText
+
+                        else
+                            ""
+                       )
+                )
+            )
 
 
 
@@ -100,109 +203,199 @@ update msg model =
 view : Model -> Html Msg
 view model =
     let
-        startIndex =
+        start =
             (model.currentPage - 1) * model.itemsPerPage
 
         paginatedDocuments =
             model.documents
-                |> List.drop startIndex
+                |> List.drop start
                 |> List.take model.itemsPerPage
 
         totalPages =
-            (List.length model.documents + model.itemsPerPage - 1) // model.itemsPerPage
-
-        isFirstPage =
-            model.currentPage == 1
-
-        isLastPage =
-            model.currentPage >= totalPages
+            Basics.max 1
+                ((List.length model.documents
+                    + model.itemsPerPage
+                    - 1
+                )
+                    // model.itemsPerPage
+                )
     in
-    div []
-        [ if model.isLoading then
+    div [ class "flex flex-col min-h-screen animate-fade-in" ]
+        [ h1
+            [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ]
+            [ text "Countries Collection" ]
+
+        , div
+            [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
+            [ input
+                [ class "search-input flex-grow px-2 py-1 border rounded-md"
+                , type_ "text"
+                , placeholder "Search by text"
+                , value model.searchText
+                , onInput SearchTextChanged
+                ]
+                []
+
+            , div [ class "this flex space-x-2 ml-auto" ]
+                [ button
+                    [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                    , onClick FetchDocuments
+                    ]
+                    [ text "Search" ]
+
+                , button
+                    [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                    , onClick ClearSearch
+                    ]
+                    [ text "X" ]
+
+                , button
+                    [ class "btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-500"
+                    , onClick ExportCSV
+                    ]
+                    [ text "Export CSV" ]
+                ]
+            ]
+
+        , if model.isLoading then
             div
-                [ class "fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50" ]
-                [ div [ class "text-xl font-semibold" ] [ text "⏳ Loading..." ] ]
+                [ class "text-center py-8 text-xl font-semibold" ]
+                [ text "Loading..." ]
 
           else
             text ""
-        , div [ class "container mx-auto p-6 animate-fade-in" ]
-            [ div [ class "flex items-center justify-between mb-6" ]
-                [ h1 [ class "text-4xl font-extrabold text-emerald-700" ]
-                    [ text "🌍 Countries Collection" ]
-                , a
-                    [ href "/csvupload?collection=Countries"
-                    , class "bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded shadow"
+
+        , div
+            [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
+            [ if List.isEmpty paginatedDocuments && not model.isLoading then
+                div
+                    [ class "text-center py-8 text-gray-600" ]
+                    [ text "No countries found." ]
+
+              else
+                div
+                    [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
+                    (List.map
+                        (documentCard model.isAdmin)
+                        paginatedDocuments
+                    )
+
+            , div
+                [ class "pagination mt-4 flex justify-between" ]
+                [ button
+                    [ onClick PrevPage
+                    , disabled (model.currentPage == 1)
+                    , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
                     ]
-                    [ text "+ Upload More Countries via CSV" ]
+                    [ text "Previous" ]
+
+                , span
+                    [ class "px-4 py-2 text-gray-700" ]
+                    [ text
+                        ("Page "
+                            ++ String.fromInt model.currentPage
+                            ++ " of "
+                            ++ String.fromInt totalPages
+                        )
+                    ]
+
+                , button
+                    [ onClick NextPage
+                    , disabled
+                        ((model.currentPage * model.itemsPerPage)
+                            >= List.length model.documents
+                        )
+                    , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                    ]
+                    [ text "Next" ]
                 ]
-            , case model.error of
-                Just errMsg ->
-                    div [ class "text-red-600" ] [ text errMsg ]
-
-                Nothing ->
-                    div []
-                        [ table [ class "min-w-full table-auto border border-gray-300 mb-6" ]
-                            [ thead [ class "bg-gray-100" ]
-                                [ tr []
-                                    [ thCell "Country ID"
-                                    , thCell "Continent ID"
-                                    , thCell "Country"
-                                    , thCell "Data Source ID"
-                                    , thCell "Data Status ID"
-                                    , thCell "Data Access ID"
-                                    , thCell "Submitted by"
-                                    , thCell "Document"
-                                    ]
-                                ]
-                            , tbody []
-                                (List.map viewDocument paginatedDocuments)
-                            ]
-                        , div [ class "pagination mt-4 flex justify-between" ]
-                            [ button
-                                [ onClick PrevPage
-                                , disabled (isFirstPage || model.isLoading)
-                                , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
-                                ]
-                                [ text "Previous" ]
-                            , span [ class "px-4 py-2 text-gray-700" ]
-                                [ text ("Page " ++ String.fromInt model.currentPage ++ " of " ++ String.fromInt totalPages) ]
-                            , button
-                                [ onClick NextPage
-                                , disabled (isLastPage || model.isLoading)
-                                , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
-                                ]
-                                [ text "Next" ]
-                            ]
-                        ]
             ]
+
+        , case model.error of
+            Just errorMsg ->
+                div
+                    [ class "error-msg text-red-500 mt-4" ]
+                    [ text ("Error: " ++ errorMsg) ]
+
+            Nothing ->
+                text ""
         ]
 
 
-thCell : String -> Html msg
-thCell label =
-    th [ class "px-4 py-2 text-left font-semibold border border-gray-300" ] [ text label ]
+
+-- DOCUMENT CARD
 
 
-tdCell : String -> Html msg
-tdCell value =
-    td [ class "px-4 py-2 border border-gray-300" ] [ text value ]
+documentCard : Bool -> Document -> Html Msg
+documentCard isAdmin doc =
+    div
+        [ class "border rounded shadow p-4 bg-white flex-grow animate-fade-in" ]
+        [ div
+            [ class "flex items-center justify-between mb-4" ]
+            [ h2
+                [ class "text-lg font-semibold" ]
+                [ text ("Country: " ++ doc.country) ]
 
+            , if doc.approved then
+                span [ class "badge active" ]
+                    [ text "Active" ]
 
-viewDocument : Document -> Html msg
-viewDocument doc =
-    tr []
-        [ tdCell doc.countryId
-        , tdCell doc.continentId
-        , tdCell doc.country
-        , tdCell doc.dataSourceId
-        , tdCell doc.dataStatusId
-        , tdCell doc.dataAccessId
-        , tdCell doc.userLogin
-        , td [ class "px-4 py-2 border border-gray-300" ]
-            [ a [ href ("/documents/" ++ doc.id ++ "?collection=Countries"), class "text-blue-600 underline" ]
-                [ text "View Document" ]
+              else
+                text ""
             ]
+
+        , div [ class "mb-2" ]
+            [ text ("Country ID: " ++ doc.countryId) ]
+
+        , div [ class "mb-2" ]
+            [ text ("Continent ID: " ++ doc.continentId) ]
+
+        , div [ class "mb-4" ]
+            [ text ("Submitted by: " ++ doc.userLogin) ]
+
+        , a
+            [ href
+                ("/documents/"
+                    ++ doc.id
+                    ++ "?collection=Countries"
+                )
+            , class "btn btn-primary"
+            ]
+            [ text "View Document" ]
+
+        , case ( doc.approved, isAdmin ) of
+            ( False, True ) ->
+                button
+                    [ onClick (ApproveDocument doc.id)
+                    , class "btn btn-success"
+                    ]
+                    [ text "Approve" ]
+
+            ( False, False ) ->
+                span
+                    [ class "mb-2 text-red" ]
+                    [ text " NOT YET APPROVED" ]
+
+            _ ->
+                text ""
         ]
+
+
+
+-- APPROVE DOCUMENT
+
+
+approveDocument : Model -> String -> Cmd Msg
+approveDocument model docId =
+    Http.post
+        { url =
+            model.baseUrl
+                ++ "/api/Mongodb/approve_document/"
+                ++ docId
+                ++ "?collection=Countries"
+        , body = Http.emptyBody
+        , expect = Http.expectString DocumentApproved
+        }
 
 
 
@@ -212,8 +405,31 @@ viewDocument doc =
 fetchDocuments : String -> Cmd Msg
 fetchDocuments baseUrl =
     Http.get
-        { url = baseUrl ++ "/api/Mongodb/document?collection=Countries"
-        , expect = Http.expectJson GotDocuments responseDecoder
+        { url =
+            baseUrl
+                ++ "/api/Mongodb/document?collection=Countries"
+        , expect =
+            Http.expectJson GotDocuments responseDecoder
+        }
+
+
+searchDocuments : String -> String -> Cmd Msg
+searchDocuments baseUrl searchText =
+    let
+        url =
+            if String.isEmpty (String.trim searchText) then
+                baseUrl
+                    ++ "/api/Mongodb/document?collection=Countries"
+
+            else
+                baseUrl
+                    ++ "/api/Mongodb/document/search?collection=Countries&search="
+                    ++ Url.percentEncode searchText
+    in
+    Http.get
+        { url = url
+        , expect =
+            Http.expectJson GotDocuments responseDecoder
         }
 
 
@@ -226,21 +442,23 @@ type alias Response =
 responseDecoder : Decode.Decoder Response
 responseDecoder =
     Decode.succeed Response
-        |> required "isAdmin" Decode.bool
-        |> required "documents" (Decode.list documentDecoder)
+        |> Pipeline.required "isAdmin" Decode.bool
+        |> Pipeline.required "documents"
+            (Decode.list documentDecoder)
 
 
 documentDecoder : Decode.Decoder Document
 documentDecoder =
     Decode.succeed Document
-        |> required "_id" Decode.string
-        |> required "countryid" Decode.string
-        |> required "continentid" Decode.string
-        |> required "country" Decode.string
-        |> required "datasourceid" Decode.string
-        |> required "datastatusid" Decode.string
-        |> required "dataaccessid" Decode.string
-        |> required "userLogin" Decode.string
+        |> Pipeline.required "_id" Decode.string
+        |> Pipeline.required "countryid" Decode.string
+        |> Pipeline.required "continentid" Decode.string
+        |> Pipeline.required "country" Decode.string
+        |> Pipeline.required "datasourceid" Decode.string
+        |> Pipeline.required "datastatusid" Decode.string
+        |> Pipeline.required "dataaccessid" Decode.string
+        |> Pipeline.required "userLogin" Decode.string
+        |> Pipeline.optional "approved" Decode.bool False
 
 
 
@@ -267,6 +485,15 @@ httpErrorToString err =
 
 
 
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
+
+
+
 -- MAIN
 
 
@@ -275,6 +502,6 @@ main =
     Browser.element
         { init = init
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , view = view
         }

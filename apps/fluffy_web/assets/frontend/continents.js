@@ -1,6 +1,6 @@
-import { Elm } from './src/Profile.elm';
+import { Elm } from './src/Continents.elm';
 export function start_elm(flags) {
-  return Elm.Profile.init({
+  return Elm.Continents.init({
     node: document.getElementById("myapp"),
     flags: flags
   });
