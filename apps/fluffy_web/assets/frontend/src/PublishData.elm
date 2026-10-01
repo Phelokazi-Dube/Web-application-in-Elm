@@ -72,10 +72,10 @@ viewResources =
         [ resourceCard
             "reports"
             "bi-file-earmark-bar-graph"
-            "Reports"
-            "View CBC and partner reports, project summaries and research outcomes."
-            "View Reports"
-            "#"
+            " Annual Reports"
+            "Explore annual reports highlighting the work and activities of the CBC."
+            "View Annual Reports"
+            "/api/annual-reports"
 
         , resourceCard
             "articles"
@@ -88,10 +88,10 @@ viewResources =
         , resourceCard
             "papers"
             "bi-journal-text"
-            "Papers"
-            "Access scientific papers, publications and conference material."
-            "View Papers"
-            "#"
+            "Publications"
+            "Explore peer-reviewed papers and other scholarly publications produced by CBC researchers."
+            "View Publications"
+            "/api/publications"
 
         , resourceCard
             "publish"

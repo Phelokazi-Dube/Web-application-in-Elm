@@ -53,27 +53,85 @@ view model =
             , div [ class "hero-image", style "background-image" "url(/images/Mass_rearings.png)" ] []
             ]
         , section [ id "features", class "homepage-features" ]
-            [ div [ class "feature-box" ]
-                [ h2 [ class "feature-title" ] [ text "Weekly Publications" ]
-                , p [ class "feature-text" ] [ text "Stay updated with the latest news and research from the CBC." ]
-                , span [ class "feature-link" ] [ text "Get More Info" ]
+            [ featureCard
+                "news"
+                "bi-newspaper"
+                "News"
+                "Stay updated with the latest news and research from the CBC."
+                "Get More Info"
+                "/api/news"
+
+            , featureCard
+                "publish"
+                "bi-cloud-arrow-up"
+                "Publish Findings"
+                "Contribute your research findings and survey data to the CBC."
+                "Start Publishing"
+                "/publish"
+
+            , featureCard
+                "calendar"
+                "bi-calendar2-event"
+                "CBC Public Calendar of Events"
+                "Stay up to date about all the exciting events of the CBC."
+                "View Calendar"
+                "/api/calendar"
+            ]
+
+        , section [ id "cta", class "homepage-cbc-feature" ]
+            [ div
+                [ class "homepage-cbc-image"
+                , style "background-image" "url('/images/Lillies.jpg')"
                 ]
-            , div [ class "feature-box" ]
-                [ h2 [ class "feature-title" ] [ text "Publish Findings" ]
-                , p [ class "feature-text" ] [ text "Share your research with the biodiversity community." ]
-                , a [ href "/publish", class "feature-link" ] [ text "Start Publishing" ]
-                ]
-            , div [ class "feature-box" ]
-                [ h2 [ class "feature-title" ] [ text "CBC Public Calendar of Events" ]
-                , p [ class "feature-text" ] [ text "Stay up to date about all the exciting events of the CBC." ]
-                , a [ href "api/calendar", class "feature-link" ] [ text "View Calendar" ]
+                []
+
+            , div [ class "homepage-cbc-content" ]
+                [ h2 [] [ text "Learn More About CBC" ]
+
+                , p []
+                    [ text "The Center for Biological Control (CBC) is dedicated to advancing research and solutions in biological control. "
+                    , text "Visit the official CBC website to explore their research, initiatives, and the wealth of knowledge they share with the community."
+                    ]
+
+                , div [ class "homepage-cbc-title-line" ] []
+
+                , a
+                    [ href "/api/rhodes"
+                    , class "homepage-cbc-link"
+                    ]
+                    [ text "Visit CBC Website"
+                    , span [ class "homepage-feature-arrow" ] [ text " →" ]
+                    ]
                 ]
             ]
-        , section [ id "cta", class "cta-section" ]
-            [ h2 [ class "cta-title" ] [ text "Learn More About CBC" ]
-            , p [ class "cta-text" ]
-                [ text "The Center for Biological Control (CBC) is dedicated to advancing research and solutions in biological control. Visit the official CBC website to explore their research, initiatives, and the wealth of knowledge they share with the community." ]
-            , a [ href "api/rhodes", class "cta-link" ] [ text "Visit CBC Website" ]
+        ]
+
+
+featureCard :
+    String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> Html Msg
+featureCard cardType iconClass titleText description buttonText destination =
+    article [ class ("feature-box homepage-feature-" ++ cardType) ]
+        [ div [ class ("homepage-feature-icon homepage-feature-icon-" ++ cardType) ]
+            [ i [ class ("bi " ++ iconClass) ] [] ]
+
+        , h2 [ class "feature-title" ]
+            [ text titleText ]
+
+        , p [ class "feature-text" ]
+            [ text description ]
+
+        , a
+            [ href destination
+            , class ("feature-link homepage-feature-link homepage-feature-link-" ++ cardType)
+            ]
+            [ span [] [ text buttonText ]
+            , span [ class "homepage-feature-arrow" ] [ text "→" ]
             ]
         ]
 

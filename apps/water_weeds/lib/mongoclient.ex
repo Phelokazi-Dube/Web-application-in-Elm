@@ -60,7 +60,7 @@ defmodule WaterWeeds.MongoDBClient do
     ]
     case Mongo.create_indexes(conn, collection, indexes) do
       :ok ->
-        Logger.info("Text index ensured for #{collection}")
+        Logger.info("ℹ️ Text index ensured for #{collection}")
 
       {:error, %Mongo.Error{code: 85}} ->
         Logger.info("ℹ️ Index already exists, for #{collection}, skipping")

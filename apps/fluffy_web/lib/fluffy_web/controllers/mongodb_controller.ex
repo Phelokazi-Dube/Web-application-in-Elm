@@ -354,6 +354,24 @@ defmodule FluffyWeb.MongoDBController do
     )
   end
 
+  def to_annual_reports(conn, _params) do
+  redirect(conn,
+    external: "https://www.ru.ac.za/centreforbiologicalcontrol/resources/annualreports/"
+  )
+end
+
+def to_publications(conn, _params) do
+  redirect(conn,
+    external: "https://www.ru.ac.za/centreforbiologicalcontrol/resources/publications/"
+  )
+end
+
+def to_news(conn, _params) do
+  redirect(conn,
+    external: "https://www.ru.ac.za/centreforbiologicalcontrol/latestnews/"
+  )
+end
+
   # Function that approves the documents
   def approve(conn, %{"id" => id} = params) do
     role = get_session(conn, :role) || "user"

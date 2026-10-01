@@ -761,21 +761,22 @@ header nav .nav-items li {
 .resources-hero {
   position: relative;
   width: 100%;
-  min-height: 340px;
+  min-height: 100%;
 
   display: flex;
   align-items: center;
 
   background-image:
     linear-gradient(
-      90deg,
+      70deg,
       rgba(255, 255, 255, 0.15),
       rgba(255, 255, 255, 0.02)
     ),
-    url("/images/resources-hero.jpg");
+    url("/images/Flowers.jpg");
 
   background-size: cover;
   background-position: center;
+  margin-top: -14px;
   margin-bottom: 1rem;
 }
 
@@ -1184,9 +1185,22 @@ header nav .nav-items li {
   gap: 1.5rem;
 }
 
+/* HOMEPAGE FEATURE CARDS */
+
+.homepage-features {
+  width: calc(100% - 2rem);
+  max-width: 1400px;
+  margin: 0 auto 4rem auto;
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+}
+
 .homepage-page .feature-box {
+  position: relative;
   min-width: 0;
-  padding: 2.5rem;
+  padding: 3rem 2.5rem 2.5rem;
 
   background-color: #ffffff;
   border: 1px solid #e5e7eb;
@@ -1204,14 +1218,49 @@ header nav .nav-items li {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.13);
 }
 
+/* Feature icons */
+
+.homepage-feature-icon {
+  width: 58px;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 2rem;
+
+  border-radius: 50%;
+  font-size: 2.8rem;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.homepage-feature-icon-news {
+  color: #1683c4;
+  background-color: #e4f4ff;
+}
+
+.homepage-feature-icon-publish {
+  color: #26813b;
+  background-color: #e7f7eb;
+}
+
+.homepage-feature-icon-calendar {
+  color: #6254d9;
+  background-color: #efedff;
+}
+
 .homepage-page .feature-title {
   margin: 0 0 1rem 0;
+
   font-size: 2.6rem;
   font-weight: 700;
   color: #172b43;
 }
 
 .homepage-page .feature-text {
+  min-height: 55px;
   margin: 0 0 2rem 0;
 
   font-family: "Times New Roman", Times, serif;
@@ -1221,40 +1270,92 @@ header nav .nav-items li {
   color: #59687a;
 }
 
-.homepage-page .feature-link {
-  display: inline-block;
+/* Coloured feature links */
 
-  color: rgb(17, 71, 104);
+.homepage-page .homepage-feature-link {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+
+  border-radius: 7px;
 
   font-family: inherit;
   font-size: 1.55rem;
   font-weight: 700;
 
   text-decoration: none;
-  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
 }
 
-.homepage-page .feature-link:hover {
-  color: #4d9221;
+.homepage-page .homepage-feature-link:hover {
   text-decoration: none;
+  transform: translateY(-1px);
+  filter: brightness(0.97);
+}
+
+.homepage-feature-link-news {
+  color: #075985 !important;
+  background-color: #e5f5ff;
+}
+
+.homepage-feature-link-publish {
+  color: #216e39 !important;
+  background-color: #e7f7ec;
+}
+
+.homepage-feature-link-calendar {
+  color: #5145cd !important;
+  background-color: #efedff;
+}
+
+.homepage-feature-arrow {
+  font-size: 2rem;
 }
 
 /* HOMEPAGE CBC CTA */
+/* HOMEPAGE CBC FEATURE */
 
-.homepage-page .cta-section {
+.homepage-cbc-feature {
   width: calc(100% - 2rem);
   max-width: 1400px;
-
   margin: 0 auto;
-  padding: 3.5rem;
+
+  padding: 2.5rem;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 3rem;
 
   background-color: #f0faf4;
   border-radius: 16px;
-
-  text-align: left;
 }
 
-.homepage-page .cta-title {
+.homepage-cbc-image {
+  min-height: 300px;
+
+  border-radius: 12px;
+
+  background-size: cover;
+  background-position: center;
+}
+
+.homepage-cbc-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 1rem 2rem;
+}
+
+.homepage-cbc-content h2 {
   margin: 0 0 1.2rem 0;
 
   font-size: 3rem;
@@ -1263,10 +1364,8 @@ header nav .nav-items li {
   color: #172b43;
 }
 
-.homepage-page .cta-text {
-  max-width: 950px;
-
-  margin: 0 0 2rem 0;
+.homepage-cbc-content p {
+  margin: 0;
 
   font-family: "Times New Roman", Times, serif;
   font-size: 1.8rem;
@@ -1275,20 +1374,27 @@ header nav .nav-items li {
   color: #59687a;
 }
 
-.homepage-page .cta-link {
-  display: inline-block;
+.homepage-cbc-title-line {
+  width: 48px;
+  height: 3px;
+
+  margin: 1.7rem 0;
+
+  background-color: #4d9221;
+}
+
+.homepage-cbc-link {
+  width: fit-content;
 
   padding: 1.1rem 2rem;
 
   border: 1px solid rgb(17, 71, 104);
   border-radius: 8px;
 
-  background-color: transparent;
   color: rgb(17, 71, 104);
 
   font-size: 1.5rem;
   font-weight: 700;
-
   text-decoration: none;
 
   transition:
@@ -1296,7 +1402,7 @@ header nav .nav-items li {
     color 0.2s ease;
 }
 
-.homepage-page .cta-link:hover {
+.homepage-cbc-link:hover {
   background-color: rgb(17, 71, 104);
   color: white;
   text-decoration: none;

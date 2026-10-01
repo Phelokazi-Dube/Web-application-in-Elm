@@ -27,7 +27,8 @@ defmodule Fluffy.Umbrella.MixProject do
     [
       # Required to run "mix format" on ~H/.heex files from the umbrella root
       # TODO bump on release to {:phoenix_live_view, ">= 0.0.0"},
-      {:phoenix_live_view, "~> 1.0.0-rc.1", override: true}
+      {:phoenix_live_view, "~> 1.0.0-rc.1", override: true},
+      {:dotenvy, "~> 0.8"}
     ]
   end
 

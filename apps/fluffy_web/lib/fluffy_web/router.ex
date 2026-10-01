@@ -95,6 +95,12 @@ defmodule FluffyWeb.Router do
     # Add a route for viewing the calender
     get("/calendar", MongoDBController, :to_calendar)
 
+    get("/annual-reports", MongoDBController, :to_annual_reports)
+
+    get("/publications", MongoDBController, :to_publications)
+
+    get("/news", MongoDBController, :to_news)
+
     # Get approved documents
     get("/Mongodb/approved_documents", MongoDBController, :approved)
 

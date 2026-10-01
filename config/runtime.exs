@@ -1,5 +1,8 @@
 import Config
-Dotenvy.source!(".env")
+
+if Code.ensure_loaded?(Dotenvy) and File.exists?(".env") do
+  Dotenvy.source!(".env")
+end
 
 config :elixir_auth_google,
   client_id: System.fetch_env!("GOOGLE_CLIENT_ID"),
