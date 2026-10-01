@@ -5,6 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 
 
+
 -- MODEL
 
 
@@ -15,6 +16,7 @@ type alias Model =
 init : Model
 init =
     {}
+
 
 
 -- UPDATE
@@ -34,6 +36,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
+
 
 
 -- VIEW
@@ -76,7 +79,6 @@ viewResources =
             "Explore annual reports highlighting the work and activities of the CBC."
             "View Annual Reports"
             "/api/annual-reports"
-
         , resourceCard
             "articles"
             "bi-newspaper"
@@ -84,7 +86,6 @@ viewResources =
             "Explore accessible articles and news on biological control and related research."
             "Read Articles"
             "#"
-
         , resourceCard
             "papers"
             "bi-journal-text"
@@ -92,7 +93,6 @@ viewResources =
             "Explore peer-reviewed papers and other scholarly publications produced by CBC researchers."
             "View Publications"
             "/api/publications"
-
         , resourceCard
             "publish"
             "bi-cloud-arrow-up"
@@ -111,18 +111,14 @@ resourceCard :
     -> String
     -> String
     -> Html Msg
-
 resourceCard cardType iconClass titleText description buttonText destination =
     article [ class ("resource-card resource-card-" ++ cardType) ]
         [ div [ class "resource-card-body" ]
             [ div [ class ("resource-icon resource-icon-" ++ cardType) ]
                 [ i [ class ("bi " ++ iconClass) ] [] ]
-
             , h2 [] [ text titleText ]
-
             , p []
                 [ text description ]
-
             , a
                 [ href destination
                 , class ("resource-action resource-action-" ++ cardType)
@@ -142,17 +138,13 @@ viewResearchSection =
             , style "background-image" "url('/images/Mass_rearings.png')"
             ]
             []
-
         , div [ class "research-feature-content" ]
             [ h2 [] [ text "Biological Control Research" ]
-
             , p []
                 [ text "Our research facilities include state-of-the-art greenhouses equipped for biological control experiments. "
                 , text "These controlled environments allow researchers to study plant-pest-predator interactions in detail."
                 ]
-
             , div [ class "research-title-line" ] []
-
             , a
                 [ href "api/rhodes"
                 , class "research-learn-more animate-fade-in"

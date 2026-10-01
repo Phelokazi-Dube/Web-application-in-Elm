@@ -60,7 +60,6 @@ view model =
                 "Stay updated with the latest news and research from the CBC."
                 "Get More Info"
                 "/api/news"
-
             , featureCard
                 "publish"
                 "bi-cloud-arrow-up"
@@ -68,7 +67,6 @@ view model =
                 "Contribute your research findings and survey data to the CBC."
                 "Start Publishing"
                 "/publish"
-
             , featureCard
                 "calendar"
                 "bi-calendar2-event"
@@ -77,24 +75,19 @@ view model =
                 "View Calendar"
                 "/api/calendar"
             ]
-
         , section [ id "cta", class "homepage-cbc-feature" ]
             [ div
                 [ class "homepage-cbc-image"
                 , style "background-image" "url('/images/Lillies.jpg')"
                 ]
                 []
-
             , div [ class "homepage-cbc-content" ]
                 [ h2 [] [ text "Learn More About CBC" ]
-
                 , p []
                     [ text "The Center for Biological Control (CBC) is dedicated to advancing research and solutions in biological control. "
                     , text "Visit the official CBC website to explore their research, initiatives, and the wealth of knowledge they share with the community."
                     ]
-
                 , div [ class "homepage-cbc-title-line" ] []
-
                 , a
                     [ href "/api/rhodes"
                     , class "homepage-cbc-link"
@@ -119,13 +112,10 @@ featureCard cardType iconClass titleText description buttonText destination =
     article [ class ("feature-box homepage-feature-" ++ cardType) ]
         [ div [ class ("homepage-feature-icon homepage-feature-icon-" ++ cardType) ]
             [ i [ class ("bi " ++ iconClass) ] [] ]
-
         , h2 [ class "feature-title" ]
             [ text titleText ]
-
         , p [ class "feature-text" ]
             [ text description ]
-
         , a
             [ href destination
             , class ("feature-link homepage-feature-link homepage-feature-link-" ++ cardType)

@@ -75,10 +75,12 @@ type alias Coordinates =
     , lng : Float
     }
 
+
 type alias GeocodeResult =
     { province : String
     , country : String
     }
+
 
 coordsDecoder : D.Decoder Coordinates
 coordsDecoder =
@@ -86,11 +88,13 @@ coordsDecoder =
         (D.field "lat" D.float)
         (D.field "lng" D.float)
 
+
 geocodeDecoder : D.Decoder GeocodeResult
 geocodeDecoder =
     D.map2 GeocodeResult
         (D.field "province" D.string)
         (D.field "country" D.string)
+
 
 
 -- MODEL
@@ -489,16 +493,18 @@ update msg model =
                         | province = stringToProvince geocode.province
                         , country = geocode.country
                         , error = Nothing
-                    }
+                      }
                     , Cmd.none
                     )
 
                 Err _ ->
                     ( { model
                         | error = Just "Could not automatically determine province and country. Please select the province manually."
-                    }
+                      }
                     , Cmd.none
                     )
+
+
 
 -- PROVINCE DROPDOWN
 
@@ -959,7 +965,7 @@ view model =
                                 ]
                             , provinceDropdown model
                             ]
-                        , div [ class "field" ]
+                         , div [ class "field" ]
                             [ label [] [ text "Country" ]
                             , input
                                 [ type_ "text"
@@ -968,7 +974,7 @@ view model =
                                 , readonly True
                                 ]
                                 []
-                            ]  
+                            ]
                          , div [ class "field" ]
                             [ label [] [ text "Site" ]
                             , input [ type_ "text", name "site", placeholder "Site name", value model.site, onInput SiteChanged ] []

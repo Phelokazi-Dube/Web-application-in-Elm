@@ -138,7 +138,7 @@ update msg model =
                         ((List.length model.documents
                             + model.itemsPerPage
                             - 1
-                        )
+                         )
                             // model.itemsPerPage
                         )
 
@@ -216,7 +216,7 @@ view model =
                 ((List.length model.documents
                     + model.itemsPerPage
                     - 1
-                )
+                 )
                     // model.itemsPerPage
                 )
     in
@@ -224,7 +224,6 @@ view model =
         [ h1
             [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ]
             [ text "Countries Collection" ]
-
         , div
             [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
             [ input
@@ -235,20 +234,17 @@ view model =
                 , onInput SearchTextChanged
                 ]
                 []
-
             , div [ class "this flex space-x-2 ml-auto" ]
                 [ button
                     [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
                     , onClick FetchDocuments
                     ]
                     [ text "Search" ]
-
                 , button
                     [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
                     , onClick ClearSearch
                     ]
                     [ text "X" ]
-
                 , button
                     [ class "btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-500"
                     , onClick ExportCSV
@@ -256,7 +252,6 @@ view model =
                     [ text "Export CSV" ]
                 ]
             ]
-
         , if model.isLoading then
             div
                 [ class "text-center py-8 text-xl font-semibold" ]
@@ -264,7 +259,6 @@ view model =
 
           else
             text ""
-
         , div
             [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
             [ if List.isEmpty paginatedDocuments && not model.isLoading then
@@ -279,7 +273,6 @@ view model =
                         (documentCard model.isAdmin)
                         paginatedDocuments
                     )
-
             , div
                 [ class "pagination mt-4 flex justify-between" ]
                 [ button
@@ -288,7 +281,6 @@ view model =
                     , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
                     ]
                     [ text "Previous" ]
-
                 , span
                     [ class "px-4 py-2 text-gray-700" ]
                     [ text
@@ -298,7 +290,6 @@ view model =
                             ++ String.fromInt totalPages
                         )
                     ]
-
                 , button
                     [ onClick NextPage
                     , disabled
@@ -310,7 +301,6 @@ view model =
                     [ text "Next" ]
                 ]
             ]
-
         , case model.error of
             Just errorMsg ->
                 div
@@ -335,7 +325,6 @@ documentCard isAdmin doc =
             [ h2
                 [ class "text-lg font-semibold" ]
                 [ text ("Country: " ++ doc.country) ]
-
             , if doc.approved then
                 span [ class "badge active" ]
                     [ text "Active" ]
@@ -343,16 +332,12 @@ documentCard isAdmin doc =
               else
                 text ""
             ]
-
         , div [ class "mb-2" ]
             [ text ("Country ID: " ++ doc.countryId) ]
-
         , div [ class "mb-2" ]
             [ text ("Continent ID: " ++ doc.continentId) ]
-
         , div [ class "mb-4" ]
             [ text ("Submitted by: " ++ doc.userLogin) ]
-
         , a
             [ href
                 ("/documents/"
@@ -362,7 +347,6 @@ documentCard isAdmin doc =
             , class "btn btn-primary"
             ]
             [ text "View Document" ]
-
         , case ( doc.approved, isAdmin ) of
             ( False, True ) ->
                 button

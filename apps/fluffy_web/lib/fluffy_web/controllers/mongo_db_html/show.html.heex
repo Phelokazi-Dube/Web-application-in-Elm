@@ -119,8 +119,10 @@
   <!-- Tabs -->
   <div class="tabs" id="tabs">
     <div class="tab active" data-tab="general">General</div>
-    <div class="tab" data-tab="images">Images</div>
-    <div class="tab" data-tab="publications">Publications</div>
+    <%= if @collection == "Surveys" do %>
+      <div class="tab" data-tab="images">Images</div>
+      <div class="tab" data-tab="publications">Publications</div>
+    <% end %>
   </div>
 
   <!-- Tab Contents -->
@@ -173,46 +175,48 @@
     </table>
   </div>
 
-  <div id="tab-images" class="tab-content hidden">
-    <%= if photos = Map.get(@document, "photos") do %>
-      <div class="d-flex flex-wrap gap-3 justify-content-center">
-        <%= for id <- photos do %>
-          <img 
-            src={~p"/image/#{id}"}
-            alt="Photo"
-            class="img-thumbnail"
-            onerror="this.onerror=null; this.src='/images/fallback.jpg';"
-          />
-        <% end %>
-      </div>
-    <% else %>
-      <p>No images available.</p>
-    <% end %>
-  </div>
+  <%= if @collection == "Surveys" do %>
+    <div id="tab-images" class="tab-content hidden">
+      <%= if photos = Map.get(@document, "photos") do %>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          <%= for id <- photos do %>
+            <img 
+              src={~p"/image/#{id}"}
+              alt="Photo"
+              class="img-thumbnail"
+              onerror="this.onerror=null; this.src='/images/fallback.jpg';"
+            />
+          <% end %>
+        </div>
+      <% else %>
+        <p>No images available.</p>
+      <% end %>
+    </div>
 
-  <div id="tab-publications" class="tab-content hidden">
-    <%= if publications = Map.get(@document, "publications") do %>
-      <div class="d-flex flex-wrap gap-4 justify-content-center">
-        <%= for id <- publications do %>
-          <div class="pdf-card border rounded-xl p-4 shadow-sm bg-white
-                      max-w-sm w-full sm:w-80 md:w-96 text-center">
+    <div id="tab-publications" class="tab-content hidden">
+      <%= if publications = Map.get(@document, "publications") do %>
+        <div class="d-flex flex-wrap gap-4 justify-content-center">
+          <%= for id <- publications do %>
+            <div class="pdf-card border rounded-xl p-4 shadow-sm bg-white
+                        max-w-sm w-full sm:w-80 md:w-96 text-center">
 
-            <div class="pdf-preview">📄</div>
+              <div class="pdf-preview">📄</div>
 
-            <a
-              href={~p"/publication/#{id}"}
-              target="_blank"
-              class="btn btn-warning w-full mt-2"
-            >
-              View / Download PDF
-            </a>
-          </div>
-        <% end %>
-      </div>
-    <% else %>
-      <p><i>No publications attached.</i></p>
-    <% end %>
-  </div>
+              <a
+                href={~p"/publication/#{id}"}
+                target="_blank"
+                class="btn btn-warning w-full mt-2"
+              >
+                View / Download PDF
+              </a>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p><i>No publications attached.</i></p>
+      <% end %>
+    </div>
+  <% end %>
 
   <%= if @collection && @collection != "" && @can_edit do %>
     <div class="edit-button">

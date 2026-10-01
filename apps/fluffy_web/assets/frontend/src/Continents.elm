@@ -80,13 +80,13 @@ update msg model =
 
 -- VIEW
 
+
 view : Model -> Html Msg
 view model =
     div [ class "container mx-auto p-6 animate-fade-in" ]
         [ h1
             [ class "survey-title font-bold text-5xl text-left mb-6" ]
             [ text "Continents Collection" ]
-
         , case model.error of
             Just errMsg ->
                 div [ class "text-red-600 mb-4" ]
@@ -110,13 +110,10 @@ viewDocument doc =
             [ h2 [ class "text-lg font-semibold" ]
                 [ text ("Continent: " ++ doc.continent) ]
             ]
-
         , div [ class "mb-2" ]
             [ text ("Continent ID: " ++ doc.continentId) ]
-
         , div [ class "mb-4" ]
             [ text ("Submitted by: " ++ doc.userLogin) ]
-
         , a
             [ href
                 ("/documents/"
@@ -127,6 +124,8 @@ viewDocument doc =
             ]
             [ text "View Document" ]
         ]
+
+
 
 -- HTTP
 
