@@ -355,22 +355,46 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   def to_annual_reports(conn, _params) do
-  redirect(conn,
-    external: "https://www.ru.ac.za/centreforbiologicalcontrol/resources/annualreports/"
-  )
-end
+    redirect(conn,
+      external: "https://www.ru.ac.za/centreforbiologicalcontrol/resources/annualreports"
+    )
+  end
 
-def to_publications(conn, _params) do
-  redirect(conn,
-    external: "https://www.ru.ac.za/centreforbiologicalcontrol/resources/publications/"
-  )
-end
+  def to_publications(conn, _params) do
+    redirect(conn,
+      external: "https://www.ru.ac.za/centreforbiologicalcontrol/resources/publications"
+    )
+  end
 
-def to_news(conn, _params) do
-  redirect(conn,
-    external: "https://www.ru.ac.za/centreforbiologicalcontrol/latestnews/"
-  )
-end
+  def to_news(conn, _params) do
+    redirect(conn,
+      external: "https://www.ru.ac.za/centreforbiologicalcontrol/latestnews"
+    )
+  end
+
+  def to_facebook(conn, _params) do
+    redirect(conn,
+      external: "https://www.facebook.com/RhodesUniCBC"
+    )
+  end
+
+  def to_linkedin(conn, _params) do
+    redirect(conn,
+      external: "https://www.linkedin.com/company/centre-for-biological-control"
+    )
+  end
+
+  def to_instagram(conn, _params) do
+    redirect(conn,
+      external: "https://www.instagram.com/rhodesunicbc"
+    )
+  end
+
+  def to_x(conn, _params) do
+    redirect(conn,
+      external: "https://x.com/RhodesUniCBC"
+    )
+  end
 
   # Function that approves the documents
   def approve(conn, %{"id" => id} = params) do

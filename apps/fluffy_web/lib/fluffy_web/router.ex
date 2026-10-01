@@ -101,6 +101,14 @@ defmodule FluffyWeb.Router do
 
     get("/news", MongoDBController, :to_news)
 
+    get("/facebook", MongoDBController, :to_facebook)
+
+    get("/linkedIn", MongoDBController, :to_linkedin)
+
+    get("/instagram", MongoDBController, :to_instagram)
+
+    get("/x", MongoDBController, :to_x)
+
     # Get approved documents
     get("/Mongodb/approved_documents", MongoDBController, :approved)
 
