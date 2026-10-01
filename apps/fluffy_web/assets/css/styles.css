@@ -777,7 +777,7 @@ header nav .nav-items li {
   background-size: cover;
   background-position: center;
   margin-top: -14px;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .resources-hero-overlay {
@@ -828,7 +828,7 @@ header nav .nav-items li {
   width: calc(100% - 2rem);
   max-width: 1400px;
 
-  margin: 0 auto 4rem auto;
+  margin: 4rem auto;
 
   display: grid;
 
