@@ -29,27 +29,25 @@ update msg model =
 
 view : Model -> Html Msg
 view _ =
-    div [ class "flex flex-col min-h-screen" ]
+    div [ class "records-page site-content-width animate-fade-in" ]
         [ Html.node "link"
             [ attribute "rel" "stylesheet"
             , attribute "href" "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
             ]
             []
-        , main_
-            [ class "container mx-auto flex-grow py-10 px-4 bg-slate-200 shadow-md rounded-md animate-fade-in"
-            , style "max-width" "1200px"
+
+        , div [ class "records-header" ]
+            [ h1 [ class "records-title" ]
+                [ text "Records" ]
+            , p [ class "records-description" ]
+                [ text "Browse survey records and supporting reference data used across FluffyWeb." ]
             ]
-            [ section [ class "text-center" ]
-                [ h1 [ class "text-5xl text-left font-bold mb-6 text-gray-800" ]
-                    [ text "Other Records" ]
-                , p [ class "text-lg text-left text-gray-700 mb-10 max-w-3xl" ]
-                    [ text "This is structured reference data related to survey operations and site monitoring." ]
-                , div [ class "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10" ]
-                    (List.map referenceCard referenceDataItems)
-                ]
+
+        , div [ class "records-grid-panel" ]
+            [ div [ class "records-grid" ]
+                (List.map referenceCard referenceDataItems)
             ]
         ]
-
 
 
 -- REFERENCE DATA ITEMS
@@ -84,10 +82,15 @@ referenceCard : ( String, String ) -> Html msg
 referenceCard ( iconClass, label ) =
     let
         isEnabled =
-            label == "Continents" || label == "Countries"
+            label == "Surveys"
+                || label == "Continents"
+                || label == "Countries"
 
         path =
             case label of
+                "Surveys" ->
+                    "/survey"
+
                 "Continents" ->
                     "/records/continents"
 
@@ -95,25 +98,36 @@ referenceCard ( iconClass, label ) =
                     "/records/countries"
 
                 _ ->
-                    "/records/" ++ String.toLower label
+                    "#"
 
-        baseContent =
-            [ i [ class ("fas " ++ iconClass ++ " text-7xl mb-5 text-emerald-600") ] []
-            , div [ class "text-3xl font-semibold text-gray-800 mt-2" ] [ text label ]
+        cardContent =
+            [ div [ class "records-card-icon" ]
+                [ i [ class ("fas " ++ iconClass) ] [] ]
+            , div [ class "records-card-content" ]
+                [ h2 [ class "records-card-title" ]
+                    [ text label ]
+
+                , if isEnabled then
+                    span [ class "records-card-status records-card-status-available" ]
+                        [ text "View records" ]
+
+                  else
+                    span [ class "records-card-status records-card-status-unavailable" ]
+                        [ text "Not yet available" ]
+                ]
             ]
     in
     if isEnabled then
         a
             [ href path
-            , class "bg-white hover:bg-blue-100 transition p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center"
+            , class "records-card records-card-enabled"
             ]
-            baseContent
+            cardContent
 
     else
         div
-            [ class "bg-white p-10 rounded-3xl shadow-xl flex flex-col items-center justify-center text-center opacity-40 cursor-not-allowed select-none"
-            ]
-            baseContent
+            [ class "records-card records-card-disabled" ]
+            cardContent
 
 
 subscriptions : Model -> Sub Msg

@@ -29,10 +29,10 @@ type alias Document =
     , countryId : String
     , continentId : String
     , country : String
-    , dataSourceId : String
-    , dataStatusId : String
-    , dataAccessId : String
-    , userLogin : String
+    , dataSourceId : Int
+    , dataStatusId : Int
+    , dataAccessId : Int
+    , userLogin : Maybe String
     , approved : Bool
     }
 
@@ -220,97 +220,103 @@ view model =
                     // model.itemsPerPage
                 )
     in
-    div [ class "flex flex-col min-h-screen animate-fade-in" ]
-        [ h1
-            [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ]
-            [ text "Countries Collection" ]
-        , div
-            [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
+    div [ class "collection-page site-content-width animate-fade-in" ]
+        [ div [ class "collection-header" ]
+            [ div []
+                [ h1 [ class "collection-title" ]
+                    [ text "Countries Collection" ]
+                , p [ class "collection-description" ]
+                    [ text "Browse and manage country reference data." ]
+                ]
+            , a
+                [ href "/csvupload?collection=Countries"
+                , class "collection-import-button"
+                ]
+                [ text "Import using CSV" ]
+            ]
+
+        , div [ class "collection-search-bar" ]
             [ input
-                [ class "search-input flex-grow px-2 py-1 border rounded-md"
+                [ class "collection-search-input"
                 , type_ "text"
-                , placeholder "Search by text"
+                , placeholder "Search countries..."
                 , value model.searchText
                 , onInput SearchTextChanged
                 ]
                 []
-            , div [ class "this flex space-x-2 ml-auto" ]
+            , div [ class "collection-search-actions" ]
                 [ button
-                    [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                    [ class "collection-search-button"
                     , onClick FetchDocuments
                     ]
                     [ text "Search" ]
                 , button
-                    [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
+                    [ class "collection-clear-button"
                     , onClick ClearSearch
                     ]
-                    [ text "X" ]
+                    [ text "Clear" ]
                 , button
-                    [ class "btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-500"
+                    [ class "collection-export-button"
                     , onClick ExportCSV
                     ]
                     [ text "Export CSV" ]
                 ]
             ]
-        , if model.isLoading then
-            div
-                [ class "text-center py-8 text-xl font-semibold" ]
-                [ text "Loading..." ]
 
-          else
-            text ""
-        , div
-            [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
-            [ if List.isEmpty paginatedDocuments && not model.isLoading then
-                div
-                    [ class "text-center py-8 text-gray-600" ]
-                    [ text "No countries found." ]
-
-              else
-                div
-                    [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
-                    (List.map
-                        (documentCard model.isAdmin)
-                        paginatedDocuments
-                    )
-            , div
-                [ class "pagination mt-4 flex justify-between" ]
-                [ button
-                    [ onClick PrevPage
-                    , disabled (model.currentPage == 1)
-                    , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
-                    ]
-                    [ text "Previous" ]
-                , span
-                    [ class "px-4 py-2 text-gray-700" ]
-                    [ text
-                        ("Page "
-                            ++ String.fromInt model.currentPage
-                            ++ " of "
-                            ++ String.fromInt totalPages
-                        )
-                    ]
-                , button
-                    [ onClick NextPage
-                    , disabled
-                        ((model.currentPage * model.itemsPerPage)
-                            >= List.length model.documents
-                        )
-                    , class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700"
-                    ]
-                    [ text "Next" ]
-                ]
-            ]
         , case model.error of
             Just errorMsg ->
-                div
-                    [ class "error-msg text-red-500 mt-4" ]
-                    [ text ("Error: " ++ errorMsg) ]
+                div [ class "collection-error" ]
+                    [ text errorMsg ]
 
             Nothing ->
                 text ""
-        ]
 
+        , if model.isLoading then
+            div [ class "collection-loading" ]
+                [ text "Loading countries..." ]
+
+          else
+            div [ class "collection-grid-panel" ]
+                [ if List.isEmpty paginatedDocuments then
+                    div [ class "collection-empty" ]
+                        [ text "No countries found." ]
+
+                  else
+                    div [ class "collection-grid" ]
+                        (List.map
+                            (documentCard model.isAdmin)
+                            paginatedDocuments
+                        )
+
+                , div [ class "collection-pagination" ]
+                    [ button
+                        [ onClick PrevPage
+                        , disabled (model.currentPage == 1)
+                        , class "collection-pagination-button"
+                        ]
+                        [ text "Previous" ]
+
+                    , span [ class "collection-page-number" ]
+                        [ text
+                            ("Page "
+                                ++ String.fromInt model.currentPage
+                                ++ " of "
+                                ++ String.fromInt totalPages
+                            )
+                        ]
+
+                    , button
+                        [ onClick NextPage
+                        , disabled
+                            ((model.currentPage * model.itemsPerPage)
+                                >= List.length model.documents
+                            )
+                        , class "collection-pagination-button"
+                        ]
+                        [ text "Next" ]
+                    ]
+                ]
+        ]
 
 
 -- DOCUMENT CARD
@@ -318,52 +324,82 @@ view model =
 
 documentCard : Bool -> Document -> Html Msg
 documentCard isAdmin doc =
-    div
-        [ class "border rounded shadow p-4 bg-white flex-grow animate-fade-in" ]
-        [ div
-            [ class "flex items-center justify-between mb-4" ]
-            [ h2
-                [ class "text-lg font-semibold" ]
-                [ text ("Country: " ++ doc.country) ]
+    div [ class "collection-card" ]
+        [ div [ class "collection-card-heading" ]
+            [ h2 [ class "collection-card-title" ]
+                [ text doc.country ]
+
             , if doc.approved then
-                span [ class "badge active" ]
+                span [ class "collection-status-active" ]
                     [ text "Active" ]
 
               else
-                text ""
+                span [ class "collection-status-pending" ]
+                    [ text "Pending" ]
             ]
-        , div [ class "mb-2" ]
-            [ text ("Country ID: " ++ doc.countryId) ]
-        , div [ class "mb-2" ]
-            [ text ("Continent ID: " ++ doc.continentId) ]
-        , div [ class "mb-4" ]
-            [ text ("Submitted by: " ++ doc.userLogin) ]
-        , a
-            [ href
-                ("/documents/"
-                    ++ doc.id
-                    ++ "?collection=Countries"
-                )
-            , class "btn btn-primary"
+
+        , div [ class "collection-card-details" ]
+            [ p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Country ID" ]
+                , text doc.countryId
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Continent ID" ]
+                , text doc.continentId
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Data Access ID" ]
+                , text (String.fromInt doc.dataAccessId)
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Data Source ID" ]
+                , text (String.fromInt doc.dataSourceId)
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Data Status ID" ]
+                , text (String.fromInt doc.dataStatusId)
+                ]
+
+            , case doc.userLogin of
+                Just userLogin ->
+                    p []
+                        [ span [ class "collection-field-label" ]
+                            [ text "Submitted by" ]
+                        , text userLogin
+                        ]
+
+                Nothing ->
+                    text ""
             ]
-            [ text "View Document" ]
-        , case ( doc.approved, isAdmin ) of
-            ( False, True ) ->
-                button
-                    [ onClick (ApproveDocument doc.id)
-                    , class "btn btn-success"
-                    ]
-                    [ text "Approve" ]
 
-            ( False, False ) ->
-                span
-                    [ class "mb-2 text-red" ]
-                    [ text " NOT YET APPROVED" ]
+        , div [ class "collection-card-actions" ]
+            [ a
+                [ href
+                    ("/documents/"
+                        ++ doc.id
+                        ++ "?collection=Countries"
+                    )
+                , class "collection-view-button"
+                ]
+                [ text "View Document" ]
 
-            _ ->
-                text ""
+            , case ( doc.approved, isAdmin ) of
+                ( False, True ) ->
+                    button
+                        [ onClick (ApproveDocument doc.id)
+                        , class "collection-approve-button"
+                        ]
+                        [ text "Approve" ]
+
+                _ ->
+                    text ""
+            ]
         ]
-
 
 
 -- APPROVE DOCUMENT
@@ -435,13 +471,13 @@ documentDecoder : Decode.Decoder Document
 documentDecoder =
     Decode.succeed Document
         |> Pipeline.required "_id" Decode.string
-        |> Pipeline.required "countryid" Decode.string
-        |> Pipeline.required "continentid" Decode.string
+        |> Pipeline.required "countryId" Decode.string
+        |> Pipeline.required "continentId" Decode.string
         |> Pipeline.required "country" Decode.string
-        |> Pipeline.required "datasourceid" Decode.string
-        |> Pipeline.required "datastatusid" Decode.string
-        |> Pipeline.required "dataaccessid" Decode.string
-        |> Pipeline.required "userLogin" Decode.string
+        |> Pipeline.required "dataSourceId" Decode.int
+        |> Pipeline.required "dataStatusId" Decode.int
+        |> Pipeline.required "dataAccessId" Decode.int
+        |> Pipeline.optional "userLogin" (Decode.map Just Decode.string) Nothing
         |> Pipeline.optional "approved" Decode.bool False
 
 

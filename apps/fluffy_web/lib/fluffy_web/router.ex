@@ -62,6 +62,8 @@ defmodule FluffyWeb.Router do
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
     post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
     post("/documents/:id/update", MongoDBController, :update_document)
+    get("/documents/:id/attachments", MongoDBController, :edit_attachments)
+    post("/documents/:id/attachments", MongoDBController, :update_attachments)
     # Reverse geocode coordinates into province and country
     get("/geocode/reverse", GeocodingController, :reverse)
   end

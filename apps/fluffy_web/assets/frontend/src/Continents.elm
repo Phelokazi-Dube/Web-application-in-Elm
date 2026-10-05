@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as Decode
-import Json.Decode.Pipeline exposing (required)
+import Json.Decode.Pipeline exposing (optional, required)
 
 
 
@@ -27,10 +27,10 @@ type alias Document =
     { id : String
     , continent : String
     , continentId : String
-    , dataAccessId : String
-    , dataSourceId : String
-    , dataStatusId : String
-    , userLogin : String
+    , dataAccessId : Int
+    , dataSourceId : Int
+    , dataStatusId : Int
+    , userLogin : Maybe String
     }
 
 
@@ -83,20 +83,28 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "container mx-auto p-6 animate-fade-in" ]
-        [ h1
-            [ class "survey-title font-bold text-5xl text-left mb-6" ]
-            [ text "Continents Collection" ]
+    div [ class "collection-page site-content-width animate-fade-in" ]
+        [ div [ class "collection-header" ]
+            [ div []
+                [ h1 [ class "collection-title" ]
+                    [ text "Continents Collection" ]
+                , p [ class "collection-description" ]
+                    [ text "Browse and manage continent reference data." ]
+                ]
+            , a
+                [ href "/csvupload?collection=Continents"
+                , class "collection-import-button"
+                ]
+                [ text "Import using CSV" ]
+            ]
         , case model.error of
             Just errMsg ->
-                div [ class "text-red-600 mb-4" ]
+                div [ class "collection-error" ]
                     [ text errMsg ]
 
             Nothing ->
-                div
-                    [ class "px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
-                    [ div
-                        [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
+                div [ class "collection-grid-panel" ]
+                    [ div [ class "collection-grid" ]
                         (List.map viewDocument model.documents)
                     ]
         ]
@@ -104,27 +112,51 @@ view model =
 
 viewDocument : Document -> Html msg
 viewDocument doc =
-    div
-        [ class "border rounded shadow p-4 bg-white flex-grow animate-fade-in" ]
-        [ div [ class "flex items-center justify-between mb-4" ]
-            [ h2 [ class "text-lg font-semibold" ]
-                [ text ("Continent: " ++ doc.continent) ]
+    div [ class "collection-card" ]
+        [ h2 [ class "collection-card-title" ]
+            [ text doc.continent ]
+        , div [ class "collection-card-details" ]
+            [ p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Continent ID" ]
+                , text doc.continentId
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Data Access ID" ]
+                , text (String.fromInt doc.dataAccessId)
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Data Source ID" ]
+                , text (String.fromInt doc.dataSourceId)
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Data Status ID" ]
+                , text (String.fromInt doc.dataStatusId)
+                ]
+            , case doc.userLogin of
+                Just userLogin ->
+                    p []
+                        [ span [ class "collection-field-label" ]
+                            [ text "Submitted by" ]
+                        , text userLogin
+                        ]
+
+                Nothing ->
+                    text ""
             ]
-        , div [ class "mb-2" ]
-            [ text ("Continent ID: " ++ doc.continentId) ]
-        , div [ class "mb-4" ]
-            [ text ("Submitted by: " ++ doc.userLogin) ]
         , a
             [ href
                 ("/documents/"
                     ++ doc.id
                     ++ "?collection=Continents"
                 )
-            , class "btn btn-primary"
+            , class "collection-view-button"
             ]
             [ text "View Document" ]
         ]
-
 
 
 -- HTTP
@@ -156,11 +188,11 @@ documentDecoder =
     Decode.succeed Document
         |> required "_id" Decode.string
         |> required "continent" Decode.string
-        |> required "continentid" Decode.string
-        |> required "dataaccessid" Decode.string
-        |> required "datasourceid" Decode.string
-        |> required "datastatusid" Decode.string
-        |> required "userLogin" Decode.string
+        |> required "continentId" Decode.string
+        |> required "dataAccessId" Decode.int
+        |> required "dataSourceId" Decode.int
+        |> required "dataStatusId" Decode.int
+        |> optional "userLogin" (Decode.map Just Decode.string) Nothing
 
 
 

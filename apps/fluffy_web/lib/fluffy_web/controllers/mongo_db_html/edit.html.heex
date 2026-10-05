@@ -1,143 +1,3 @@
-<style>
-  .edit-page {
-    display: flex;
-    justify-content: center;
-    padding: 3rem 1rem;
-  }
-
-  .edit-card {
-    width: 100%;
-    max-width: 900px;
-    background-color: #f0fff0;
-    border: 2px solid #0a7d43;
-    border-radius: 12px;
-    padding: 2rem 2.5rem;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
-  }
-
-  .edit-title {
-    color: #198754;
-    font-size: 2rem;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .edit-warning {
-    background-color: #fff8e1;
-    border: 1px solid #ffc107;
-    border-radius: 8px;
-    padding: 0.9rem 1rem;
-    margin-bottom: 1.8rem;
-    color: #664d03;
-  }
-
-  .edit-warning strong {
-    margin-right: 0.25rem;
-  }
-
-  .edit-field {
-    margin-bottom: 1.3rem;
-  }
-
-  .edit-field label {
-    display: block;
-    color: #087f23;
-    font-weight: 700;
-    margin-bottom: 0.45rem;
-  }
-
-  .edit-field input,
-  .edit-field select,
-  .edit-field textarea {
-    width: 100%;
-    border: 2px solid #28a745;
-    border-radius: 8px;
-    padding: 0.75rem 0.9rem;
-    background-color: #fff;
-    font-family: inherit;
-    font-size: 1rem;
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-  }
-
-  .edit-field input:focus,
-  .edit-field select:focus,
-  .edit-field textarea:focus {
-    outline: none;
-    border-color: #198754;
-    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.15);
-  }
-
-  .edit-field textarea {
-    resize: vertical;
-    min-height: 100px;
-  }
-
-  .edit-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .save-button {
-    background-color: #28a745;
-    color: white;
-    border: 2px solid #28a745;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease;
-  }
-
-  .save-button:hover {
-    background-color: #218838;
-    border-color: #218838;
-  }
-
-  .cancel-button {
-    background-color: white;
-    color: #198754;
-    border: 2px solid #28a745;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-weight: 700;
-    text-decoration: none;
-    transition:
-      background-color 0.2s ease,
-      color 0.2s ease;
-  }
-
-  .cancel-button:hover {
-    background-color: #28a745;
-    color: white;
-  }
-
-  @media (max-width: 768px) {
-    .edit-page {
-      padding: 1.5rem 0.75rem;
-    }
-
-    .edit-card {
-      padding: 1.5rem;
-    }
-
-    .edit-actions {
-      flex-direction: column;
-    }
-
-    .save-button,
-    .cancel-button {
-      width: 100%;
-      text-align: center;
-    }
-  }
-</style>
 <div class="edit-page animate-fade-in">
   <div class="edit-card">
     <h1 class="edit-title">Edit Document</h1>
@@ -150,6 +10,7 @@
     <form
         action={~p"/documents/#{@document["id"]}/update"}
         method="post"
+        enctype="multipart/form-data"
     >
         <input
         type="hidden"
@@ -223,20 +84,59 @@
         <% end %>
         <% end %>
 
+        <%= if @collection == "Surveys" do %>
+          <div class="edit-attachments">
+            <h2 class="edit-attachments-title">Attachments</h2>
+
+            <p class="edit-attachments-description">
+              Add new images or publications to this survey.
+              Existing attachments will be kept.
+            </p>
+
+            <div class="edit-field">
+              <label for="photos">
+                Add Images
+              </label>
+
+              <input
+                id="photos"
+                type="file"
+                name="photos[]"
+                accept="image/*"
+                multiple
+              />
+            </div>
+
+            <div class="edit-field">
+              <label for="publications">
+                Add Publications
+              </label>
+
+              <input
+                id="publications"
+                type="file"
+                name="publications[]"
+                accept="application/pdf"
+                multiple
+              />
+            </div>
+          </div>
+        <% end %>
+
         <div class="edit-actions">
-        <button
+          <button
             type="submit"
             class="save-button"
-        >
+          >
             💾 Save Changes
-        </button>
+          </button>
 
-        <a
+          <a
             href={~p"/documents/#{@document["id"]}?collection=#{@collection}"}
             class="cancel-button"
-        >
+          >
             Cancel
-        </a>
+          </a>
         </div>
     </form>
     </div>
