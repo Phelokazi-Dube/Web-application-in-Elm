@@ -23,7 +23,7 @@ defmodule WaterWeeds.MixProject do
   def application do
     [
       mod: {WaterWeeds.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :xlsxir]
     ]
   end
 
@@ -46,7 +46,8 @@ defmodule WaterWeeds.MixProject do
       {:mongodb_driver, "~> 1.4.1"},
       {:phoenix_view, "~> 2.0"},
       {:elixir_auth_google, "~> 1.6.9"},
-      {:nimble_csv, "~> 1.2"}
+      {:nimble_csv, "~> 1.2"},
+      {:xlsxir, "~> 1.6"}
     ]
   end
 

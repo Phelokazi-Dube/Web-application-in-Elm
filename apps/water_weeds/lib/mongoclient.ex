@@ -194,6 +194,14 @@ defmodule WaterWeeds.MongoDBClient do
   defp normalize_value(value),
       do: to_string(value)
 
+  # Function to insert a document or update it when a matching document already exists
+  def upsert_document(collection_name, filter, document) do
+    GenServer.call(
+      __MODULE__,
+      {:upsert_document, collection_name, filter, document}
+    )
+  end
+
   ### GenServer Callbacks ###
   def handle_call(
         {:upload_image, filename, binary_data, metadata, file_id},
@@ -387,5 +395,15 @@ defmodule WaterWeeds.MongoDBClient do
     |> Stream.run()
 
     {:reply, {:ok, upload_stream.id}, state}
+  end
+
+  def handle_call({:upsert_document, collection_name, filter, document}, _from, %{conn: conn} = state) do
+    case Mongo.update_one(conn, collection_name, filter, %{"$set" => document}, upsert: true) do
+      {:ok, result} ->
+        {:reply, {:ok, result}, state}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
   end
 end

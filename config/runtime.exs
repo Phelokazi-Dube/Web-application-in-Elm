@@ -4,6 +4,16 @@ if Code.ensure_loaded?(Dotenvy) and File.exists?(".env") do
   Dotenvy.source!(".env")
 end
 
+mongodb_url = System.get_env("MONGODB_URL") ||
+    raise """
+    environment variable MONGODB_URL is missing.
+    """
+
+# Configure MongoDB connection
+config :water_weeds, :mongodb_driver,
+  url: mongodb_url,
+  pool_size: 5
+
 config :elixir_auth_google,
   client_id: System.fetch_env!("GOOGLE_CLIENT_ID"),
   client_secret: System.fetch_env!("GOOGLE_CLIENT_SECRET")

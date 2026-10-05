@@ -1,9 +1,5 @@
 import Config
 
-# Configure MongoDB connection
-config :water_weeds, :mongodb_driver,
-url: "mongodb://localhost:27017/cbctryout",
-pool_size: 5
 
 # Configure mail server
 config :fluffy_web, Fluffy.Mailer,
