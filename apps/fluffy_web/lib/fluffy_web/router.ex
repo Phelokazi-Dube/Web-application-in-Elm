@@ -62,6 +62,8 @@ defmodule FluffyWeb.Router do
     get("/uploadpage", PageController, :home, private: %{:javascript => "upload_page"})
     post("/Mongodb/upload_csv", MongoDBController, :upload_csv)
     post("/documents/:id/update", MongoDBController, :update_document)
+    # Reverse geocode coordinates into province and country
+    get("/geocode/reverse", GeocodingController, :reverse)
   end
 
   scope "/", FluffyWeb do
@@ -116,9 +118,6 @@ defmodule FluffyWeb.Router do
     get("/Mongodb/unapproved_documents", MongoDBController, :unapproved)
 
     post("/contact", ContactController, :create)
-
-    # Reverse geocode coordinates into province and country
-    get("/geocode/reverse", GeocodingController, :reverse)
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

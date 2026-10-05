@@ -67,37 +67,27 @@ defmodule FluffyWeb.ControllerHelpers do
   Relevant for CSV header to the camelCase field naming used by FluffyWeb.
   """
   def to_camel_case(key) when is_binary(key) do
-    key =
-      key
-      |> String.trim()
-      |> String.replace(~r/[^a-zA-Z0-9\s%]/, " ")  # keep % for detection but remove other special chars
+    key
+    |> String.trim()
+    |> String.replace("%", " Percent ")
+    # DGCFinal -> DGC Final, ControlAgent -> Control Agent
+    |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
+    |> String.replace(~r/([a-z0-9])([A-Z])/, "\\1 \\2")
+    # spaces, underscores, brackets, punctuation etc. become separators
+    |> String.replace(~r/[^a-zA-Z0-9]+/, " ")
+    |> String.split(" ", trim: true)
+    |> camelize_words()
+  end
 
-    words =
-      key
-      |> String.split(~r/\s+/, trim: true)
-      |> Enum.map(&String.downcase/1)
+  defp camelize_words([]), do: ""
 
-    # If header contains a percent sign or the word "percent", treat it specially
-    is_percent =
-      String.contains?(key, "%") or Enum.any?(words, &(&1 == "percent"))
-
-    # Remove "percent" or "%" from the words list before camelizing
-    cleaned_words =
-      words
-      |> Enum.reject(&(&1 in ["percent", "%"]))
-
-    # Convert to camelCase
-    camel =
-      case cleaned_words do
-        [] -> ""
-        [first | rest] ->
-          first <> Enum.map_join(rest, "", &String.capitalize/1)
-      end
-    if is_percent do
-      "percent" <> String.capitalize(camel)
-    else
-      camel
-    end
+  defp camelize_words([first | rest]) do
+    String.downcase(first) <>
+      Enum.map_join(rest, fn word ->
+        word
+        |> String.downcase()
+        |> String.capitalize()
+      end)
   end
 
   @doc """

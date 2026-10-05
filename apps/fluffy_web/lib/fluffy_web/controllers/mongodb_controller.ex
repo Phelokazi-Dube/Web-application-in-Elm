@@ -4,12 +4,44 @@ defmodule FluffyWeb.MongoDBController do
   alias WaterWeeds.MongoDBClient
   use FluffyWeb, :controller
 
-  # Allowed records collections
+  # Collections recognised by FluffyWeb
   @allowed_collections ~w(
     Surveys SurveyWeedAgent Sites SiteInspections SiteInspectionWeeds Locations
     Districts Regions Continents Countries Implementers Programs WeedNames Users
     ControlAgents SurveyControlAgents WHMCounter WHMeasurements WHMeasurementReadings BAR
   )
+
+  # Collections that must not be exposed through public API endpoints
+  @private_collections ~w(
+    Users
+    Implementers
+    WHMCounter
+  )
+
+  defp validate_collection_access(conn, collection) do
+    cond do
+      collection not in @allowed_collections ->
+        {:error, :invalid_collection}
+
+      collection in @private_collections and get_session(conn, :role) != "admin" ->
+        {:error, :forbidden}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp collection_access_error(conn, :invalid_collection) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: "Invalid collection"})
+  end
+
+  defp collection_access_error(conn, :forbidden) do
+    conn
+    |> put_status(:forbidden)
+    |> json(%{error: "You are not authorized to access this collection"})
+  end
 
   # Implement Jason.Encoder for BSON.ObjectId
   defimpl Jason.Encoder, for: BSON.ObjectId do
@@ -21,18 +53,15 @@ defmodule FluffyWeb.MongoDBController do
   @spec all(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def all(conn, %{"collection" => collection}) do
     # Ensure only allowed collections are queried
-    if collection in @allowed_collections do
-      documents = MongoDBClient.get_all_documents(collection)
-      isAdmin = get_session(conn, :role) == "admin"
+    case validate_collection_access(conn, collection) do
+      :ok ->
+          documents = MongoDBClient.get_all_documents(collection)
+          isAdmin = get_session(conn, :role) == "admin"
 
-      conn
-      |> put_status(:ok)
-      |> json(%{isAdmin: isAdmin, documents: documents})
-    else
-      conn
-      |> put_status(:bad_request)
-      |> json(%{error: "Invalid collection"})
-    end
+          conn
+          |> put_status(:ok)
+          |> json(%{isAdmin: isAdmin, documents: documents})
+      end
   end
 
   def all(conn, _params) do
@@ -44,7 +73,8 @@ defmodule FluffyWeb.MongoDBController do
   def search(conn, %{"search" => search_text} = params) do
     collection = Map.get(params, "collection", "Surveys")
 
-    if collection in @allowed_collections do
+    case validate_collection_access(conn, collection) do
+    :ok ->
       documents =
         if String.trim(search_text) == "" do
           MongoDBClient.get_all_documents(collection)
@@ -60,10 +90,9 @@ defmodule FluffyWeb.MongoDBController do
         isAdmin: isAdmin,
         documents: documents
       })
-    else
-      conn
-      |> put_status(:bad_request)
-      |> json(%{error: "Invalid collection"})
+
+      {:error, reason} ->
+        collection_access_error(conn, reason)
     end
   end
 
@@ -71,20 +100,26 @@ defmodule FluffyWeb.MongoDBController do
   def show(conn, %{"id" => id, "collection" => collection}) do
     collection = collection || "Surveys"
 
-    with {:ok, bson_id} <- BSON.ObjectId.decode(id),
-         doc when not is_nil(doc) <- MongoDBClient.get_document_by_id(collection, bson_id) do
-      normalized = ControllerHelpers.normalize_mongo_id(doc)
-      json(conn, normalized)
-    else
-      {:error, _} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid document ID"})
+    case validate_collection_access(conn, collection) do
+      :ok ->
+      with {:ok, bson_id} <- BSON.ObjectId.decode(id),
+          doc when not is_nil(doc) <- MongoDBClient.get_document_by_id(collection, bson_id) do
+        normalized = ControllerHelpers.normalize_mongo_id(doc)
+        json(conn, normalized)
+      else
+        {:error, _} ->
+          conn
+          |> put_status(:bad_request)
+          |> json(%{error: "Invalid document ID"})
 
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Document not found"})
+        nil ->
+          conn
+          |> put_status(:not_found)
+          |> json(%{error: "Document not found"})
+      end
+
+      {:error, reason} ->
+        collection_access_error(conn, reason)
     end
   end
 
@@ -572,7 +607,8 @@ defmodule FluffyWeb.MongoDBController do
     search = Map.get(params, "search", "")
     collection = Map.get(params, "collection", "Surveys")
 
-    if collection in @allowed_collections do
+    case validate_collection_access(conn, collection) do
+    :ok ->
       csv = WaterWeeds.MongoDBClient.export(collection, search)
 
       filename =
@@ -587,10 +623,9 @@ defmodule FluffyWeb.MongoDBController do
         ~s(attachment; filename="#{filename}")
       )
       |> send_resp(200, csv)
-    else
-      conn
-      |> put_status(:bad_request)
-      |> json(%{error: "Invalid collection"})
-    end
+
+   {:error, reason} ->
+      collection_access_error(conn, reason)
+  end
   end
 end

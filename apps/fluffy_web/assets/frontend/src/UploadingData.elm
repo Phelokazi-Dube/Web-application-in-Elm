@@ -514,7 +514,7 @@ reverseGeocode model coords =
     Http.get
         { url =
             model.baseUrl
-                ++ "/api/geocode/reverse?lat="
+                ++ "/geocode/reverse?lat="
                 ++ String.fromFloat coords.lat
                 ++ "&lon="
                 ++ String.fromFloat coords.lng
