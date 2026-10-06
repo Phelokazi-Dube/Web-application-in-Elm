@@ -20,52 +20,106 @@ type Msg
 
 view : Model -> Html Msg
 view _ =
-    div [ class "flex flex-col min-h-screen bg-gray-50" ]
-        [ main_ [ class "flex-grow container mx-auto px-4 py-16 text-center animate-fade-in" ]
-            [ h1 [ class "text-5xl font-extrabold mb-4 text-gray-800" ]
+    main_ [ class "upload-page site-content-width animate-fade-in" ]
+        [ section [ class "upload-page-header" ]
+            [ h1 [ class "upload-page-title" ]
                 [ text "Upload Your Survey Data" ]
-            , p [ class "text-xl mb-4 text-gray-700" ]
-                [ text "You're logged in! Choose how you'd like to upload your survey information below." ]
-            , div [ class "mb-8 text-gray-600 text-base space-y-2" ]
-                [ p [] [ text "📑 Use the online form if you're entering just one or two surveys." ]
-                , p [] [ text "📁 Use a CSV file if you're uploading many records at once." ]
+            , p [ class "upload-page-description" ]
+                [ text "Choose how you would like to add survey information to FluffyWeb." ]
+            ]
+
+        , section [ class "upload-illustration-section" ]
+            [ img
+                [ src "/images/upload-illustration.jpg"
+                , alt "Illustration showing survey data upload"
+                , class "upload-illustration"
                 ]
-            , div [ class "mb-12 flex justify-center" ]
-                [ img
-                    [ src "/images/upload-illustration.jpg"
-                    , alt "Survey illustration"
-                    , class "max-w-md w-full mx-auto"
-                    ]
-                    []
+                []
+            ]
+
+        , section [ class "upload-options-panel" ]
+            [ div [ class "upload-options-intro" ]
+                [ h2 []
+                    [ text "Choose an upload method" ]
+                , p []
+                    [ text "Select the option that best matches the amount of survey data you want to add." ]
                 ]
-            , div [ class "flex justify-center gap-8 flex-wrap" ]
-                [ a
-                    [ href "/uploading"
-                    , class "bg-blue-700 text-white px-8 py-6 rounded-xl hover:bg-blue-600 hover:scale-105 transition transform duration-200 shadow-md w-64 flex flex-col items-center space-y-2"
-                    ]
-                    [ img [ src "/images/form-icon.png", alt "Form icon", class "w-12 h-12" ] []
-                    , span [] [ text "Fill in Online Form" ]
-                    ]
-                , a
-                    [ href "/csvupload?collection=Surveys"
-                    , class "bg-green-700 text-white px-8 py-6 rounded-xl hover:bg-green-600 hover:scale-105 transition transform duration-200 shadow-md w-64 flex flex-col items-center space-y-2"
-                    ]
-                    [ img [ src "/images/csv-icon.png", alt "CSV icon", class "w-12 h-12" ] []
-                    , span [] [ text "Upload CSV File" ]
-                    ]
+
+            , div [ class "upload-options-grid" ]
+                [ uploadOption
+                    "upload-option-form"
+                    "/images/form-icon.png"
+                    "Online Form"
+                    "Best for entering one survey at a time using the guided data-entry form."
+                    "Fill in Online Form"
+                    "/uploading"
+
+                , uploadOption
+                    "upload-option-csv"
+                    "/images/csv-icon.png"
+                    "CSV Upload"
+                    "Best for importing multiple survey records from an existing CSV file."
+                    "Upload CSV File"
+                    "/csvupload?collection=Surveys"
                 ]
             ]
         ]
 
 
+-- UPLOAD OPTION CARD
+uploadOption :
+    String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> String
+    -> Html Msg
+uploadOption optionClass iconPath titleText description buttonText destination =
+    article [ class ("upload-option-card " ++ optionClass) ]
+        [ div [ class "upload-option-icon" ]
+            [ img
+                [ src iconPath
+                , alt (titleText ++ " icon")
+                , class "upload-option-icon-image"
+                ]
+                []
+            ]
+
+        , h2 [ class "upload-option-title" ]
+            [ text titleText ]
+
+        , p [ class "upload-option-description" ]
+            [ text description ]
+
+        , a
+            [ href destination
+            , class "upload-option-action"
+            ]
+            [ span [] [ text buttonText ]
+            , span [ class "upload-option-arrow" ]
+                [ text "→" ]
+            ]
+        ]
+
+
+-- UPDATE
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update _ model =
     ( model, Cmd.none )
+
+
+-- INIT
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( (), Cmd.none )
+
+
+-- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg

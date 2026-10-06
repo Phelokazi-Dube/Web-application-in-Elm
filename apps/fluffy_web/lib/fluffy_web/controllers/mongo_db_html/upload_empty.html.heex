@@ -1,12 +1,21 @@
 <!-- upload_empty.html.heex -->
-<div class="upload-warning p-10 max-w-2xl mx-auto text-center bg-white rounded-2xl shadow-xl">
-  <h2 class="text-4xl font-extrabold text-red-500 mb-6">Empty CSV File</h2>
-  <p class="mb-8 text-lg text-gray-800">
-    It looks like the CSV file you uploaded is empty or contains no valid data.
-    Please make sure your file has headers and rows before uploading again.
-  </p>
-  <a href={"/csvupload?collection=#{@collection}"}
-     class="inline-block px-6 py-3 text-lg bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200">
-    Back to Upload Page
-  </a>
+
+<div class="upload-empty-page site-content-width animate-fade-in">
+  <div class="upload-empty-card">
+    <div class="upload-empty-icon">!</div>
+
+    <h1 class="upload-empty-title">Empty CSV File</h1>
+
+    <p class="upload-empty-description">
+      It looks like the CSV file you uploaded is empty or contains no valid data.
+      Please make sure your file has headers and rows before uploading again.
+    </p>
+
+    <a
+      href={"/csvupload?collection=#{@collection}"}
+      class="upload-empty-button"
+    >
+      Back to CSV Upload
+    </a>
+  </div>
 </div>

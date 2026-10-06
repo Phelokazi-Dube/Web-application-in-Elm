@@ -1,4 +1,4 @@
-module Continents exposing (main)
+port module Continents exposing (main)
 
 import Browser
 import Html exposing (..)
@@ -6,7 +6,10 @@ import Html.Attributes exposing (class, href)
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline exposing (optional, required)
+import Html.Events exposing (onClick)
 
+
+port downloadCsvPort : String -> Cmd msg
 
 
 -- FLAGS
@@ -61,6 +64,7 @@ init flags =
 
 type Msg
     = GotDocuments (Result Http.Error Response)
+    | ExportCSV
 
 
 
@@ -75,6 +79,14 @@ update msg model =
 
         GotDocuments (Err err) ->
             ( { model | error = Just (httpErrorToString err) }, Cmd.none )
+
+        ExportCSV ->
+            ( model
+            , downloadCsvPort
+                (model.baseUrl
+                    ++ "/api/Mongodb/document/search/export?collection=Continents"
+                )
+            )
 
 
 
@@ -91,11 +103,18 @@ view model =
                 , p [ class "collection-description" ]
                     [ text "Browse and manage continent reference data." ]
                 ]
-            , a
-                [ href "/csvupload?collection=Continents"
-                , class "collection-import-button"
+            , div [ class "collection-header-actions" ]
+                [ button
+                    [ class "collection-export-button"
+                    , onClick ExportCSV
+                    ]
+                    [ text "Export CSV" ]
+                , a
+                    [ href "/csvupload?collection=Continents"
+                    , class "collection-import-button"
+                    ]
+                    [ text "Import using CSV" ]
                 ]
-                [ text "Import using CSV" ]
             ]
         , case model.error of
             Just errMsg ->

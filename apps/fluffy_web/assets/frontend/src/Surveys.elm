@@ -223,7 +223,8 @@ update msg model =
             )
 
         ClearSearch ->
-            ( { model | searchText = "", filteredDocuments = model.documents }, Cmd.none )
+            ( { model | searchText = "", filteredDocuments = model.documents, currentPage = 1 } 
+            , Nav.replaceUrl model.key "/survey?page=1" )
 
         NextPage ->
             let
@@ -295,28 +296,41 @@ viewContent model =
             List.drop start model.filteredDocuments
                 |> List.take model.itemsPerPage
     in
-    div [ class "flex flex-col min-h-screen animate-fade-in" ]
+    div [ class "animate-fade-in" ]
         [ Html.node "link"
             [ attribute "rel" "stylesheet"
             , attribute "href" "/assets/app.css"
             ]
             []
-        , nav [ class "bg-neutral-100 shadow-sm mb-5", Html.Attributes.style "background-color" "rgb(17, 71, 104)" ]
-            [ div [ class "container mx-auto px-4 py-3 flex items-center justify-between" ]
+        , nav
+            [ class "survey-nav" ]
+            [ div [ class "site-content-width survey-nav-inner" ]
                 [ div [ class "brand-container" ]
-                    [ img [ Html.Attributes.src "images/images.png", Html.Attributes.alt "Logo", class "logo" ] []
+                    [ img
+                        [ Html.Attributes.src "/images/images.png"
+                        , Html.Attributes.alt "Logo"
+                        , class "logo"
+                        ]
+                        []
                     , div [ class "brand-title" ] [ text "CBC" ]
                     ]
-                , ul [ class "nav-items gap-6" ]
-                    [ li [] [ a [ href "/home", class "nav-link" ] [ text "HOME" ] ]
+                , ul [ class "nav-items" ]
+                    [ li []
+                        [ a [ href "/home", class "nav-link" ] [ text "HOME" ] ]
                     , li [ class "group" ]
                         [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                         , ul [ class "dropdown" ]
-                            [ li [] [ a [ href "/survey", class "dropdown-link" ] [ text "Survey Data" ] ]
-                            , li [] [ a [ href "/publish", class "dropdown-link" ] [ text "Publish Data" ] ]
+                            [ li []
+                                [ a [ href "/survey", class "dropdown-link" ]
+                                    [ text "Survey Data" ]
+                                ]
+                            , li []
+                                [ a [ href "/publish", class "dropdown-link" ]
+                                    [ text "Publish Data" ]
+                                ]
                             ]
                         ]
-                    , li [ class "group" ]
+                    , li []
                         [ a [ href "/records", class "nav-link" ] [ text "RECORDS" ] ]
                     , li []
                         [ a [ href "/contact", class "nav-link" ] [ text "CONTACT" ] ]
@@ -325,68 +339,155 @@ viewContent model =
                     ]
                 ]
             ]
-        , h1 [ class "survey-title font-bold mx-auto text-5xl text-left mb-6" ] [ text "Survey Collections" ]
-        , div [ class "search-bar container mx-auto flex items-center mb-4 px-4 py-2 border border-neutral-300 rounded-md shadow-sm" ]
-            [ input
-                [ class "search-input flex-grow px-2 py-1 border rounded-md"
-                , type_ "text"
-                , placeholder "Search by text"
-                , value model.searchText
-                , onInput SearchTextChanged
+        , main_ [ class "collection-page site-content-width" ]
+            [ div [ class "collection-header" ]
+                [ div []
+                    [ h1 [ class "collection-title" ]
+                        [ text "Survey Collections" ]
+                    , p [ class "collection-description" ]
+                        [ text "Browse and search biological control survey records." ]
+                    ]
                 ]
-                []
-            , div [ class "this flex space-x-2 ml-auto" ]
-                [ button [ class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick FetchDocuments ] [ text "Search" ]
-                , button [ class "clear-btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700", onClick ClearSearch ] [ text "X" ]
-                , button [ class "btn bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-500", onClick ExportCSV ] [ text "Export CSV" ]
+            , div [ class "collection-search-bar" ]
+                [ input
+                    [ class "collection-search-input"
+                    , type_ "text"
+                    , placeholder "Search survey records"
+                    , value model.searchText
+                    , onInput SearchTextChanged
+                    ]
+                    []
+                , div [ class "collection-search-actions" ]
+                    [ button
+                        [ class "collection-search-button"
+                        , onClick FetchDocuments
+                        ]
+                        [ text "Search" ]
+                    , button
+                        [ class "collection-clear-button"
+                        , onClick ClearSearch
+                        ]
+                        [ text "Clear" ]
+                    , button
+                        [ class "collection-export-button"
+                        , onClick ExportCSV
+                        ]
+                        [ text "Export CSV" ]
+                    ]
                 ]
-            ]
-        , div [ class "container mx-auto px-4 py-8 shadow-lg rounded-md bg-slate-200 animate-fade-in" ]
-            [ div [ class "grid document-card grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" ]
-                (List.map (documentCard model.adminUser) paginatedDocuments)
-            , div [ class "pagination mt-4 flex justify-between" ]
-                [ button [ onClick PrevPage, disabled (model.currentPage == 1), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Previous" ]
-                , span [ class "px-4 py-2 text-gray-700" ] [ text ("Page " ++ String.fromInt model.currentPage) ]
-                , button [ onClick NextPage, disabled ((model.currentPage * model.itemsPerPage) >= List.length model.filteredDocuments), class "btn bg-neutral-800 text-white px-4 py-2 rounded-md hover:bg-neutral-700" ] [ text "Next" ]
-                ]
-            ]
-        , case model.error of
-            Just errorMsg ->
-                div [ class "error-msg text-red-500 mt-4" ] [ text ("Error: " ++ errorMsg) ]
+            , case model.error of
+                Just errorMsg ->
+                    div [ class "collection-error" ]
+                        [ text ("Error: " ++ errorMsg) ]
 
-            Nothing ->
-                text ""
-        , footer [ class "footer mt-8" ]
-            [ div [ class "container mx-auto" ]
+                Nothing ->
+                    text ""
+            , div [ class "collection-grid-panel" ]
+                [ if List.isEmpty paginatedDocuments then
+                    div [ class "collection-empty" ]
+                        [ text "No survey records found." ]
+
+                  else
+                    div [ class "collection-grid" ]
+                        (List.map
+                            (documentCard model.adminUser)
+                            paginatedDocuments
+                        )
+                , div [ class "collection-pagination" ]
+                    [ button
+                        [ onClick PrevPage
+                        , disabled (model.currentPage == 1)
+                        , class "collection-pagination-button"
+                        ]
+                        [ text "Previous" ]
+                    , span [ class "collection-page-number" ]
+                        [ text ("Page " ++ String.fromInt model.currentPage) ]
+                    , button
+                        [ onClick NextPage
+                        , disabled
+                            ((model.currentPage * model.itemsPerPage)
+                                >= List.length model.filteredDocuments
+                            )
+                        , class "collection-pagination-button"
+                        ]
+                        [ text "Next" ]
+                    ]
+                ]
+            ]
+        , footer [ class "footer" ]
+            [ div [ class "site-content-width" ]
                 [ div [ class "footer-content" ]
                     [ div [ class "footer-section" ]
                         [ h3 [ class "footer-title" ] [ text "CBC" ]
-                        , p [ class "footer-text" ] [ text "Enhancing access to biological control data" ]
+                        , p [ class "footer-text" ]
+                            [ text "Enhancing access to biological control data" ]
                         ]
                     , div [ class "footer-section" ]
                         [ h3 [ class "footer-title" ] [ text "Quick Links" ]
                         , ul []
-                            [ li [] [ a [ href "#", class "footer-link" ] [ text "Privacy Policy" ] ]
-                            , li [] [ a [ href "#", class "footer-link" ] [ text "Terms of Service" ] ]
-                            , li [] [ a [ href "/contact", class "footer-link" ] [ text "Contact Us" ] ]
+                            [ li []
+                                [ a [ href "#", class "footer-link" ]
+                                    [ text "Privacy Policy" ]
+                                ]
+                            , li []
+                                [ a [ href "#", class "footer-link" ]
+                                    [ text "Terms of Service" ]
+                                ]
+                            , li []
+                                [ a [ href "/contact", class "footer-link" ]
+                                    [ text "Contact Us" ]
+                                ]
                             ]
                         ]
                     , div [ class "footer-section" ]
                         [ h3 [ class "footer-title" ] [ text "Connect With Us" ]
                         , div [ class "social-icons" ]
-                            [ a [ href "/api/facebook", class "fa fa-facebook", target "_blank", rel "noopener noreferrer", attribute "aria-label" "CBC on Facebook", title "Facebook" ] []
-                            , a [ href "/api/x", class "fa fa-twitter", target "_blank", rel "noopener noreferrer", attribute "aria-label" "CBC on X", title "X" ] []
-                            , a [ href "/api/instagram", class "fa fa-instagram", target "_blank", rel "noopener noreferrer", attribute "aria-label" "CBC on Instagram", title "Instagram" ] []
-                            , a [ href "/api/linkedIn", class "fa fa-linkedin", target "_blank", rel "noopener noreferrer", attribute "aria-label" "CBC on LinkedIn", title "LinkedIn" ] []
+                            [ a
+                                [ href "/api/facebook"
+                                , class "fa fa-facebook"
+                                , target "_blank"
+                                , rel "noopener noreferrer"
+                                , attribute "aria-label" "CBC on Facebook"
+                                , title "Facebook"
+                                ]
+                                []
+                            , a
+                                [ href "/api/x"
+                                , class "fa fa-twitter"
+                                , target "_blank"
+                                , rel "noopener noreferrer"
+                                , attribute "aria-label" "CBC on X"
+                                , title "X"
+                                ]
+                                []
+                            , a
+                                [ href "/api/instagram"
+                                , class "fa fa-instagram"
+                                , target "_blank"
+                                , rel "noopener noreferrer"
+                                , attribute "aria-label" "CBC on Instagram"
+                                , title "Instagram"
+                                ]
+                                []
+                            , a
+                                [ href "/api/linkedIn"
+                                , class "fa fa-linkedin"
+                                , target "_blank"
+                                , rel "noopener noreferrer"
+                                , attribute "aria-label" "CBC on LinkedIn"
+                                , title "LinkedIn"
+                                ]
+                                []
                             ]
                         ]
                     ]
+                , div [ class "footer-credits" ]
+                    [ p []
+                        [ text "© 2025 Center for Biological Control. All rights reserved." ]
+                    ]
                 ]
-            , div [ class "footer-credits" ]
-                [ p [] [ text "© 2025 Center for Biological Control. All rights reserved." ] ]
             ]
         ]
-
 
 view : Model -> Browser.Document Msg
 view model =
@@ -401,39 +502,86 @@ view model =
 
 documentCard : Bool -> Document -> Html Msg
 documentCard isAdmin doc =
-    div [ class "border rounded shadow p-4 bg-white flex-grow animate-fade-in" ]
-        [ div [ class "flex items-center justify-between mb-4" ]
-            [ h2 [ class "text-lg font-semibold" ] [ text ("Collection ID: #" ++ Maybe.withDefault "Unknown" doc.id) ]
+    div [ class "collection-card animate-fade-in" ]
+        [ div [ class "collection-card-heading" ]
+            [ div []
+                [ h2 [ class "collection-card-title survey-card-title" ]
+                    [ text "Survey" ]
+                , p [ class "survey-card-id" ]
+                    [ span [ class "survey-card-id-label" ]
+                        [ text "ID " ]
+                    , text (Maybe.withDefault "Unknown" doc.id)
+                    ]
+                ]
             , if doc.approved then
-                span [ class "badge active" ] [ text "Active" ]
+                span [ class "collection-status-active" ]
+                    [ text "Active" ]
 
               else
-                text ""
+                span [ class "collection-status-pending" ]
+                    [ text "Pending" ]
             ]
-        , div [ class "mb-2" ]
-            [ text ("Created: " ++ Maybe.withDefault "No Date" doc.date) ]
-        , div [ class "mb-2" ]
-            [ text ("Location: " ++ Maybe.withDefault "No Site" (orElse doc.sitename doc.site)) ]
-        , div [ class "mb-2" ]
-            [ text ("Province: " ++ Maybe.withDefault "No Province" doc.province) ]
-        , div [ class "mb-4" ]
-            [ text ("Notes: " ++ Maybe.withDefault "No Notes" (orElse doc.description doc.notes)) ]
-        , a [ href ("documents/" ++ Maybe.withDefault "Unknown" doc.id ++ "?collection=Surveys"), class "btn btn-primary" ] [ text "View Document" ]
-        , case ( doc.id, doc.approved, isAdmin ) of
-            ( Just id, False, True ) ->
-                -- Only show the button if approved is False
-                button [ onClick (ApproveDocument id), class "btn btn-success" ] [ text "Approve" ]
+        , div [ class "collection-card-details" ]
+            [ p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Created" ]
+                , span []
+                    [ text (Maybe.withDefault "No Date" doc.date) ]
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Location" ]
+                , span []
+                    [ text
+                        (Maybe.withDefault "No Site"
+                            (orElse doc.sitename doc.site)
+                        )
+                    ]
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Province" ]
+                , span []
+                    [ text
+                        (Maybe.withDefault "No Province" doc.province)
+                    ]
+                ]
+            , p []
+                [ span [ class "collection-field-label" ]
+                    [ text "Notes" ]
+                , span []
+                    [ text
+                        (Maybe.withDefault "No Notes"
+                            (orElse doc.description doc.notes)
+                        )
+                    ]
+                ]
+            ]
+        , div [ class "collection-card-actions" ]
+            ([ a
+                [ href
+                    ("/documents/"
+                        ++ Maybe.withDefault "Unknown" doc.id
+                        ++ "?collection=Surveys"
+                    )
+                , class "collection-view-button"
+                ]
+                [ text "View Document" ]
+             ]
+                ++ (case ( doc.id, doc.approved, isAdmin ) of
+                        ( Just id, False, True ) ->
+                            [ button
+                                [ onClick (ApproveDocument id)
+                                , class "collection-approve-button"
+                                ]
+                                [ text "Approve" ]
+                            ]
 
-            ( Just id, False, False ) ->
-                span [ class "mb-2 text-red" ]
-                    [ text " NOT YET APPROVED" ]
-
-            _ ->
-                text ""
-
-        -- Do not render the button if the document is already approved
+                        _ ->
+                            []
+                   )
+            )
         ]
-
 
 
 -- Approved documents

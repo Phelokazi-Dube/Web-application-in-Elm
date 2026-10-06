@@ -817,33 +817,34 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ class "animate-fade-in" ]
         [ if model.isLoading then
-            div
-                [ class "fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50" ]
-                [ div [ class "text-xl font-semibold" ] [ text "⏳ Saving observation..." ] ]
+            div [ class "uploading-loading" ]
+                [ text "⏳ Saving observation..." ]
 
           else
             text ""
+
         , div [ class "uploading-container" ]
             [ div [ class "header" ]
                 [ div [ class "navtab" ] [] ]
+
             , div [ id "wrapper", class "container clear" ]
                 [ div [ id "pageheader", class "column span-26" ]
-                    [ h2 [ class "add-observation" ] [ text "Add an Observation" ] ]
+                    [ h2 [ class "add-observation" ]
+                        [ text "Add an Observation" ]
+                    ]
+
                 , if model.success then
-                    div
-                        [ class "max-w-2xl mx-auto mt-4 mb-4 p-4 rounded-md bg-green-100 text-green-800 text-center font-semibold shadow transition-opacity duration-500 opacity-100"
-                        , style "transition" "opacity 0.5s ease"
-                        ]
+                    div [ class "uploading-message uploading-message-success" ]
                         [ text "✅ Observation saved successfully!" ]
 
                   else
                     text ""
+
                 , case model.error of
                     Just err ->
-                        div
-                            [ class "max-w-2xl mx-auto mt-4 mb-4 p-4 rounded-md bg-red-100 text-red-800 text-center font-semibold shadow" ]
+                        div [ class "uploading-message uploading-message-error" ]
                             [ text err ]
 
                     Nothing ->

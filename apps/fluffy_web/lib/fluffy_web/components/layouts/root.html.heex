@@ -27,68 +27,102 @@
     </script>
   </head>
 
-  <body class="flex flex-col min-h-screen">
-    <!-- Navbar -->
-    <header class="bg-neutral-100 shadow-sm my-5" style="background-color: rgb(17, 71, 104);">
-      <nav class="container mx-auto px-4 py-3 flex items-center justify-between">
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const button = document.getElementById("mobile-menu-button");
+      const navigation = document.getElementById("mobile-navigation");
+
+      if (!button || !navigation) return;
+
+      button.addEventListener("click", function () {
+        const isOpen = navigation.classList.toggle("mobile-menu-open");
+
+        button.setAttribute("aria-expanded", String(isOpen));
+        button.setAttribute(
+          "aria-label",
+          isOpen ? "Close navigation menu" : "Open navigation menu"
+        );
+
+        const icon = button.querySelector("i");
+
+        if (icon) {
+          icon.classList.toggle("fa-bars", !isOpen);
+          icon.classList.toggle("fa-times", isOpen);
+        }
+      });
+    });
+  </script>
+
+  <body class="site-body">
+  <!-- Navbar -->
+    <header class="site-header">
+      <nav class="site-navbar site-content-width">
         <div class="brand-container">
           <img src="/images/images.png" alt="Logo" class="logo" />
           <div class="brand-title">CBC</div>
         </div>
-        <div class="nav-right flex items-center ml-auto">
-        <ul class="nav-items">
-          <li><a href="/home" class="nav-link hover:text-gray-300 transition-colors duration-200">HOME</a></li>
-          <li class="group relative">
-            <span class="nav-link cursor-default hover:text-gray-300 transition-colors duration-200">DATA</span>
-            <ul class="dropdown">
-              <li><a href="/survey" class="dropdown-link">Survey Data</a></li>
-              <li><a href="/publish" class="dropdown-link">Resources</a></li>
-            </ul>
-          </li>
-          <li class="group"><a href="/records" class="nav-link">RECORDS</a></li>
-          <li><a href="/contact" class="nav-link">CONTACT</a></li>
-          <li><a href="/help" class="nav-link">HELP</a></li>
-        </ul>
-        <div class="auth-links flex items-center space-x-4">
-          <%= if assigns[:profile] do %>
-            <.profile name={@profile.given_name} picture={@profile.picture} />
-          <% else %>
-            <.login_link oauth_url={assigns[:oauth_url] || "#"} />
-          <% end %>
+
+        <div class="nav-right">
+          <ul class="nav-items">
+            <li>
+              <a href="/home" class="nav-link">HOME</a>
+            </li>
+
+            <li class="group">
+              <span class="nav-link nav-dropdown-trigger">DATA</span>
+              <ul class="dropdown">
+                <li><a href="/survey" class="dropdown-link">Survey Data</a></li>
+                <li><a href="/publish" class="dropdown-link">Resources</a></li>
+              </ul>
+            </li>
+
+            <li class="group">
+              <a href="/records" class="nav-link">RECORDS</a>
+            </li>
+
+            <li>
+              <a href="/contact" class="nav-link">CONTACT</a>
+            </li>
+
+            <li>
+              <a href="/help" class="nav-link">HELP</a>
+            </li>
+          </ul>
+
+          <div class="auth-links">
+            <%= if assigns[:profile] do %>
+              <.profile name={@profile.given_name} picture={@profile.picture} />
+            <% else %>
+              <.login_link oauth_url={assigns[:oauth_url] || "#"} />
+            <% end %>
+          </div>
         </div>
-      </div>
       </nav>
     </header>
     <%= if Phoenix.Flash.get(@flash, :error) do %>
-      <div
-        id="login-popup"
-        class="fixed top-20 right-6 z-50 bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg shadow-lg flex items-center space-x-4"
-      >
+      <div id="login-popup" class="login-popup">
         <span>
           <%= Phoenix.Flash.get(@flash, :error) %>
         </span>
 
-        <a
-          href={assigns[:oauth_url] || "#"}
-          class="underline font-semibold text-blue-700 hover:text-blue-900"
-        >
+        <a href={assigns[:oauth_url] || "#"} class="login-popup-link">
           Login
         </a>
       </div>
     <% end %>
 
-    <!-- Main content (Elm app and page content) -->
-    <main class="flex-grow">
+    <main class="site-main">
       <%= @inner_content %>
     </main>
 
-    <!-- Footer -->
-    <footer class="footer mt-8">
-      <div class="container mx-auto">
+    <footer class="footer">
+      <div class="site-content-width">
         <div class="footer-content">
           <div class="footer-section">
             <h3 class="footer-title">CBC</h3>
-            <p class="footer-text">Enhancing access to biological control data</p>
+            <p class="footer-text">
+              Enhancing access to biological control data
+            </p>
           </div>
           <div class="footer-section">
             <h3 class="footer-title">Quick Links</h3>
@@ -101,10 +135,33 @@
           <div class="footer-section">
             <h3 class="footer-title">Connect With Us</h3>
             <div class="social-icons">
-              <a href="/api/facebook" class="fa fa-facebook" target="_blank" rel="noopener noreferrer" aria-label="CBC on Facebook" title="Facebook"></a>
-              <a href="/api/x" class="fa fa-twitter" target="_blank" rel="noopener noreferrer" aria-label="CBC on X" title="X"></a>
-              <a href="/api/instagram" class="fa fa-instagram" target="_blank" rel="noopener noreferrer" aria-label="CBC on Instagram" title="Instagram"></a>
-              <a href="/api/linkedIn" class="fa fa-linkedin" target="_blank" rel="noopener noreferrer" aria-label="CBC on LinkedIn" title="LinkedIn"></a>
+              <a href="/api/facebook"
+                class="fa fa-facebook"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CBC on Facebook"
+                title="Facebook"></a>
+
+              <a href="/api/x"
+                class="fa fa-twitter"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CBC on X"
+                title="X"></a>
+
+              <a href="/api/instagram"
+                class="fa fa-instagram"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CBC on Instagram"
+                title="Instagram"></a>
+
+              <a href="/api/linkedIn"
+                class="fa fa-linkedin"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="CBC on LinkedIn"
+                title="LinkedIn"></a>
             </div>
           </div>
         </div>
