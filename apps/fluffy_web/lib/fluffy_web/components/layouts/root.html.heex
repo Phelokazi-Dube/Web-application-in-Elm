@@ -54,6 +54,21 @@
   </script>
 
   <body class="site-body">
+  <div
+    id="loading-overlay"
+    class="loading-overlay"
+    aria-hidden="true"
+    aria-live="polite"
+  >
+    <div class="loading-overlay-content">
+      <div class="loading-spinner" aria-hidden="true"></div>
+
+      <p id="loading-message" class="loading-message">
+        Processing…
+      </p>
+    </div>
+  </div>
+
   <!-- Navbar -->
     <header class="site-header">
       <nav class="site-navbar site-content-width">

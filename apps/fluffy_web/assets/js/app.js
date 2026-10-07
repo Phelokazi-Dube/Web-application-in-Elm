@@ -30,3 +30,33 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
+
+// Show a full-page loading overlay for long-running server requests.
+document.addEventListener("submit", (event) => {
+  const form = event.target
+
+  if (!form.matches("[data-loading]")) {
+    return
+  }
+
+  const overlay = document.getElementById("loading-overlay")
+  const message = document.getElementById("loading-message")
+
+  if (!overlay || !message) {
+    return
+  }
+
+  message.textContent =
+    form.dataset.loadingMessage || "Processing…"
+
+  overlay.classList.add("is-visible")
+  overlay.setAttribute("aria-hidden", "false")
+
+  const submitButton = form.querySelector(
+    'button[type="submit"], input[type="submit"]'
+  )
+
+  if (submitButton) {
+    submitButton.disabled = true
+  }
+})
