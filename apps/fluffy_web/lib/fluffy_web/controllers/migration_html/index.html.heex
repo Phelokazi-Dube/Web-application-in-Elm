@@ -1,0 +1,57 @@
+<div class="migration-page site-content-width animate-fade-in">
+  <div class="migration-header">
+    <h1>CBC Data Migration</h1>
+    <p>
+      Upload a CBC Excel workbook to validate its data before importing
+      configured collections into FluffyWeb.
+    </p>
+  </div>
+
+  <div class="migration-upload-panel">
+    <div class="migration-upload-panel-header">
+      <div class="migration-upload-icon">
+        <i class="bi bi-file-earmark-spreadsheet"></i>
+      </div>
+
+      <div>
+        <h2>Upload CBC workbook</h2>
+
+        <p class="migration-upload-panel-description">
+          The workbook will be checked before any changes are made to the database.
+        </p>
+      </div>
+    </div>
+
+    <form
+      action={~p"/admin/migration/validate"}
+      method="post"
+      enctype="multipart/form-data"
+      class="migration-upload-form"
+    >
+      <input
+        type="hidden"
+        name="_csrf_token"
+        value={Plug.CSRFProtection.get_csrf_token()}
+      />
+
+      <label for="workbook" class="migration-file-label">
+        Excel workbook
+      </label>
+
+      <input
+        id="workbook"
+        type="file"
+        name="workbook"
+        accept=".xlsx"
+        required
+        class="migration-file-input"
+      />
+
+      <div class="migration-actions">
+        <button type="submit" class="migration-primary-button">
+          Upload &amp; Validate
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

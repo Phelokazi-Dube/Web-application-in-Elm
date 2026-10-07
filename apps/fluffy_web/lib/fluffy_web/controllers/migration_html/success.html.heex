@@ -1,0 +1,76 @@
+<div class="migration-page site-content-width">
+  <div class="migration-header">
+    <h1>CBC Data Migration</h1>
+
+    <p>
+      Import results for <strong><%= @filename %></strong>
+    </p>
+  </div>
+
+  <div class="migration-status migration-status-success">
+    <h2>✓ Migration completed successfully</h2>
+
+    <p>
+      The validated workbook data has been processed by FluffyWeb.
+    </p>
+  </div>
+
+  <div class="migration-summary">
+    <div class="migration-summary-item">
+      <span class="migration-summary-number">
+        <%= @result.total_processed %>
+      </span>
+
+      <span class="migration-summary-label">
+        Records processed
+      </span>
+    </div>
+
+    <div class="migration-summary-item">
+      <span class="migration-summary-number">
+        <%= length(@result.imported) %>
+      </span>
+
+      <span class="migration-summary-label">
+        Collections processed
+      </span>
+    </div>
+  </div>
+
+  <div class="migration-table-wrapper">
+    <table class="migration-table">
+      <thead>
+        <tr>
+          <th>Sheet</th>
+          <th>Collection</th>
+          <th>Records Processed</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <%= for item <- @result.imported do %>
+          <tr>
+            <td><%= item.sheet %></td>
+            <td><%= item.collection %></td>
+            <td><%= item.processed_count %></td>
+            <td>
+              <span class="migration-valid">
+                ✓ Imported
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="migration-actions">
+    <a
+      href={~p"/admin/migration"}
+      class="migration-primary-button"
+    >
+      Migrate Another Workbook
+    </a>
+  </div>
+</div>

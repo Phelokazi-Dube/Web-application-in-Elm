@@ -66,11 +66,15 @@ defmodule FluffyWeb.Router do
     post("/documents/:id/attachments", MongoDBController, :update_attachments)
     # Reverse geocode coordinates into province and country
     get("/geocode/reverse", GeocodingController, :reverse)
+    post("/documents/:id/delete", MongoDBController, :delete_document)
   end
 
   scope "/", FluffyWeb do
-    pipe_through(:admin_only)
+    pipe_through([:browser, :admin_only])
     post("/api/Mongodb/approve_document/:id", MongoDBController, :approve)
+    get("/admin/migration", MigrationController, :index)
+    post("/admin/migration/validate", MigrationController, :validate)
+    post("/admin/migration/import", MigrationController, :import)
   end
 
   # Other scopes may use custom stacks.

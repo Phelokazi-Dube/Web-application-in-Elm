@@ -18,6 +18,26 @@ defmodule FluffyWeb.MongoDBController do
     WHMCounter
   )
 
+  # Stable identities used to prevent duplicate records during CSV uploads.
+  # Collections are included only where a safe identity has been established.
+  @csv_identities %{
+    "Surveys" => ["surveyId"],
+    "SurveyWeedAgent" => ["swaid"],
+    "SiteInspections" => ["siteInspectionId"],
+    "SiteInspectionWeeds" => ["siteInspectionWeedId"],
+    "Locations" => ["locationId"],
+    "Districts" => ["districtId"],
+    "Regions" => ["regionId"],
+    "Continents" => ["continentId"],
+    "Countries" => ["countryId", "continentId"],
+    "Implementers" => ["implementerId"],
+    "WeedNames" => ["weedId"],
+    "ControlAgents" => ["controlAgentId"],
+    "SurveyControlAgents" => ["id"],
+    "WHMeasurements" => ["whmid"],
+    "BAR" => ["barId"]
+  }
+
   defp validate_collection_access(conn, collection) do
     cond do
       collection not in @allowed_collections ->
@@ -194,6 +214,7 @@ defmodule FluffyWeb.MongoDBController do
                   conn,
                   template,
                   document: normalized,
+                  document_id: id,
                   collection: collection,
                   profile: profile,
                   oauth_url: oauth_url,
@@ -286,95 +307,217 @@ defmodule FluffyWeb.MongoDBController do
   # Action to upload and process a CSV file with dynamic fields
   @spec upload_csv(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def upload_csv(conn, %{"file" => %Plug.Upload{path: file_path}, "collection" => collection}) do
-    # Ensure session is fetched before trying to get data from it
     conn = fetch_session(conn)
-
     profile = get_session(conn, :profile)
     email = profile && Map.get(profile, :email)
 
-    # Validate collection name
-    if collection not in @allowed_collections do
-      conn
-      |> put_status(:unprocessable_entity)
-      |> json(%{error: "Invalid collection"})
-    else
-      if email do
-        # Read and parse the CSV file safely
-        csv_stream = File.stream!(file_path)
+    cond do
+      collection not in @allowed_collections ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{error: "Invalid collection"})
 
-        # Check if the file is empty
-        if Enum.empty?(csv_stream) do
-          conn
-          |> put_status(:bad_request)
-          |> render("upload_empty.html", message: "CSV file is empty", collection: collection)
-        else
-          csv_data =
-            file_path
-            |> File.stream!()
-            |> CSV.decode(separator: ?,, headers: true)
-            |> Enum.map(fn
-              {:ok, row} ->
-                row
-                |> ControllerHelpers.normalize_keys()
-                # Add user email to each row
-                |> Map.put("userLogin", email)
-                |> Map.put("approved", false)
-                |> Map.put("approved_by", nil)
-                |> Map.put("approved_at", nil)
-                |> ControllerHelpers.add_date_dt()
-                |> ControllerHelpers.parse_location()
-
-              {:error, reason} ->
-                {:error, reason}
-            end)
-
-          # Filter out rows that failed to decode
-          documents = Enum.filter(csv_data, &is_map/1)
-
-          if documents == [] do
-            conn
-            |> put_status(:bad_request)
-            |> json(%{error: "No valid data found in CSV"})
-          else
-            Logger.debug("Inserting documents into #{collection}: #{inspect(documents)}")
-
-            # Insert the documents into MongoDB
-            case MongoDBClient.insert_many_documents(collection, documents) do
-              {:ok, result} ->
-                _inserted_documents =
-                  Enum.map(result.inserted_ids, fn bson_obj ->
-                    MongoDBClient.get_document_by_id(collection, bson_obj)
-                  end)
-                  |> Enum.filter(&(&1 != nil))
-                  |> Enum.map(&ControllerHelpers.normalize_mongo_id/1)
-
-                conn
-                |> put_status(:created)
-                |> render("upload_success.html",
-                  message: "Upload successful",
-                  collection: collection
-                )
-
-              {:error, reason} ->
-                Logger.error("Failed to insert CSV: #{inspect(reason)}")
-
-                error_message =
-                  case reason do
-                    %Mongo.Error{message: message, code: code} -> %{message: message, code: code}
-                    _ -> %{message: inspect(reason)}
-                  end
-
-                conn
-                |> put_status(:unprocessable_entity)
-                |> json(%{error: "Failed to create document", reason: error_message})
-            end
-          end
-        end
-      else
+      is_nil(email) ->
         conn
         |> put_status(:unauthorized)
         |> json(%{error: "User not authenticated"})
+
+      not Map.has_key?(@csv_identities, collection) ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error:
+            "CSV upload is not available for #{collection} because a safe record identity has not been configured."
+        })
+
+      true ->
+        process_csv_upload(conn, file_path, collection, email)
+    end
+  end
+
+  defp process_csv_upload(conn, file_path, collection, email) do
+    if File.stat!(file_path).size == 0 do
+      conn
+      |> put_status(:bad_request)
+      |> render("upload_empty.html",
+        message: "CSV file is empty",
+        collection: collection
+      )
+    else
+      documents =
+        file_path
+        |> File.stream!()
+        |> CSV.decode(separator: ?,, headers: true)
+        |> Enum.flat_map(fn
+          {:ok, row} ->
+            document =
+              row
+              |> ControllerHelpers.normalize_keys()
+              |> Map.put("userLogin", email)
+              |> Map.put("approved", false)
+              |> Map.put("approved_by", nil)
+              |> Map.put("approved_at", nil)
+              |> ControllerHelpers.add_date_dt()
+              |> ControllerHelpers.parse_location()
+
+            [document]
+
+          {:error, reason} ->
+            Logger.warning("Skipping invalid CSV row: #{inspect(reason)}")
+            []
+        end)
+
+      if documents == [] do
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "No valid data found in CSV"})
+      else
+        upsert_csv_documents(conn, collection, documents)
       end
+    end
+  end
+
+  defp upsert_csv_documents(conn, collection, documents) do
+    identity_fields = Map.fetch!(@csv_identities, collection)
+
+    case validate_csv_identities(documents, identity_fields) do
+      :ok ->
+        case perform_csv_upserts(collection, documents, identity_fields) do
+          {:ok, processed_count} ->
+            Logger.info(
+              "Processed #{processed_count} CSV documents for #{collection}"
+            )
+
+            conn
+            |> put_status(:created)
+            |> render("upload_success.html",
+              message: "Upload successful",
+              collection: collection,
+              processed_count: processed_count
+            )
+
+          {:error, reason} ->
+            Logger.error("Failed to process CSV: #{inspect(reason)}")
+
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              error: "Failed to process CSV",
+              reason: inspect(reason)
+            })
+        end
+
+      {:error, missing_fields} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render("upload_error.html",
+          title: "CSV Does Not Match This Collection",
+          message:
+            "This file does not appear to contain the required fields for #{collection}. Please check that you selected the correct CSV file.",
+          collection: collection,
+          required_fields: identity_fields,
+          missing_fields: missing_fields
+        )
+    end
+  end
+
+  defp validate_csv_identities(documents, identity_fields) do
+    missing_fields =
+      documents
+      |> Enum.flat_map(fn document ->
+        Enum.filter(identity_fields, fn field ->
+          value = Map.get(document, field)
+
+          is_nil(value) or
+            (is_binary(value) and String.trim(value) == "")
+        end)
+      end)
+      |> Enum.uniq()
+
+    case missing_fields do
+      [] -> :ok
+      fields -> {:error, fields}
+    end
+  end
+
+  defp perform_csv_upserts(collection, documents, identity_fields) do
+    Enum.reduce_while(documents, {:ok, 0}, fn document, {:ok, count} ->
+      filter = Map.take(document, identity_fields)
+
+      case MongoDBClient.upsert_document(collection, filter, document) do
+        {:ok, _result} ->
+          {:cont, {:ok, count + 1}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  def delete_document(conn, %{"id" => id, "collection" => collection}) do
+    role = get_session(conn, :role)
+    profile = get_session(conn, :profile)
+
+    current_user_email =
+      if profile do
+        Map.get(profile, :email)
+      else
+        nil
+      end
+
+    case validate_collection_access(conn, collection) do
+      :ok ->
+        case BSON.ObjectId.decode(id) do
+          {:ok, bson_id} ->
+            case MongoDBClient.get_document_by_id(collection, bson_id) do
+              nil ->
+                conn
+                |> put_flash(:error, "Document not found.")
+                |> redirect(to: "/records")
+
+              %{} = existing_document ->
+                owner_email = Map.get(existing_document, "userLogin")
+
+                can_delete =
+                  role == "admin" or
+                    (not is_nil(current_user_email) and
+                      current_user_email == owner_email)
+
+                if can_delete do
+                  case MongoDBClient.delete_document(collection, bson_id) do
+                    {:ok, _result} ->
+                      conn
+                      |> put_flash(:info, "Document deleted successfully.")
+                      |> redirect(to: "/records")
+
+                    {:error, reason} ->
+                      Logger.error(
+                        "Failed to delete document #{id} from #{collection}: #{inspect(reason)}"
+                      )
+
+                      conn
+                      |> put_flash(:error, "Failed to delete document.")
+                      |> redirect(to: "/documents/#{id}?collection=#{collection}")
+                  end
+                else
+                  conn
+                  |> put_status(:forbidden)
+                  |> put_flash(
+                    :error,
+                    "You are not authorised to delete this document."
+                  )
+                  |> redirect(to: "/documents/#{id}?collection=#{collection}")
+                end
+            end
+
+          :error ->
+            conn
+            |> put_flash(:error, "Invalid document ID.")
+            |> redirect(to: "/records")
+        end
+
+      {:error, reason} ->
+        collection_access_error(conn, reason)
     end
   end
 

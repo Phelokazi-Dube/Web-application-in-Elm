@@ -4,6 +4,8 @@ defmodule FluffyWeb.ControllerHelpers do
     These functions normalise incoming CBC data before it is passed to the database.
     """
 
+    alias WaterWeeds.FieldNormalizer
+
     @required_fields [
     {"surveyType", "Survey type"},
     {"weed", "Weed"},
@@ -50,7 +52,6 @@ defmodule FluffyWeb.ControllerHelpers do
 
   def valid_date?(_), do: false
 
-
   @doc """
   Converts a MongoDB document's `_id` into a JSON-friendly `id` string.
   """
@@ -63,44 +64,14 @@ defmodule FluffyWeb.ControllerHelpers do
   end
 
   @doc """
-  Converts almost any header string (e.g. COUNTRY_ID, DataACCESSID) into clean camelCase.
-  Relevant for CSV header to the camelCase field naming used by FluffyWeb.
+  Converts an external field name into the camelCase naming used by FluffyWeb.
   """
-  def to_camel_case(key) when is_binary(key) do
-    key
-    |> String.trim()
-    |> String.replace("%", " Percent ")
-    # DGCFinal -> DGC Final, ControlAgent -> Control Agent
-    |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
-    |> String.replace(~r/([a-z0-9])([A-Z])/, "\\1 \\2")
-    # spaces, underscores, brackets, punctuation etc. become separators
-    |> String.replace(~r/[^a-zA-Z0-9]+/, " ")
-    |> String.split(" ", trim: true)
-    |> camelize_words()
-  end
-
-  defp camelize_words([]), do: ""
-
-  defp camelize_words([first | rest]) do
-    String.downcase(first) <>
-      Enum.map_join(rest, fn word ->
-        word
-        |> String.downcase()
-        |> String.capitalize()
-      end)
-  end
+  defdelegate to_camel_case(key), to: FieldNormalizer
 
   @doc """
   Normalises all keys in a map to the camelCase naming used by FluffyWeb.
   """
-  def normalize_keys(map) when is_map(map) do
-    map
-    |> Enum.map(fn {key, value} ->
-      new_key = to_camel_case(to_string(key))
-      {new_key, value}
-    end)
-    |> Enum.into(%{})
-  end
+  defdelegate normalize_keys(map), to: FieldNormalizer
 
   @doc """
   Adds a machine-readable date_dt value while preserving the original

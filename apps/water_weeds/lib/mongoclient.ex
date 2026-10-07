@@ -126,6 +126,11 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:update_image, file_id, new_binary_data})
   end
 
+  # Delete a document by its MongoDB ObjectId
+  def delete_document(collection_name, bson_id) do
+    GenServer.call(__MODULE__, {:delete_document, collection_name, bson_id})
+  end
+
   @spec upload_file(String.t(), binary(), map() | nil, BSON.ObjectId.t() | nil) :: {:ok, BSON.ObjectId.t()} | {:error, any()}
   def upload_file(filename, binary_data, metadata \\ nil, file_id \\ nil) do
     GenServer.call(__MODULE__, {:upload_file, filename, binary_data, metadata, file_id})
@@ -325,6 +330,16 @@ defmodule WaterWeeds.MongoDBClient do
     # Reply with the found document or nil
     {:reply, doc, state}
   end
+
+  def handle_call({:delete_document, collection_name, bson_id}, _from, %{conn: conn} = state) do
+  case Mongo.delete_one(conn, collection_name, %{_id: bson_id}) do
+    {:ok, result} ->
+      {:reply, {:ok, result}, state}
+
+    {:error, reason} ->
+      {:reply, {:error, reason}, state}
+  end
+end
 
   def handle_call(
         {:update_document, collection_name, bson_id, update_fields},

@@ -118,15 +118,88 @@
 
   <%= if @collection && @collection != "" && @can_edit do %>
     <div class="document-edit-actions">
-        <a
-          href={"?collection=#{@collection}&edit=true"}
-          class="document-edit-button"
-        >
-          ✏️ Edit Document
-        </a>
+      <a
+        href={"?collection=#{@collection}&edit=true"}
+        class="document-edit-button"
+      >
+        ✏️ Edit Document
+      </a>
+
+      <button
+        type="button"
+        class="document-delete-button"
+        id="open-delete-modal"
+      >
+        🗑️ Delete Document
+      </button>
+    </div>
+
+    <div
+      id="delete-document-modal"
+      class="document-delete-modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-modal-title"
+    >
+      <div
+        class="document-delete-modal-backdrop"
+        id="delete-modal-backdrop"
+      >
       </div>
+
+      <div class="document-delete-modal-content">
+        <h2 id="delete-modal-title">
+          Delete this document?
+        </h2>
+
+        <p>
+          This document will be permanently removed. If you entered this
+          record incorrectly and want to start again, you can delete it
+          and create a new one.
+        </p>
+
+        <p class="document-delete-warning">
+          This action cannot be undone.
+        </p>
+
+        <div class="document-delete-modal-actions">
+          <button
+            type="button"
+            class="document-delete-cancel-button"
+            id="cancel-delete"
+          >
+            Cancel
+          </button>
+
+          <form
+            action={~p"/documents/#{@document_id}/delete"}
+            method="post"
+          >
+            <input
+              type="hidden"
+              name="_csrf_token"
+              value={Plug.CSRFProtection.get_csrf_token()}
+            />
+
+            <input
+              type="hidden"
+              name="collection"
+              value={@collection}
+            />
+
+            <button
+              type="submit"
+              class="document-delete-confirm-button"
+            >
+              Delete Document
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
   <% end %>
-</div>
+
+  </div>
 
 <!-- Tab Switching Script -->
 <script>
@@ -135,14 +208,56 @@
 
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      // Remove active classes
       tabs.forEach(t => t.classList.remove('active'));
       contents.forEach(c => c.classList.add('hidden'));
 
-      // Add active classes
       tab.classList.add('active');
-      const activeContent = document.getElementById('tab-' + tab.dataset.tab);
+
+      const activeContent =
+        document.getElementById('tab-' + tab.dataset.tab);
+
       activeContent.classList.remove('hidden');
     });
+  });
+
+  // Delete confirmation modal
+  const deleteModal =
+    document.getElementById('delete-document-modal');
+
+  const openDeleteModal =
+    document.getElementById('open-delete-modal');
+
+  const cancelDelete =
+    document.getElementById('cancel-delete');
+
+  const deleteModalBackdrop =
+    document.getElementById('delete-modal-backdrop');
+
+  if (deleteModal && openDeleteModal) {
+    openDeleteModal.addEventListener('click', () => {
+      deleteModal.classList.remove('hidden');
+    });
+  }
+
+  if (deleteModal && cancelDelete) {
+    cancelDelete.addEventListener('click', () => {
+      deleteModal.classList.add('hidden');
+    });
+  }
+
+  if (deleteModal && deleteModalBackdrop) {
+    deleteModalBackdrop.addEventListener('click', () => {
+      deleteModal.classList.add('hidden');
+    });
+  }
+
+  document.addEventListener('keydown', event => {
+    if (
+      event.key === 'Escape' &&
+      deleteModal &&
+      !deleteModal.classList.contains('hidden')
+    ) {
+      deleteModal.classList.add('hidden');
+    }
   });
 </script>

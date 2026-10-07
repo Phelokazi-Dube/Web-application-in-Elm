@@ -1,0 +1,210 @@
+<div class="migration-page site-content-width">
+  <div class="migration-header">
+    <h1>CBC Data Migration</h1>
+
+    <p>
+      Validation results for <strong><%= @filename %></strong>
+    </p>
+  </div>
+
+  <%= if @validation.valid? do %>
+    <div class="migration-status migration-status-success">
+      <h2>✓ Workbook validation passed</h2>
+      <p>
+        The configured collections are ready for import.
+        No database changes have been made yet.
+      </p>
+    </div>
+  <% else %>
+    <div class="migration-status migration-status-error">
+      <h2>✕ Workbook validation failed</h2>
+      <p>
+        Resolve the validation errors before importing this workbook.
+      </p>
+    </div>
+  <% end %>
+
+  <div class="migration-table-wrapper">
+    <table class="migration-table">
+      <thead>
+        <tr>
+          <th>Sheet</th>
+          <th>Collection</th>
+          <th>Records</th>
+          <th>Missing IDs</th>
+          <th>Duplicate IDs</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <%= for sheet <- @validation.sheets do %>
+          <tr>
+            <td><%= sheet.sheet %></td>
+            <td><%= sheet.collection %></td>
+            <td><%= sheet.document_count %></td>
+            <td><%= sheet.missing_identity_count %></td>
+            <td><%= sheet.duplicate_identity_count %></td>
+            <td>
+              <%= if sheet.valid? do %>
+                <span class="migration-valid">✓ Ready</span>
+              <% else %>
+                <span class="migration-invalid">✕ Error</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= if @validation.skipped_sheets != [] do %>
+    <div class="migration-skipped-section">
+        <div class="migration-status migration-status-warning">
+        <h2>
+            ○ <%= length(@validation.skipped_sheets) %>
+            workbook sheet(s) will be skipped
+        </h2>
+
+        <p>
+            These sheets are present in the uploaded workbook but are not
+            configured for migration. Their data will not be imported or modified.
+        </p>
+        </div>
+
+        <div class="migration-table-wrapper">
+        <table class="migration-table">
+            <thead>
+            <tr>
+                <th>Sheet</th>
+                <th>Status</th>
+                <th>Reason</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            <%= for sheet_name <- @validation.skipped_sheets do %>
+                <tr>
+                <td><%= sheet_name %></td>
+
+                <td>
+                    <span class="migration-skipped">
+                    ○ Skipped
+                    </span>
+                </td>
+
+                <td>
+                    Not configured for migration
+                </td>
+                </tr>
+            <% end %>
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <% end %>
+
+  <div class="migration-actions">
+    <a
+      href={~p"/admin/migration"}
+      class="migration-secondary-button"
+    >
+      Choose Another Workbook
+    </a>
+
+    <%= if @validation.valid? do %>
+      <button
+        type="button"
+        id="open-import-confirmation"
+        class="migration-primary-button"
+      >
+        Continue to Import
+      </button>
+    <% end %>
+  </div>
+</div>
+
+<!-- Import confirmation modal -->
+<%= if @validation.valid? do %>
+  <div
+    id="import-confirmation-modal"
+    class="migration-modal hidden"
+  >
+    <div class="migration-modal-backdrop"></div>
+
+    <div class="migration-modal-content">
+      <h2>Import validated CBC data?</h2>
+
+      <p>
+        This workbook has passed validation.
+      </p>
+
+      <p>
+        Continuing will create new records and update matching existing
+        records in the configured FluffyWeb collections.
+      </p>
+
+      <%= if @validation.skipped_sheets != [] do %>
+        <div class="migration-warning">
+            <strong>Please note:</strong>
+
+            <%= length(@validation.skipped_sheets) %>
+            workbook sheet(s) are not configured for migration and will be skipped.
+
+            No data from those sheets will be imported or modified.
+        </div>
+    <% end %>
+
+      <div class="migration-modal-actions">
+        <button
+          type="button"
+          id="cancel-import"
+          class="migration-secondary-button"
+        >
+          Cancel
+        </button>
+
+        <form
+          action={~p"/admin/migration/import"}
+          method="post"
+        >
+          <input
+            type="hidden"
+            name="_csrf_token"
+            value={Plug.CSRFProtection.get_csrf_token()}
+          />
+
+          <button
+            type="submit"
+            class="migration-primary-button"
+          >
+            Import Data
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const modal =
+        document.getElementById("import-confirmation-modal");
+
+      const openButton =
+        document.getElementById("open-import-confirmation");
+
+      const cancelButton =
+        document.getElementById("cancel-import");
+
+      if (!modal || !openButton || !cancelButton) return;
+
+      openButton.addEventListener("click", function () {
+        modal.classList.remove("hidden");
+      });
+
+      cancelButton.addEventListener("click", function () {
+        modal.classList.add("hidden");
+      });
+    });
+  </script>
+<% end %>
