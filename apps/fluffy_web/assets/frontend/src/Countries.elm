@@ -29,9 +29,9 @@ type alias Document =
     , countryId : String
     , continentId : String
     , country : String
-    , dataSourceId : Int
-    , dataStatusId : Int
-    , dataAccessId : Int
+    , dataSourceId : String
+    , dataStatusId : String
+    , dataAccessId : String
     , userLogin : Maybe String
     , approved : Bool
     }
@@ -352,17 +352,17 @@ documentCard isAdmin doc =
             , p []
                 [ span [ class "collection-field-label" ]
                     [ text "Data Access ID" ]
-                , text (String.fromInt doc.dataAccessId)
+                , text doc.dataAccessId
                 ]
             , p []
                 [ span [ class "collection-field-label" ]
                     [ text "Data Source ID" ]
-                , text (String.fromInt doc.dataSourceId)
+                , text doc.dataSourceId
                 ]
             , p []
                 [ span [ class "collection-field-label" ]
                     [ text "Data Status ID" ]
-                , text (String.fromInt doc.dataStatusId)
+                , text doc.dataStatusId
                 ]
 
             , case doc.userLogin of
@@ -467,6 +467,16 @@ responseDecoder =
             (Decode.list documentDecoder)
 
 
+stringOrNumber : Decode.Decoder String
+stringOrNumber =
+    Decode.oneOf
+        [ Decode.string
+        , Decode.int |> Decode.map String.fromInt
+        , Decode.float |> Decode.map String.fromFloat
+        , Decode.null ""
+        ]
+
+
 documentDecoder : Decode.Decoder Document
 documentDecoder =
     Decode.succeed Document
@@ -474,9 +484,9 @@ documentDecoder =
         |> Pipeline.required "countryId" Decode.string
         |> Pipeline.required "continentId" Decode.string
         |> Pipeline.required "country" Decode.string
-        |> Pipeline.required "dataSourceId" Decode.int
-        |> Pipeline.required "dataStatusId" Decode.int
-        |> Pipeline.required "dataAccessId" Decode.int
+        |> Pipeline.required "dataSourceId" stringOrNumber
+        |> Pipeline.required "dataStatusId" stringOrNumber
+        |> Pipeline.required "dataAccessId" stringOrNumber
         |> Pipeline.optional "userLogin" (Decode.map Just Decode.string) Nothing
         |> Pipeline.optional "approved" Decode.bool False
 

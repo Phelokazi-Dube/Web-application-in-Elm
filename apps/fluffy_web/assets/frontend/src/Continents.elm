@@ -30,9 +30,9 @@ type alias Document =
     { id : String
     , continent : String
     , continentId : String
-    , dataAccessId : Int
-    , dataSourceId : Int
-    , dataStatusId : Int
+    , dataAccessId : String
+    , dataSourceId : String
+    , dataStatusId : String
     , userLogin : Maybe String
     }
 
@@ -143,17 +143,17 @@ viewDocument doc =
             , p []
                 [ span [ class "collection-field-label" ]
                     [ text "Data Access ID" ]
-                , text (String.fromInt doc.dataAccessId)
+                , text doc.dataAccessId
                 ]
             , p []
                 [ span [ class "collection-field-label" ]
                     [ text "Data Source ID" ]
-                , text (String.fromInt doc.dataSourceId)
+                , text doc.dataSourceId
                 ]
             , p []
                 [ span [ class "collection-field-label" ]
                     [ text "Data Status ID" ]
-                , text (String.fromInt doc.dataStatusId)
+                , text doc.dataStatusId
                 ]
             , case doc.userLogin of
                 Just userLogin ->
@@ -201,6 +201,13 @@ responseDecoder =
         |> required "isAdmin" Decode.bool
         |> required "documents" (Decode.list documentDecoder)
 
+stringOrNumber : Decode.Decoder String
+stringOrNumber =
+    Decode.oneOf
+        [ Decode.string
+        , Decode.int |> Decode.map String.fromInt
+        , Decode.float |> Decode.map String.fromFloat
+        ]
 
 documentDecoder : Decode.Decoder Document
 documentDecoder =
@@ -208,9 +215,9 @@ documentDecoder =
         |> required "_id" Decode.string
         |> required "continent" Decode.string
         |> required "continentId" Decode.string
-        |> required "dataAccessId" Decode.int
-        |> required "dataSourceId" Decode.int
-        |> required "dataStatusId" Decode.int
+        |> required "dataAccessId" stringOrNumber
+        |> required "dataSourceId" stringOrNumber
+        |> required "dataStatusId" stringOrNumber
         |> optional "userLogin" (Decode.map Just Decode.string) Nothing
 
 

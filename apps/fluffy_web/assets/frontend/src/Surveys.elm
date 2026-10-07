@@ -623,17 +623,26 @@ fetchDocuments model searchString =
                 )
         }
 
+stringOrNumber : Decode.Decoder String
+stringOrNumber =
+    Decode.oneOf
+        [ Decode.string
+        , Decode.int |> Decode.map String.fromInt
+        , Decode.float |> Decode.map String.fromFloat
+        , Decode.null ""
+        ]
+
 
 documentDecoder : Decode.Decoder Document
 documentDecoder =
     Decode.map8 Document
-        (Decode.maybe (Decode.field "_id" Decode.string))
-        (Decode.maybe (Decode.field "date" Decode.string))
-        (Decode.maybe (Decode.field "notes" Decode.string))
-        (Decode.maybe (Decode.field "description" Decode.string))
-        (Decode.maybe (Decode.field "site" Decode.string))
-        (Decode.maybe (Decode.field "sitename" Decode.string))
-        (Decode.maybe (Decode.field "province" Decode.string))
+        (Decode.maybe (Decode.field "_id" stringOrNumber))
+        (Decode.maybe (Decode.field "date" stringOrNumber))
+        (Decode.maybe (Decode.field "notes" stringOrNumber))
+        (Decode.maybe (Decode.field "description" stringOrNumber))
+        (Decode.maybe (Decode.field "site" stringOrNumber))
+        (Decode.maybe (Decode.field "sitename" stringOrNumber))
+        (Decode.maybe (Decode.field "province" stringOrNumber))
         (Decode.maybe (Decode.field "approved" Decode.bool) |> Decode.map (Maybe.withDefault False))
 
 

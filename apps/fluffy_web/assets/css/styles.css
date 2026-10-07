@@ -2972,63 +2972,80 @@ textarea.contact-field {
   text-decoration: none;
 }
 
-/* Edit */
+/* ==========================================================
+   DOCUMENT ACTIONS
+   ========================================================== */
 
-.document-edit-actions {
+.document-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  margin-top: 2rem;
+  gap: 1.5rem;
+  margin-top: 2.5rem;
 }
 
-.document-edit-button {
-  display: inline-block;
-  padding: 1rem 1.8rem;
-  background-color: #26813b;
+.document-edit-button,
+.document-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 190px;
+  width: 190px;
+  height: 48px;
+  padding: 0;
+
+  box-sizing: border-box;
   border-radius: 8px;
-  color: #ffffff;
+
+  font-family: inherit;
   font-size: 1.4rem;
   font-weight: 700;
+  line-height: 1;
+
   text-decoration: none;
+  cursor: pointer;
+}
+
+/* Edit */
+
+.document-edit-button {
+  background-color: #26813b;
+  border: 1px solid #26813b;
+  color: #ffffff;
 }
 
 .document-edit-button:hover {
   background-color: #216e39;
+  border-color: #216e39;
+  color: #ffffff;
   text-decoration: none;
 }
 
+/* Delete */
+
+.document-delete-button {
+  background-color: #ffffff;
+  border: 1px solid #b91c1c;
+  color: #b91c1c;
+}
+
+.document-delete-button:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  color: #ffffff;
+}
+
 @media (max-width: 768px) {
-  .document-details-page {
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
+  .document-actions {
+    flex-direction: column;
+    align-items: flex-end;
   }
 
-  .document-details-title {
-    font-size: 3.5rem;
-  }
-
-  .document-tabs {
-    overflow-x: auto;
-  }
-
-  .document-tab {
-    flex-shrink: 0;
-  }
-
-  .document-tab-content {
-    padding: 1.5rem;
-  }
-
-  .document-details-table th {
-    width: 40%;
-  }
-
-  .document-edit-actions {
-    justify-content: stretch;
-  }
-
-  .document-edit-button {
-    width: 100%;
-    text-align: center;
+  .document-edit-button,
+  .document-delete-button {
+    flex-basis: 48px;
+    width: 190px;
   }
 }
 
@@ -3141,6 +3158,158 @@ textarea.contact-field {
   }
 
   .upload-empty-button {
+    width: 100%;
+  }
+}
+
+/* ==========================================================
+   CSV UPLOAD ERROR
+   ========================================================== */
+
+.upload-error-page {
+  display: flex;
+  justify-content: center;
+
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.upload-error-card {
+  width: 100%;
+  max-width: 700px;
+
+  padding: 4rem;
+
+  background-color: #ffffff;
+  border: 1px solid #dce3ea;
+  border-radius: 14px;
+
+  box-shadow: 0 4px 14px rgba(15, 40, 65, 0.08);
+
+  text-align: center;
+}
+
+.upload-error-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 64px;
+  height: 64px;
+
+  margin: 0 auto 1.8rem;
+
+  border-radius: 50%;
+
+  background-color: #fee2e2;
+  color: #991b1b;
+
+  font-size: 2.8rem;
+}
+
+.upload-error-title {
+  margin: 0 0 1.2rem;
+
+  color: #17324d;
+
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.upload-error-description {
+  max-width: 560px;
+
+  margin: 0 auto 2rem;
+
+  color: #59687a;
+
+  font-size: 1.6rem;
+  line-height: 1.6;
+}
+
+.upload-error-details {
+  max-width: 560px;
+
+  margin: 0 auto 2.5rem;
+  padding: 1.6rem 2rem;
+
+  background-color: #f8fafc;
+  border: 1px solid #dce3ea;
+  border-radius: 10px;
+}
+
+.upload-error-details-title {
+  margin: 0 0 1rem;
+
+  color: #17324d;
+
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.upload-error-fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.upload-error-field {
+  padding: 0.5rem 1rem;
+
+  background-color: #ffffff;
+  border: 1px solid #dce3ea;
+  border-radius: 6px;
+
+  color: #59687a;
+
+  font-family: monospace;
+  font-size: 1.3rem;
+}
+
+.upload-error-button {
+  display: inline-block;
+
+  padding: 1.1rem 2rem;
+
+  background-color: #26813b;
+  border-radius: 8px;
+
+  color: #ffffff;
+
+  font-size: 1.5rem;
+  font-weight: 700;
+
+  text-decoration: none;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.upload-error-button:hover {
+  background-color: #216e39;
+  color: #ffffff;
+  text-decoration: none;
+
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .upload-error-page {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .upload-error-card {
+    padding: 2.5rem 2rem;
+  }
+
+  .upload-error-title {
+    font-size: 2.6rem;
+  }
+
+  .upload-error-button {
     width: 100%;
   }
 }
@@ -3694,6 +3863,158 @@ body {
 
   .migration-modal-actions form,
   .migration-modal-actions button {
+    width: 100%;
+  }
+}
+
+/* ====================================
+   DELETE DOCUMENT POPUP
+   =================================== */
+
+.document-delete-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2rem;
+}
+
+.document-delete-modal.hidden {
+  display: none;
+}
+
+.document-delete-modal-backdrop {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.document-delete-modal-content {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  max-width: 520px;
+
+  padding: 3rem;
+
+  background: #ffffff;
+  border-radius: 12px;
+
+  box-shadow:
+    0 20px 25px rgba(0, 0, 0, 0.1),
+    0 8px 10px rgba(0, 0, 0, 0.08);
+}
+
+.document-delete-modal-content h2 {
+  margin: 0 0 1.5rem;
+
+  color: #1f2937;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.document-delete-modal-content p {
+  margin: 0 0 1.5rem;
+
+  color: #4b5563;
+  font-size: 1.4rem;
+  line-height: 1.6;
+}
+
+.document-delete-modal-content .document-delete-warning {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
+/* Modal buttons */
+
+.document-delete-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+
+  margin-top: 2.5rem;
+}
+
+.document-delete-modal-actions form {
+  margin: 0;
+}
+
+.document-delete-cancel-button,
+.document-delete-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 140px;
+  height: 44px;
+  padding: 0 1.5rem;
+
+  box-sizing: border-box;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+/* Cancel */
+
+.document-delete-cancel-button {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.document-delete-cancel-button:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* Confirm deletion */
+
+.document-delete-confirm-button {
+  background: #b91c1c;
+  border: 1px solid #b91c1c;
+  color: #ffffff;
+}
+
+.document-delete-confirm-button:hover {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .document-delete-modal {
+    padding: 1.5rem;
+  }
+
+  .document-delete-modal-content {
+    padding: 2rem;
+  }
+
+  .document-delete-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .document-delete-modal-actions form {
+    width: 100%;
+  }
+
+  .document-delete-cancel-button,
+  .document-delete-confirm-button {
     width: 100%;
   }
 }
