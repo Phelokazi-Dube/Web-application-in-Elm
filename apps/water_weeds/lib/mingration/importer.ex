@@ -8,6 +8,7 @@ defmodule WaterWeeds.Migration.Importer do
 
   alias WaterWeeds.Migration.Workbook
   alias WaterWeeds.MongoDBClient
+  alias WaterWeeds.DataNormalizer
 
   @import_config %{
     "Surveys" => %{collection: "Surveys", identity: ["surveyId"]},
@@ -82,7 +83,8 @@ defmodule WaterWeeds.Migration.Importer do
   """
   def import(file_path) do
     with {:ok, %{valid?: true} = validation} <- validate(file_path),
-        {:ok, results} <- import_validated_workbook(file_path) do
+     :ok <- validate_database_identities(file_path),
+     {:ok, results} <- import_validated_workbook(file_path) do
       {:ok,
       %{
         validation: validation,
@@ -129,7 +131,7 @@ defmodule WaterWeeds.Migration.Importer do
   end
 
   defp import_sheet(file_path, sheet_name, config) do
-    with {:ok, documents} <- Workbook.prepare_documents(file_path, sheet_name) do
+    with {:ok, documents} <- Workbook.prepare_documents(file_path, sheet_name, config.collection) do
       upsert_documents(
         documents,
         config.collection,
@@ -141,27 +143,71 @@ defmodule WaterWeeds.Migration.Importer do
 
   defp upsert_documents(documents, collection, identity_fields, sheet_name) do
     documents
-    |> Enum.reduce_while({:ok, 0}, fn document, {:ok, count} ->
-      filter = Map.take(document, identity_fields)
+    |> Enum.reduce_while(
+      {:ok, %{inserted: 0, updated: 0, unchanged: 0}},
+      fn document, {:ok, counts} ->
+        filter = Map.take(document, identity_fields)
 
-      case MongoDBClient.upsert_document(collection, filter, document) do
-        {:ok, _result} ->
-          {:cont, {:ok, count + 1}}
+        case MongoDBClient.get_all_documents(collection, filter) do
+          [] ->
+            new_document =
+              document
+              |> DataNormalizer.prepare_coordinates(nil)
+              |> Map.put("approved", false)
 
-        {:error, reason} ->
-          {:halt, {:error, reason}}
+            case MongoDBClient.insert_document(collection, new_document) do
+              {:ok, _result} ->
+                {:cont,
+                {:ok, Map.update!(counts, :inserted, &(&1 + 1))}}
 
-        other ->
-          {:halt, {:error, {:unexpected_mongo_result, other}}}
+              {:error, reason} ->
+                {:halt, {:error, reason}}
+            end
+
+          [existing] ->
+            document = DataNormalizer.prepare_coordinates(document, existing)
+            changes =
+              Map.reject(document, fn {field, value} ->
+                Map.has_key?(existing, field) and
+                  Map.get(existing, field) == value
+              end)
+
+            if map_size(changes) == 0 do
+              {:cont,
+              {:ok, Map.update!(counts, :unchanged, &(&1 + 1))}}
+            else
+              # Approval policy for changed legacy records is still
+              # awaiting confirmation from CBC.
+              case MongoDBClient.update_document_fields(
+                    collection,
+                    existing["_id"],
+                    changes
+                  ) do
+                {:ok, _updated_document} ->
+                  {:cont,
+                  {:ok, Map.update!(counts, :updated, &(&1 + 1))}}
+
+                {:error, reason} ->
+                  {:halt, {:error, reason}}
+              end
+            end
+
+          [_first, _second | _rest] ->
+            {:halt, {:error, {:ambiguous_identity, filter}}}
+        end
       end
-    end)
+    )
     |> case do
-      {:ok, count} ->
+      {:ok, counts} ->
         {:ok,
         %{
           sheet: sheet_name,
           collection: collection,
-          processed_count: count
+          processed_count:
+            counts.inserted + counts.updated + counts.unchanged,
+          inserted_count: counts.inserted,
+          updated_count: counts.updated,
+          unchanged_count: counts.unchanged
         }}
 
       {:error, reason} ->
@@ -171,7 +217,7 @@ defmodule WaterWeeds.Migration.Importer do
 
   defp validate_sheet(file_path, sheet_name, config, available_sheets) do
     if MapSet.member?(available_sheets, sheet_name) do
-      case Workbook.prepare_documents(file_path, sheet_name) do
+      case Workbook.prepare_documents(file_path, sheet_name, config.collection) do
         {:ok, documents} ->
           missing_identity_count =
             Enum.count(documents, fn document ->
@@ -234,6 +280,58 @@ defmodule WaterWeeds.Migration.Importer do
         nil -> false
         value when is_binary(value) -> String.trim(value) != ""
         _value -> true
+      end
+    end)
+  end
+
+  @doc """
+  Checks whether workbook identities match multiple existing MongoDB documents.
+
+  This performs database reads only. It does not import or modify documents.
+  """
+  def validate_database(file_path) do
+    with {:ok, report} <- validate(file_path),
+        true <- report.valid? do
+      validate_database_identities(file_path)
+    else
+      false -> {:error, :invalid_workbook}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp validate_database_identities(file_path) do
+    @import_config
+    |> Enum.reduce_while(:ok, fn {sheet_name, config}, :ok ->
+      with {:ok, documents} <- Workbook.prepare_documents(file_path, sheet_name, config.collection) do
+        ambiguous =
+          documents
+          |> Enum.map(fn document ->
+            filter = Map.take(document, config.identity)
+
+            case MongoDBClient.get_all_documents(config.collection, filter) do
+              [_first, _second | _rest] -> filter
+              _ -> nil
+            end
+          end)
+          |> Enum.reject(&is_nil/1)
+
+        case ambiguous do
+          [] ->
+            {:cont, :ok}
+
+          identities ->
+            {:halt,
+            {:error,
+              {:ambiguous_database_identities,
+              %{
+                sheet: sheet_name,
+                collection: config.collection,
+                identities: identities
+              }}}}
+        end
+      else
+        {:error, reason} ->
+          {:halt, {:error, reason}}
       end
     end)
   end

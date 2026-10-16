@@ -54,6 +54,7 @@ type alias Model =
     , itemsPerPage : Int
     , adminUser : Bool
     , baseUrl : String
+    , csrfToken : String
     }
 
 
@@ -86,6 +87,7 @@ init flags url navKey =
             , itemsPerPage = 12
             , adminUser = False
             , baseUrl = flags.baseUrl
+            , csrfToken = flags.csrfToken
             }
     in
     ( model, fetchDocuments model searchText )
@@ -589,13 +591,20 @@ documentCard isAdmin doc =
 
 approveDocument : Model -> String -> Cmd Msg
 approveDocument model docId =
-    Http.post
-        { url = model.baseUrl ++ "/api/Mongodb/approve_document/" ++ docId
+    Http.request
+        { method = "POST"
+        , headers =
+            [ Http.header "x-csrf-token" model.csrfToken ]
+        , url = model.baseUrl ++ "/api/Mongodb/approve_document/" ++ docId
         , body = Http.emptyBody
-        , expect = Http.expectString (always (DocumentApproved (Ok docId)))
+        , expect =
+            Http.expectString
+                (\result ->
+                    DocumentApproved (Result.map (\_ -> docId) result)
+                )
+        , timeout = Nothing
+        , tracker = Nothing
         }
-
-
 
 -- HTTP REQUESTS
 

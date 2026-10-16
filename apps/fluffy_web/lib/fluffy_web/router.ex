@@ -50,6 +50,7 @@ defmodule FluffyWeb.Router do
     get("/image/:id", MongoDBController, :get_image)
     get("/publication/:id", MongoDBController, :get_publication)
     get("/survey", PageController, :home, private: %{:javascript => "surveys"})
+    get "/surveys/:survey_id", PageController, :home, private: %{javascript: "survey_details"}
   end
 
   scope "/", FluffyWeb do
@@ -124,6 +125,8 @@ defmodule FluffyWeb.Router do
     get("/Mongodb/unapproved_documents", MongoDBController, :unapproved)
 
     post("/contact", ContactController, :create)
+
+    get "/query/surveys/:survey_id", QueryController, :survey_details
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

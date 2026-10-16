@@ -404,7 +404,7 @@ update msg model =
 
                     textParts =
                         [ Http.stringPart "surveyType" model.surveyType
-                        , Http.stringPart "location" model.location
+                        , Http.stringPart "geospatialCoordinates" model.location
                         , Http.stringPart "controlAgent" model.controlAgent
                         , Http.stringPart "weather" model.weather
                         , Http.stringPart "province" (provinceToString model.province)
@@ -921,12 +921,12 @@ view model =
                             ]
                          , div [ class "field" ]
                             [ label []
-                                [ text "Location"
+                                [ text "Geospatial Coordinates"
                                 , span [ class "required-asterisk" ] [ text "*" ]
                                 ]
                             , input
                                 [ type_ "text"
-                                , name "location"
+                                , name "geospatialCoordinates"
                                 , placeholder "Latitude, Longitude"
                                 , value model.location
                                 , onInput LocationChanged

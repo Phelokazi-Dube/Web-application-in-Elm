@@ -45,6 +45,7 @@ type alias Model =
     , currentPage : Int
     , itemsPerPage : Int
     , baseUrl : String
+    , csrfToken : String
     , isLoading : Bool
     }
 
@@ -60,6 +61,7 @@ init flags =
             , currentPage = 1
             , itemsPerPage = 12
             , baseUrl = flags.baseUrl
+            , csrfToken = flags.csrfToken
             , isLoading = True
             }
     in
@@ -407,14 +409,19 @@ documentCard isAdmin doc =
 
 approveDocument : Model -> String -> Cmd Msg
 approveDocument model docId =
-    Http.post
-        { url =
+    Http.request
+        { method = "POST"
+        , headers =
+            [ Http.header "x-csrf-token" model.csrfToken ]
+        , url =
             model.baseUrl
                 ++ "/api/Mongodb/approve_document/"
                 ++ docId
                 ++ "?collection=Countries"
         , body = Http.emptyBody
         , expect = Http.expectString DocumentApproved
+        , timeout = Nothing
+        , tracker = Nothing
         }
 
 

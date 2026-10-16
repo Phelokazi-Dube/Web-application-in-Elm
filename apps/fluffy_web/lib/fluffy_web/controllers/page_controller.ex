@@ -36,7 +36,18 @@ defmodule FluffyWeb.PageController do
         })
 
       true ->
-        process_upload(conn, params)
+        case ControllerHelpers.normalize_location(params) do
+          {:ok, normalized_params} ->
+            process_upload(conn, normalized_params)
+          {:error, reason} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              error: "Invalid geospatial coordinates",
+              message: "Please provide a valid latitude and longitude pair.",
+              reason: reason
+            })
+        end
     end
   end
 
@@ -156,7 +167,6 @@ defmodule FluffyWeb.PageController do
       |> Map.put("publications", processed_publications)
       |> Map.put("userLogin", user_email)
       |> FluffyWeb.ControllerHelpers.add_date_dt()
-      |> FluffyWeb.ControllerHelpers.parse_location()
 
     case MongoDBClient.insert_document("Surveys", cleaned_params) do
       {:ok, %{inserted_id: bson_id}} ->
@@ -257,6 +267,11 @@ defmodule FluffyWeb.PageController do
   end
 
   def countries(conn, _params) do
+    # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
+    render(conn, :home, layout: false, js_file: conn.private[:javascript])
+  end
+
+  def surveys(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end

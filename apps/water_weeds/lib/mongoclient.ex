@@ -97,11 +97,29 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:update_document, collection_name, bson_id, update_fields})
   end
 
+  # Updates selected document fields and optionally removes specified fields.
+  # Uses $set for updates and $unset for removals.
+  def update_document_fields(collection_name, bson_id, update_fields, unset_fields \\ []) do
+    GenServer.call(
+      __MODULE__,
+      {:update_document_fields, collection_name, bson_id, update_fields, unset_fields}
+    )
+  end
+
+
   # Function to insert multiple documents into a collection (for CSV data)
   @spec insert_many_documents(String.t(), [map()]) ::
           {:ok, Mongo.InsertManyResult.t()} | {:error, any()}
   def insert_many_documents(collection_name, documents) do
     GenServer.call(__MODULE__, {:insert_many_documents, collection_name, documents})
+  end
+
+  # Execute database operations inside a MongoDB transaction.
+  def transaction(fun) when is_function(fun, 1) do
+    GenServer.call(__MODULE__, :get_connection)
+    |> then(fn conn ->
+      Mongo.transaction(conn, fn -> fun.(conn) end)
+    end)
   end
 
   ### Public Functions for GridFS ###
@@ -368,6 +386,56 @@ end
     end
   end
 
+
+  def handle_call(
+        {:update_document_fields, collection_name, bson_id, update_fields, unset_fields},
+        _from,
+        %{conn: conn} = state
+      ) do
+    update =
+      %{}
+      |> then(fn operations ->
+        if map_size(update_fields) > 0 do
+          Map.put(operations, "$set", update_fields)
+        else
+          operations
+        end
+      end)
+      |> then(fn operations ->
+        if unset_fields != [] do
+          Map.put(
+            operations,
+            "$unset",
+            Map.new(unset_fields, fn field -> {field, ""} end)
+          )
+        else
+          operations
+        end
+      end)
+
+    if map_size(update) == 0 do
+      {:reply, {:error, :empty_update}, state}
+    else
+      case Mongo.find_one_and_update(
+            conn,
+            collection_name,
+            %{_id: bson_id},
+            update,
+            return_document: :after,
+            upsert: false
+          ) do
+        {:ok, %Mongo.FindAndModifyResult{value: doc}} when not is_nil(doc) ->
+          {:reply, {:ok, doc}, state}
+
+        {:ok, _} ->
+          {:reply, {:error, :not_found}, state}
+
+        {:error, reason} ->
+          {:reply, {:error, reason}, state}
+      end
+    end
+  end
+
   def handle_call(
         {:insert_many_documents, collection_name, documents},
         _from,
@@ -410,6 +478,10 @@ end
     |> Stream.run()
 
     {:reply, {:ok, upload_stream.id}, state}
+  end
+
+  def handle_call(:get_connection, _from, %{conn: conn} = state) do
+    {:reply, conn, state}
   end
 
   def handle_call({:upsert_document, collection_name, filter, document}, _from, %{conn: conn} = state) do

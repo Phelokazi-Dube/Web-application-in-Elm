@@ -1,16 +1,17 @@
+
 defmodule FluffyWeb.ControllerHelpers do
-    @moduledoc """
-    Shared validation and data-transformation helpers used by FluffyWeb controllers.
-    These functions normalise incoming CBC data before it is passed to the database.
-    """
+  @moduledoc """
+  Shared validation and data-transformation helpers used by FluffyWeb controllers.
+  These functions normalise incoming CBC data before it is passed to the database.
+  """
 
-    alias WaterWeeds.FieldNormalizer
+  alias WaterWeeds.DataNormalizer
 
-    @required_fields [
+  @required_fields [
     {"surveyType", "Survey type"},
     {"weed", "Weed"},
     {"controlAgent", "Control agent"},
-    {"location", "Location"},
+    {"geospatialCoordinates", "Geospatial coordinates"},
     {"province", "Province"},
     {"date", "Date"}
   ]
@@ -63,49 +64,132 @@ defmodule FluffyWeb.ControllerHelpers do
     |> Map.delete("_id")
   end
 
-  @doc """
+   @doc """
   Converts an external field name into the camelCase naming used by FluffyWeb.
   """
-  defdelegate to_camel_case(key), to: FieldNormalizer
+  defdelegate to_camel_case(key), to: DataNormalizer
 
   @doc """
   Normalises all keys in a map to the camelCase naming used by FluffyWeb.
   """
-  defdelegate normalize_keys(map), to: FieldNormalizer
+  defdelegate normalize_keys(map), to: DataNormalizer
 
   @doc """
-  Adds a machine-readable date_dt value while preserving the original
-  source date field.
+  Validates and normalises coordinates into a GeoJSON Point.
+  """
+  defdelegate normalize_location(document), to: DataNormalizer
+
+  @doc """
+  Compatibility wrapper for existing location-normalisation callers.
+  """
+  defdelegate parse_location(document), to: DataNormalizer
+
+  @doc """
+  Adds date_dt when a valid date or year is available.
+
+  Preserves existing date_dt when neither source field is supplied.
+  For validation-sensitive operations, use normalize_date/1 instead.
   """
   def add_date_dt(document) do
-    date_str = Map.get(document, "date")
-    year_str = Map.get(document, "year")
+    case normalize_date(document) do
+      {:ok, normalized} ->
+        normalized
 
-    parsed =
-      cond do
-        not is_nil(parse_date_string(date_str)) -> parse_date_string(date_str)
-        not is_nil(parse_date_string(year_str)) -> parse_date_string(year_str)
-        true -> nil
-      end
-    Map.put(document, "date_dt", parsed)
+      {:ok, normalized, :clear_date_dt} ->
+        normalized
+
+      {:error, _reason} ->
+        document
+    end
   end
 
   @doc """
-  Parses CBC full dates and year-only historical dates.
-  Full dates are converted to `Date` values. Year-only values use January 1
-  internally for `date_dt`, the original year field remains unchanged.
+  Validates and normalises supplied date/year fields.
+
+  Returns:
+  - {:ok, document} when no date/year is supplied, or a valid date is found.
+  - {:ok, document, :clear_date_dt} when date/year was explicitly cleared
+    and no usable source date remains.
+  - {:error, reason} for invalid values.
+
+  The controller must handle :clear_date_dt using MongoDB $unset.
   """
-  def parse_date_string(date_str) when is_binary(date_str) do
-    date_str = String.trim(date_str)
+  def normalize_date(document) when is_map(document) do
+    date_present? = Map.has_key?(document, "date")
+    year_present? = Map.has_key?(document, "year")
+
+    cond do
+      not date_present? and not year_present? ->
+        {:ok, document}
+
+      true ->
+        date = Map.get(document, "date")
+        year = Map.get(document, "year")
+
+        cond do
+          date_present? and not blank_date?(date) ->
+            case parse_date_string(date) do
+              %Date{} = parsed ->
+                {:ok, Map.put(document, "date_dt", parsed)}
+
+              nil ->
+                {:error, :invalid_date}
+            end
+
+          year_present? and not blank_date?(year) ->
+            case parse_date_string(year) do
+              %Date{} = parsed ->
+                {:ok, Map.put(document, "date_dt", parsed)}
+
+              nil ->
+                {:error, :invalid_year}
+            end
+
+          true ->
+            {:ok, Map.delete(document, "date_dt"), :clear_date_dt}
+        end
+    end
+  end
+
+
+  defp blank_date?(nil), do: true
+  defp blank_date?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank_date?(_), do: false
+
+  @doc """
+  Parses CBC dates without changing their original stored representation.
+
+  Supported:
+  - M/D/YYYY and MM/DD/YYYY
+  - YYYY-MM-DD
+  - YYYY (stored internally as January 1)
+  - Date values and integer years
+  """
+  def parse_date_string(%Date{} = date), do: date
+
+  def parse_date_string(year) when is_integer(year) do
+    if year >= 1 and year <= 9999 do
+      case Date.new(year, 1, 1) do
+        {:ok, date} -> date
+        _ -> nil
+      end
+    else
+      nil
+    end
+  end
+
+  def parse_date_string(value) when is_binary(value) do
+    value = String.trim(value)
+
     cond do
       # CBC full dates: M/D/YYYY, MM/D/YYYY, M/DD/YYYY or MM/DD/YYYY
-      Regex.match?(~r/^\d{1,2}\/\d{1,2}\/\d{4}$/, date_str) ->
-        case String.split(date_str, "/") do
-          [month_str, day_str, year_str] ->
-            with {month, ""} <- Integer.parse(month_str),
-                {day, ""} <- Integer.parse(day_str),
-                {year, ""} <- Integer.parse(year_str),
-                {:ok, date} <- Date.new(year, month, day) do
+      Regex.match?(~r/^\d{1,2}\/\d{1,2}\/\d{4}$/, value) ->
+        case String.split(value, "/") do
+          [month_string, day_string, year_string] ->
+            with {month, ""} <- Integer.parse(month_string),
+                 {day, ""} <- Integer.parse(day_string),
+                 {year, ""} <- Integer.parse(year_string),
+                 {:ok, date} <- Date.new(year, month, day) do
               date
             else
               _ -> nil
@@ -116,71 +200,19 @@ defmodule FluffyWeb.ControllerHelpers do
         end
 
       # Historical CBC records where only the year is known
-      Regex.match?(~r/^\d{4}$/, date_str) ->
-        case Date.new(String.to_integer(date_str), 1, 1) do
+      Regex.match?(~r/^\d{4}-\d{2}-\d{2}$/, value) ->
+        case Date.from_iso8601(value) do
           {:ok, date} -> date
           _ -> nil
         end
+
+      Regex.match?(~r/^\d{4}$/, value) ->
+        parse_date_string(String.to_integer(value))
 
       true ->
         nil
     end
   end
 
-  # Fallback for unrecognized formats
   def parse_date_string(_), do: nil
-
-  @doc """
-  Converts latitude and longitude values into a GeoJSON Point.
-  Coordinates may originate from CSV latitude/longitude fields or the
-  location value submitted by the survey form.
-  """
-  def parse_location(document) do
-    lat = Map.get(document, "latitude") || Map.get(document, "Latitude")
-    lon = Map.get(document, "longitude") || Map.get(document, "Longitude")
-
-    cond do
-      # Case 1: CSV headers exist
-      is_binary(lat) or is_binary(lon) ->
-        if lat != "" and lon != "" do
-          case {Float.parse(lat), Float.parse(lon)} do
-            {{lat_f, ""}, {lon_f, ""}} ->
-              document
-              |> Map.put("location", %{
-                "type" => "Point",
-                "coordinates" => [lon_f, lat_f]
-              })
-              |> Map.drop(["latitude", "Latitude", "longitude", "Longitude"])
-
-            _ ->
-              Map.put(document, "location", nil)
-          end
-        else
-          Map.put(document, "location", nil)
-        end
-
-      # Case 2: Form field "location" = "lat, lon"
-      is_binary(Map.get(document, "location")) ->
-        case String.split(document["location"], ",", trim: true) do
-          [lat_s, lon_s] ->
-            case {Float.parse(String.trim(lat_s)), Float.parse(String.trim(lon_s))} do
-              {{lat_f, ""}, {lon_f, ""}} ->
-                Map.put(document, "location", %{
-                  "type" => "Point",
-                  "coordinates" => [lon_f, lat_f]
-                })
-
-              _ ->
-                Map.put(document, "location", nil)
-            end
-
-          _ ->
-            Map.put(document, "location", nil)
-        end
-
-      # Default: neither CSV nor Form → still enforce consistency
-      true ->
-        Map.put(document, "location", nil)
-    end
-  end
 end

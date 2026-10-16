@@ -3,7 +3,7 @@ defmodule WaterWeeds.Migration.Workbook do
   Reads CBC Excel workbooks for migration.
   """
 
-  alias WaterWeeds.FieldNormalizer
+  alias WaterWeeds.DataNormalizer
 
   @doc """
   Returns the worksheets in workbook order.
@@ -62,22 +62,22 @@ defmodule WaterWeeds.Migration.Workbook do
   Reads a worksheet by its Excel tab name and converts its rows into
   normalised document maps.
   """
-  def prepare_documents(file_path, sheet_name) do
+  def prepare_documents(file_path, sheet_name, collection) do
     with {:ok, %{index: sheet_index}} <- find_sheet(file_path, sheet_name),
          {:ok, table_id} <- Xlsxir.multi_extract(file_path, sheet_index) do
       try do
         table_id
         |> Xlsxir.get_list()
-        |> rows_to_documents()
+        |> rows_to_documents(collection)
       after
         Xlsxir.close(table_id)
       end
     end
   end
 
-  defp rows_to_documents([]), do: {:ok, []}
+  defp rows_to_documents([], _collection), do: {:ok, []}
 
-  defp rows_to_documents([headers | data_rows]) do
+  defp rows_to_documents([headers | data_rows], collection) do
     valid_headers =
       headers
       |> Enum.with_index()
@@ -85,7 +85,7 @@ defmodule WaterWeeds.Migration.Workbook do
         blank?(header)
       end)
       |> Enum.map(fn {header, index} ->
-        {index, FieldNormalizer.to_camel_case(to_string(header))}
+        {index, DataNormalizer.to_camel_case(to_string(header))}
       end)
 
     documents =
@@ -97,7 +97,24 @@ defmodule WaterWeeds.Migration.Workbook do
         end)
       end)
 
-    {:ok, documents}
+    documents
+    |> Enum.with_index(2)
+    |> Enum.reduce_while({:ok, []}, fn {document, row_number}, {:ok, acc} ->
+      case DataNormalizer.normalize_ids(document, collection) do
+        {:ok, normalized} ->
+          {:cont, {:ok, [normalized | acc]}}
+
+        {:error, reason} ->
+          {:halt, {:error, {:invalid_id, row_number, reason}}}
+      end
+    end)
+    |> case do
+      {:ok, normalized_documents} ->
+        {:ok, Enum.reverse(normalized_documents)}
+
+      error ->
+        error
+    end
   end
 
   defp empty_row?(row) do

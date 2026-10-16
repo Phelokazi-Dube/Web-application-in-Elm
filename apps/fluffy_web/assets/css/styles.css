@@ -4081,3 +4081,112 @@ body {
     transform: rotate(360deg);
   }
 }
+
+
+/* ==========================================
+   CSV UPLOAD SUCCESS PAGE
+   ========================================== */
+
+.upload-success-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 65vh;
+  padding: 4rem 1rem;
+}
+
+.upload-success-card {
+  width: 100%;
+  max-width: 650px;
+  padding: 4rem 3rem;
+  background: #ffffff;
+  border: 1px solid #d8eadc;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.upload-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 85px;
+  height: 85px;
+  margin: 0 auto 2rem;
+  border-radius: 50%;
+  background: #e7f7ec;
+  color: #26813b;
+  font-size: 4rem;
+}
+
+.upload-success-title {
+  margin: 0 0 1rem;
+  color: #17324d;
+  font-size: 3.5rem;
+  font-weight: 700;
+}
+
+.upload-success-description {
+  margin: 0 0 2.5rem;
+  color: #59687a;
+  font-size: 1.7rem;
+  line-height: 1.5;
+}
+
+.upload-success-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: #f0faf4;
+  border-radius: 12px;
+}
+
+.upload-success-count {
+  color: #26813b;
+  font-size: 4rem;
+  font-weight: 700;
+}
+
+.upload-success-label {
+  color: #59687a;
+  font-size: 1.5rem;
+}
+
+.upload-success-button {
+  display: inline-block;
+  padding: 1.2rem 2.5rem;
+  background: #26813b;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.upload-success-button:hover {
+  background: #216e39;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .upload-success-card {
+    padding: 3rem 1.5rem;
+  }
+
+  .upload-success-title {
+    font-size: 2.8rem;
+  }
+}
+
+.survey-detail-image {
+    display: block;
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    border-radius: 8px;
+}

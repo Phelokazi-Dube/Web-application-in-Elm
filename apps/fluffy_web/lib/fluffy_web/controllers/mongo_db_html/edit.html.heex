@@ -1,3 +1,42 @@
+
+<%
+  identity_fields =
+    case @collection do
+      "Surveys" -> ["surveyId"]
+      "SurveyWeedAgent" -> ["swaid"]
+      "SiteInspections" -> ["siteInspectionId"]
+      "SiteInspectionWeeds" -> ["siteInspectionWeedId"]
+      "Locations" -> ["locationId"]
+      "Districts" -> ["districtId"]
+      "Regions" -> ["regionId"]
+      "Continents" -> ["continentId"]
+      "Countries" -> ["countryId", "continentId"]
+      "Implementers" -> ["implementerId"]
+      "WeedNames" -> ["weedId"]
+      "ControlAgents" -> ["controlAgentId"]
+      "SurveyControlAgents" -> ["id"]
+      "WHMeasurements" -> ["whmid"]
+      "BAR" -> ["barId"]
+      _ -> []
+    end
+
+  excluded_fields = [
+    "id",
+    "_id",
+    "photos",
+    "publications",
+    "userLogin",
+    "approved",
+    "approved_by",
+    "approved_at",
+    "created_at",
+    "updated_by",
+    "updated_at",
+    "geospatialCoordinates",
+    "date_dt"
+  ] ++ identity_fields
+%>
+
 <div class="edit-page animate-fade-in">
   <div class="edit-card">
     <h1 class="edit-title">Edit Document</h1>
@@ -8,83 +47,92 @@
     </div>
 
     <form
-        action={~p"/documents/#{@document["id"]}/update"}
-        method="post"
-        enctype="multipart/form-data"
+      action={~p"/documents/#{@document["id"]}/update"}
+      method="post"
+      enctype="multipart/form-data"
     >
-        <input
+      <input
         type="hidden"
         name="_csrf_token"
         value={Plug.CSRFProtection.get_csrf_token()}
-        />
+      />
 
-        <input
+      <input
         type="hidden"
         name="collection"
         value={@collection}
-        />
+      />
 
-        <% excluded_fields = [
-        "id",
-        "_id",
-        "photos",
-        "publications",
-        "userLogin",
-        "approved",
-        "approved_by",
-        "approved_at",
-        "created_at",
-        "updated_by",
-        "updated_at",
-        "date_dt"
-        ] %>
-
-        <%= for {key, value} <- @document do %>
+      <%= for {key, value} <- @document do %>
         <%= if key not in excluded_fields do %>
-            <div class="edit-field">
+          <div class="edit-field">
             <label for={key}>
-                <%= Phoenix.Naming.humanize(key) %>
+              <%= Phoenix.Naming.humanize(key) %>
             </label>
 
-            <%= case value do %>
-
-                <% value when is_boolean(value) -> %>
-                <select
-                    id={key}
-                    name={key}
-                >
-                    <option value="true" selected={value == true}>True</option>
-                    <option value="false" selected={value == false}>False</option>
+            <%= cond do %>
+              <% is_boolean(value) -> %>
+                <select id={key} name={key}>
+                  <option value="true" selected={value == true}>True</option>
+                  <option value="false" selected={value == false}>False</option>
                 </select>
 
-                <% value when is_list(value) -> %>
-                <textarea
-                    id={key}
-                    name={key}
-                    rows="4"
-                ><%= Enum.join(value, ", ") %></textarea>
+              <% is_list(value) -> %>
+              <textarea
+                id={key}
+                name={key}
+                rows="4"
+              ><%= Jason.encode!(value) %></textarea>
 
-                <% value when is_map(value) -> %>
+              <small>
+                Edit the list using JSON format, for example:
+                ["Agent A", "Agent B"]
+              </small>
+
+              <% is_map(value) -> %>
                 <textarea
-                    id={key}
-                    name={key}
-                    rows="5"
+                  id={key}
+                  name={key}
+                  rows="5"
                 ><%= Jason.encode!(value) %></textarea>
 
-                <% _ -> %>
+                <small>
+                  Edit this field using valid JSON object format.
+                </small>
+
+              <% true -> %>
                 <input
-                    id={key}
-                    name={key}
-                    type="text"
-                    value={value}
+                  id={key}
+                  name={key}
+                  type="text"
+                  value={value}
                 />
 
             <% end %>
-            </div>
+          </div>
         <% end %>
+      <% end %>
+
+      <%= if @collection in ["Surveys", "Sites", "Locations"] do %>
+          <%= for field <- ["latitude", "longitude"] do %>
+            <%= if not Map.has_key?(@document, field) do %>
+              <div class="edit-field">
+                <label for={field}>
+                  <%= Phoenix.Naming.humanize(field) %>
+                </label>
+
+                <input
+                  id={field}
+                  name={field}
+                  type="text"
+                  placeholder={"Enter #{field}"}
+                />
+              </div>
+            <% end %>
+          <% end %>
         <% end %>
 
-        <%= if @collection == "Surveys" do %>
+      <%= if @collection == "Surveys" do %>
           <div class="edit-attachments">
             <h2 class="edit-attachments-title">Attachments</h2>
 
@@ -122,22 +170,21 @@
             </div>
           </div>
         <% end %>
-
-        <div class="edit-actions">
-          <button
-            type="submit"
+      <div class="edit-actions">
+        <button 
+          type="submit" 
             class="save-button"
-          >
-            💾 Save Changes
-          </button>
+            >
+          💾 Save Changes
+        </button>
 
-          <a
-            href={~p"/documents/#{@document["id"]}?collection=#{@collection}"}
-            class="cancel-button"
-          >
-            Cancel
-          </a>
-        </div>
+        <a
+          href={~p"/documents/#{@document["id"]}?collection=#{@collection}"}
+          class="cancel-button"
+        >
+          Cancel
+        </a>
+      </div>
     </form>
-    </div>
-    </div>
+  </div>
+</div>

@@ -2,6 +2,7 @@ defmodule FluffyWeb.MongoDBController do
   require Logger
   alias FluffyWeb.ControllerHelpers
   alias WaterWeeds.MongoDBClient
+  alias WaterWeeds.DataNormalizer
   use FluffyWeb, :controller
 
   # Collections recognised by FluffyWeb
@@ -61,6 +62,386 @@ defmodule FluffyWeb.MongoDBController do
     conn
     |> put_status(:forbidden)
     |> json(%{error: "You are not authorized to access this collection"})
+  end
+
+
+  @protected_fields ~w(
+    _id id collection
+    userLogin
+    approved approved_by approved_at
+    created_at updated_at updated_by
+    date_dt geospatialCoordinates
+    photos publications
+  )
+
+  defp prepare_edit_changes(params, existing, collection) do
+    identity_fields = Map.get(@csv_identities, collection, [])
+
+    protected_fields =
+      @protected_fields ++
+        identity_fields ++
+        ["_csrf_token", "_method"]
+
+    params
+    |> Map.drop(protected_fields)
+    |> Enum.reduce_while({:ok, %{}}, fn {field, submitted}, {:ok, changes} ->
+      case Map.fetch(existing, field) do
+        {:ok, old_value} ->
+          case cast_edit_value(field, submitted, old_value) do
+            {:ok, new_value} ->
+              if new_value == old_value do
+                {:cont, {:ok, changes}}
+              else
+                {:cont, {:ok, Map.put(changes, field, new_value)}}
+              end
+
+            {:error, reason} ->
+              {:halt, {:error, {field, reason}}}
+          end
+        :error ->
+          if collection in ["Surveys", "Locations"] and
+              field in ["latitude", "longitude"] and
+              is_binary(submitted) and
+              String.trim(submitted) != "" do
+            {:cont, {:ok, Map.put(changes, field, submitted)}}
+          else
+            # Ignore arbitrary new fields and blank coordinate inputs.
+            {:cont, {:ok, changes}}
+          end
+      end
+    end)
+  end
+
+  defp cast_edit_value(field, value, _old)
+      when field in ["date", "year"] and
+              is_binary(value) and value == "" do
+    {:ok, ""}
+  end
+
+  defp cast_edit_value(field, value, _old)
+    when field in ["latitude", "longitude"] and is_binary(value) do
+      {:ok, String.trim(value)}
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_boolean(old) do
+    case value do
+      "true" -> {:ok, true}
+      "false" -> {:ok, false}
+      _ -> {:error, :invalid_boolean}
+    end
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_integer(old) do
+    case Integer.parse(String.trim(value)) do
+      {number, ""} -> {:ok, number}
+      _ -> {:error, :invalid_integer}
+    end
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_list(old) do
+    case Jason.decode(value) do
+      {:ok, decoded} when is_list(decoded) ->
+        {:ok, decoded}
+
+      _ ->
+        {:error, :invalid_json_list}
+    end
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_float(old) do
+    case Float.parse(String.trim(value)) do
+      {number, ""} -> {:ok, number}
+      _ -> {:error, :invalid_number}
+    end
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_map(old) do
+    case Jason.decode(value) do
+      {:ok, decoded} when is_map(decoded) -> {:ok, decoded}
+      _ -> {:error, :invalid_json}
+    end
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_list(old) do
+    # Only simple string lists can safely use the
+    # comma-separated textarea in the existing form.
+    if Enum.all?(old, &is_binary/1) do
+      parsed =
+        if String.trim(value) == "" do
+          []
+        else
+          value
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+      end
+
+      {:ok, parsed}
+    else
+      {:error, :unsupported_list}
+    end
+  end
+
+  defp cast_edit_value(_field, value, nil) when is_binary(value) do
+    if String.trim(value) == "" do
+      {:ok, nil}
+    else
+      {:ok, value}
+    end
+  end
+
+  defp cast_edit_value(_field, value, old)
+      when is_binary(value) and is_binary(old) do
+    {:ok, value}
+  end
+
+  defp cast_edit_value(_field, value, old) do
+    if value == old do
+      {:ok, old}
+    else
+      {:error, :unsupported_field_type}
+    end
+  end
+
+  defp normalize_edit_changes(changes, existing) do
+    with {:ok, located} <- normalize_edit_coordinates(changes, existing),
+       {:ok, dated, unset_fields} <- normalize_edit_date(located, existing) do
+      # Normalisation can produce an equivalent value.
+      # Remove those from the actual change set.
+      actual_changes =
+        Map.reject(dated, fn {field, value} ->
+          Map.has_key?(existing, field) and existing[field] == value
+        end)
+
+      actual_unsets =
+        Enum.filter(unset_fields, &Map.has_key?(existing, &1))
+
+      {:ok, actual_changes, actual_unsets}
+    end
+  end
+
+  defp normalize_edit_coordinates(changes, existing) do
+    coordinates_changed? =
+      Map.has_key?(changes, "latitude") or
+        Map.has_key?(changes, "longitude")
+
+    if coordinates_changed? do
+      effective =
+        %{}
+        |> include_effective_field("latitude", changes, existing)
+        |> include_effective_field("longitude", changes, existing)
+
+      case ControllerHelpers.normalize_location(effective) do
+        {:ok, %{"geospatialCoordinates" => point}} ->
+          {:ok, Map.put(changes, "geospatialCoordinates", point)}
+
+        {:ok, _} ->
+          {:error, :incomplete_coordinates}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:ok, changes}
+    end
+  end
+
+  defp normalize_edit_date(changes, existing) do
+    date_changed? = Map.has_key?(changes, "date")
+    year_changed? = Map.has_key?(changes, "year")
+
+    if date_changed? or year_changed? do
+      effective =
+        %{}
+        |> include_effective_field("date", changes, existing)
+        |> include_effective_field("year", changes, existing)
+
+      case ControllerHelpers.normalize_date(effective) do
+        {:ok, normalized} ->
+          date_dt = Map.fetch(normalized, "date_dt")
+
+          case date_dt do
+            {:ok, value} ->
+              {:ok, Map.put(changes, "date_dt", value), []}
+
+            :error ->
+              {:ok, changes, []}
+          end
+
+        {:ok, _normalized, :clear_date_dt} ->
+          {:ok, Map.delete(changes, "date_dt"), ["date_dt"]}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:ok, changes, []}
+    end
+  end
+
+  defp include_effective_field(result, field, changes, existing) do
+    cond do
+      Map.has_key?(changes, field) ->
+        Map.put(result, field, changes[field])
+
+      Map.has_key?(existing, field) ->
+        Map.put(result, field, existing[field])
+
+      true ->
+        result
+    end
+  end
+
+  defp uploaded_files(nil), do: []
+
+  defp uploaded_files(%Plug.Upload{} = upload), do: [upload]
+
+  defp uploaded_files(uploads) when is_list(uploads), do: uploads
+
+  defp uploaded_files(uploads) when is_map(uploads),
+    do: Map.values(uploads)
+
+  defp uploaded_files(_), do: []
+
+
+  defp prepare_survey_attachments(params) do
+    photos = uploaded_files(Map.get(params, "photos"))
+    publications = uploaded_files(Map.get(params, "publications"))
+
+    with :ok <- validate_uploads(photos, :photo),
+        :ok <- validate_uploads(publications, :publication) do
+      {:ok, photos, publications}
+    end
+  end
+
+
+  defp validate_uploads(uploads, type) do
+    Enum.reduce_while(uploads, :ok, fn
+      %Plug.Upload{} = upload, :ok ->
+        case validate_upload(upload, type) do
+          :ok -> {:cont, :ok}
+          {:error, reason} -> {:halt, {:error, reason}}
+        end
+
+      _, :ok ->
+        {:halt, {:error, :invalid_upload}}
+    end)
+  end
+
+
+  defp validate_upload(%Plug.Upload{} = upload, type) do
+    allowed_types =
+      case type do
+        :photo ->
+          ["image/jpeg", "image/png", "image/gif", "image/webp"]
+
+        :publication ->
+          ["application/pdf"]
+      end
+
+    with true <- upload.content_type in allowed_types,
+        {:ok, %{size: size}} <- File.stat(upload.path),
+        true <- size > 0,
+        {:ok, file} <- File.open(upload.path, [:read, :binary]) do
+      header = IO.binread(file, 16)
+      File.close(file)
+
+      if valid_file_signature?(header, type) do
+        :ok
+      else
+        {:error, :invalid_file_content}
+      end
+    else
+      false -> {:error, :invalid_file_type_or_size}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+
+  defp valid_file_signature?(<<"%PDF-", _::binary>>, :publication),
+    do: true
+
+  defp valid_file_signature?(<<0xFF, 0xD8, 0xFF, _::binary>>, :photo),
+    do: true
+
+  defp valid_file_signature?(<<0x89, "PNG", 13, 10, 26, 10, _::binary>>, :photo),
+    do: true
+
+  defp valid_file_signature?(<<"GIF87a", _::binary>>, :photo),
+    do: true
+
+  defp valid_file_signature?(<<"GIF89a", _::binary>>, :photo),
+    do: true
+
+  defp valid_file_signature?(<<"RIFF", _size::binary-size(4), "WEBP", _::binary>>, :photo),
+    do: true
+
+  defp valid_file_signature?(_, _), do: false
+
+
+  defp upload_survey_attachments(photos, publications) do
+    with {:ok, photo_ids} <- upload_files(photos, :photo),
+        {:ok, publication_ids} <- upload_files(publications, :publication) do
+      {:ok, photo_ids, publication_ids}
+    end
+  end
+
+
+  defp upload_files(uploads, type) do
+    Enum.reduce_while(uploads, {:ok, []}, fn upload, {:ok, ids} ->
+      with {:ok, binary_data} <- File.read(upload.path),
+          {:ok, file_id} <- store_attachment(upload, binary_data, type) do
+        {:cont, {:ok, [BSON.ObjectId.encode!(file_id) | ids]}}
+      else
+        {:error, reason} ->
+          {:halt, {:error, {:attachment_upload_failed, reason}}}
+      end
+    end)
+    |> case do
+      {:ok, ids} -> {:ok, Enum.reverse(ids)}
+      error -> error
+    end
+  end
+
+
+  defp store_attachment(upload, binary_data, :photo) do
+    MongoDBClient.upload_image(
+      upload.filename,
+      binary_data,
+      %{content_type: upload.content_type}
+    )
+  end
+
+
+  defp store_attachment(upload, binary_data, :publication) do
+    MongoDBClient.upload_file(
+      upload.filename,
+      binary_data,
+      %{
+        content_type: upload.content_type,
+        type: "publication"
+      }
+    )
+  end
+
+
+  defp append_attachment_ids(changes, existing, field, new_ids) do
+    if new_ids == [] do
+      changes
+    else
+      existing_ids =
+        case Map.get(existing, field) do
+          nil -> []
+          ids when is_list(ids) -> ids
+        end
+
+      Map.put(changes, field, existing_ids ++ new_ids)
+    end
   end
 
   # Implement Jason.Encoder for BSON.ObjectId
@@ -344,6 +725,7 @@ defmodule FluffyWeb.MongoDBController do
         collection: collection
       )
     else
+      identity_fields = Map.fetch!(@csv_identities, collection)
       documents =
         file_path
         |> File.stream!()
@@ -353,12 +735,8 @@ defmodule FluffyWeb.MongoDBController do
             document =
               row
               |> ControllerHelpers.normalize_keys()
-              |> Map.put("userLogin", email)
-              |> Map.put("approved", false)
-              |> Map.put("approved_by", nil)
-              |> Map.put("approved_at", nil)
+              |> Map.drop(@protected_fields -- identity_fields)
               |> ControllerHelpers.add_date_dt()
-              |> ControllerHelpers.parse_location()
 
             [document]
 
@@ -367,45 +745,94 @@ defmodule FluffyWeb.MongoDBController do
             []
         end)
 
-      if documents == [] do
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "No valid data found in CSV"})
-      else
-        upsert_csv_documents(conn, collection, documents)
+      cond do
+        documents == [] ->
+          conn
+          |> put_status(:bad_request)
+          |> json(%{error: "No valid data found in CSV"})
+
+        true ->
+          case normalize_csv_documents(documents, collection) do
+            {:ok, normalized_documents} ->
+              upsert_csv_documents(conn, collection, normalized_documents, email)
+
+            {:error, {:invalid_id, row_number, field, reason}} ->
+              conn
+              |> put_status(:unprocessable_entity)
+              |> json(%{
+                error: "Invalid CSV identifier",
+                row: row_number,
+                field: field,
+                reason: inspect(reason)
+              })
+          end
       end
     end
   end
 
-  defp upsert_csv_documents(conn, collection, documents) do
+  defp upsert_csv_documents(conn, collection, documents, email) do
     identity_fields = Map.fetch!(@csv_identities, collection)
 
-    case validate_csv_identities(documents, identity_fields) do
-      :ok ->
-        case perform_csv_upserts(collection, documents, identity_fields) do
-          {:ok, processed_count} ->
-            Logger.info(
-              "Processed #{processed_count} CSV documents for #{collection}"
+    with :ok <- validate_csv_identities(documents, identity_fields),
+     :ok <- validate_unique_csv_identities(documents, identity_fields),
+     :ok <- validate_database_csv_identities(collection, documents, identity_fields) do
+      case MongoDBClient.transaction(fn mongo_conn ->
+            perform_csv_upserts(
+              mongo_conn,
+              collection,
+              documents,
+              identity_fields,
+              email
             )
+          end) do
+        {:ok, counts} ->
+          processed_count =
+            counts.inserted + counts.updated + counts.unchanged
 
-            conn
-            |> put_status(:created)
-            |> render("upload_success.html",
-              message: "Upload successful",
-              collection: collection,
-              processed_count: processed_count
-            )
+          Logger.info(
+            "Processed #{processed_count} CSV documents for #{collection}"
+          )
 
-          {:error, reason} ->
-            Logger.error("Failed to process CSV: #{inspect(reason)}")
+          conn
+          |> put_status(:created)
+          |> render("upload_success.html",
+            message: "Upload successful",
+            collection: collection,
+            processed_count: processed_count
+          )
 
-            conn
-            |> put_status(:unprocessable_entity)
-            |> json(%{
-              error: "Failed to process CSV",
-              reason: inspect(reason)
-            })
-        end
+        {:error, reason} ->
+          Logger.error("Failed to process CSV: #{inspect(reason)}")
+
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{
+            error: "Failed to process CSV",
+            reason: inspect(reason)
+          })
+      end
+    else
+      {:error, {:duplicate_csv_identities, identities}} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "Duplicate identities found in CSV",
+          message:
+            "The CSV contains multiple rows with the same identity. Please correct the file and upload it again.",
+          collection: collection,
+          duplicate_identities: identities
+        })
+
+      {:error, {:ambiguous_database_identities, identities}} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          error: "CSV upload rejected because duplicate records exist in the database.",
+          message:
+            "No records were changed. Please resolve the duplicate database records and upload the CSV again.",
+          collection: collection,
+          duplicate_identities: identities
+        })
 
       {:error, missing_fields} ->
         conn
@@ -440,18 +867,123 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
-  defp perform_csv_upserts(collection, documents, identity_fields) do
-    Enum.reduce_while(documents, {:ok, 0}, fn document, {:ok, count} ->
+  defp validate_unique_csv_identities(documents, identity_fields) do
+    duplicates =
+      documents
+      |> Enum.group_by(&Map.take(&1, identity_fields))
+      |> Enum.filter(fn {_identity, rows} -> length(rows) > 1 end)
+      |> Enum.map(fn {identity, _rows} -> identity end)
+
+    case duplicates do
+      [] -> :ok
+      identities -> {:error, {:duplicate_csv_identities, identities}}
+    end
+  end
+
+  defp validate_database_csv_identities(collection, documents, identity_fields) do
+    ambiguous_identities =
+      documents
+      |> Enum.map(fn document ->
+        identity = Map.take(document, identity_fields)
+
+        case MongoDBClient.get_all_documents(collection, identity) do
+          [_first, _second | _rest] -> identity
+          _ -> nil
+        end
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    case ambiguous_identities do
+      [] -> :ok
+      identities -> {:error, {:ambiguous_database_identities, identities}}
+    end
+  end
+
+  defp perform_csv_upserts( mongo_conn, collection, documents, identity_fields, email) do
+    Enum.reduce_while(documents, {:ok, %{inserted: 0, updated: 0, unchanged: 0}}, fn document, {:ok, counts} ->
       filter = Map.take(document, identity_fields)
 
-      case MongoDBClient.upsert_document(collection, filter, document) do
-        {:ok, _result} ->
-          {:cont, {:ok, count + 1}}
+      case Mongo.find(mongo_conn, collection, filter) |> Enum.to_list() do
+        [] ->
+          now = System.os_time(:second)
 
-        {:error, reason} ->
-          {:halt, {:error, reason}}
+          new_document =
+            document
+            |> DataNormalizer.prepare_coordinates(nil)
+            |> Map.put("userLogin", email)
+            |> Map.put("approved", false)
+            |> Map.put("approved_by", nil)
+            |> Map.put("approved_at", nil)
+            |> Map.put("created_at", now)
+
+          case Mongo.insert_one(mongo_conn, collection, new_document) do
+            {:ok, _result} ->
+              {:cont, {:ok, Map.update!(counts, :inserted, &(&1 + 1))}}
+
+            {:error, reason} ->
+              {:halt, {:error, reason}}
+          end
+
+        [existing] ->
+          document = DataNormalizer.prepare_coordinates(document, existing)
+
+          changes =
+            Map.reject(document, fn {field, value} ->
+              Map.has_key?(existing, field) and
+                Map.get(existing, field) == value
+            end)
+
+          if map_size(changes) == 0 do
+            {:cont, {:ok, Map.update!(counts, :unchanged, &(&1 + 1))}}
+          else
+            update_fields =
+              Map.merge(changes, %{
+                "approved" => false,
+                "approved_by" => nil,
+                "approved_at" => nil,
+                "updated_by" => email,
+                "updated_at" => System.os_time(:second)
+              })
+
+              case Mongo.update_one(
+                mongo_conn,
+                collection,
+                %{"_id" => existing["_id"]},
+                %{"$set" => update_fields}
+              ) do
+              {:ok, _updated_document} ->
+                {:cont, {:ok, Map.update!(counts, :updated, &(&1 + 1))}}
+
+              {:error, reason} ->
+                {:halt, {:error, reason}}
+            end
+          end
+
+        [_first, _second | _rest] ->
+          {:halt, {:error, {:ambiguous_identity, filter}}}
       end
     end)
+  end
+
+  defp normalize_csv_documents(documents, collection) do
+    documents
+    |> Enum.with_index(2)
+    |> Enum.reduce_while({:ok, []}, fn {document, row_number}, {:ok, acc} ->
+      case DataNormalizer.normalize_ids(document, collection) do
+        {:ok, normalized} ->
+          {:cont, {:ok, [normalized | acc]}}
+
+        {:error, {field, reason}} ->
+          {:halt, {:error, {:invalid_id, row_number, field, reason}}}
+      end
+    end)
+    |> case do
+      {:ok, normalized_documents} ->
+        {:ok, Enum.reverse(normalized_documents)}
+
+      error ->
+        error
+    end
   end
 
   def delete_document(conn, %{"id" => id, "collection" => collection}) do
@@ -641,87 +1173,153 @@ defmodule FluffyWeb.MongoDBController do
     profile = get_session(conn, :profile)
 
     current_user_email =
-      if profile do
-        Map.get(profile, :email)
-      else
-        nil
-      end
+      if profile, do: Map.get(profile, :email), else: nil
 
-    case BSON.ObjectId.decode(id) do
-      {:ok, bson_id} ->
-        case MongoDBClient.get_document_by_id(collection, bson_id) do
-          nil ->
-            conn
-            |> put_flash(:error, "Document not found")
-            |> redirect(to: "/")
+    show_path = ~p"/documents/#{id}?collection=#{collection}"
+    edit_path = show_path <> "&edit=true"
 
-          %{} = existing_document ->
-            owner_email = Map.get(existing_document, "userLogin")
+    cond do
+      collection not in @allowed_collections ->
+        conn
+        |> put_flash(:error, "Invalid collection.")
+        |> redirect(to: "/")
 
-            can_edit =
-              role == "admin" or
-                (not is_nil(current_user_email) and
-                   current_user_email == owner_email)
+      collection in @private_collections and role != "admin" ->
+        conn
+        |> put_flash(:error, "You are not authorised to edit this collection.")
+        |> redirect(to: "/")
 
-            if can_edit do
-              update_fields =
-                params
-                |> Map.drop([
-                  "_csrf_token",
-                  "_method",
-                  "id",
-                  "collection",
-                  "userLogin",
-                  "approved",
-                  "approved_by",
-                  "approved_at",
-                  "created_at",
-                  "_id"
-                ])
-                |> ControllerHelpers.add_date_dt()
-                |> ControllerHelpers.parse_location()
-                |> Map.merge(%{
-                  "approved" => false,
-                  "approved_by" => nil,
-                  "approved_at" => nil,
-                  "updated_by" => current_user_email,
-                  "updated_at" => System.os_time(:second)
-                })
+      true ->
+        case BSON.ObjectId.decode(id) do
+          {:ok, bson_id} ->
+            case MongoDBClient.get_document_by_id(collection, bson_id) do
+              nil ->
+                conn
+                |> put_flash(:error, "Document not found.")
+                |> redirect(to: "/")
 
-              case MongoDBClient.update_document(collection, bson_id, update_fields) do
-                {:ok, _updated_document} ->
+              %{} = existing_document ->
+                owner_email = Map.get(existing_document, "userLogin")
+
+                can_edit =
+                  role == "admin" or
+                    (not is_nil(current_user_email) and
+                      current_user_email == owner_email)
+
+                if can_edit do
+                  with {:ok, changes} <-
+                        prepare_edit_changes(
+                          params,
+                          existing_document,
+                          collection
+                        ),
+                      {:ok, normalized, unset_fields} <-
+                        normalize_edit_changes(changes, existing_document),
+                      {:ok, photos, publications} <-
+                        prepare_survey_attachments(
+                          if(collection == "Surveys", do: params, else: %{})
+                        ) do
+
+                    attachments_selected? =
+                      photos != [] or publications != []
+
+                    if map_size(normalized) == 0 and
+                        unset_fields == [] and
+                        not attachments_selected? do
+                      conn
+                      |> put_flash(:info, "No changes were made.")
+                      |> redirect(to: show_path)
+                    else
+                      case upload_survey_attachments(photos, publications) do
+                        {:ok, photo_ids, publication_ids} ->
+                          updated_changes =
+                            normalized
+                            |> append_attachment_ids(
+                              existing_document,
+                              "photos",
+                              photo_ids
+                            )
+                            |> append_attachment_ids(
+                              existing_document,
+                              "publications",
+                              publication_ids
+                            )
+
+                          update_fields =
+                            Map.merge(updated_changes, %{
+                              "approved" => false,
+                              "approved_by" => nil,
+                              "approved_at" => nil,
+                              "updated_by" => current_user_email,
+                              "updated_at" => System.os_time(:second)
+                            })
+
+                          case MongoDBClient.update_document_fields(
+                                collection,
+                                bson_id,
+                                update_fields,
+                                unset_fields
+                              ) do
+                            {:ok, _updated_document} ->
+                              conn
+                              |> put_flash(
+                                :info,
+                                "Document updated successfully. It is awaiting re-approval."
+                              )
+                              |> redirect(to: show_path)
+
+                            {:error, reason} ->
+                              Logger.error(
+                                "Failed to update document: #{inspect(reason)}"
+                              )
+
+                              conn
+                              |> put_flash(:error, "Failed to update document.")
+                              |> redirect(to: edit_path)
+                          end
+
+                        {:error, reason} ->
+                          Logger.error(
+                            "Failed to upload attachments: #{inspect(reason)}"
+                          )
+
+                          conn
+                          |> put_flash(
+                            :error,
+                            "Failed to upload attachments. No document changes were saved."
+                          )
+                          |> redirect(to: edit_path)
+                      end
+                    end
+                  else
+                    {:error, reason} ->
+                      Logger.warning(
+                        "Invalid document edit: #{inspect(reason)}"
+                      )
+
+                      conn
+                      |> put_flash(
+                        :error,
+                        "Invalid field value or attachment. Please check your changes."
+                      )
+                      |> redirect(to: edit_path)
+                  end
+                else
                   conn
-                  |> put_flash(
-                    :info,
-                    "Document updated successfully. It is awaiting re-approval."
-                  )
-                  |> redirect(to: ~p"/documents/#{id}?collection=#{collection}")
-
-                {:error, reason} ->
-                  Logger.error("Failed to update document: #{inspect(reason)}")
-
-                  conn
+                  |> put_status(:forbidden)
                   |> put_flash(
                     :error,
-                    "Failed to update document."
+                    "You are not authorised to edit this document."
                   )
-                  |> redirect(to: ~p"/documents/#{id}?collection=#{collection}&edit=true")
-              end
-            else
-              conn
-              |> put_status(:forbidden)
-              |> put_flash(
-                :error,
-                "You are not authorised to edit this document."
-              )
-              |> redirect(to: ~p"/documents/#{id}?collection=#{collection}")
+                  |> redirect(to: show_path)
+                end
             end
-        end
 
-      :error ->
-        conn
-        |> put_flash(:error, "Invalid document ID")
-        |> redirect(to: "/")
+          :error ->
+            conn
+            |> put_flash(:error, "Invalid document ID.")
+            |> redirect(to: "/")
+        end
     end
   end
 
