@@ -184,7 +184,7 @@ type Msg
     | ToggleOtherWeedPresent Int
     | ToggleOtherWeedAbsent Int
     | SaveObservation
-    | UploadResponse (Result Http.Error String)
+    | UploadResponse (Result String String)
     | LocationPicked (Result D.Error Coordinates)
     | ReverseGeocodeResponse (Result Http.Error GeocodeResult)
     | StartPicking
@@ -430,9 +430,7 @@ update msg model =
                         Http.post
                             { url = model.baseUrl ++ "/uploading"
                             , body = Http.multipartBody (textParts ++ fileParts ++ publicationParts)
-                            , expect =
-                                Http.expectJson UploadResponse
-                                    (D.field "status" D.string)
+                            , expect = Http.expectStringResponse UploadResponse decodeUploadResponse
                             }
                 in
                 ( { model | isLoading = True, success = False, error = Nothing }, request )
@@ -464,9 +462,12 @@ update msg model =
                 ]
             )
 
-        UploadResponse (Err _) ->
-            ( { model | isLoading = False, success = False }
-            , Cmd.none
+        UploadResponse (Err errorMessage) ->
+            ( { model | isLoading = False
+                , success = False
+                , error = Just errorMessage
+            }
+            , scrollToTop ()
             )
 
         ClearSuccess ->
@@ -618,6 +619,42 @@ stringToProvince str =
 
         _ ->
             None
+
+
+decodeUploadResponse : Http.Response String -> Result String String
+decodeUploadResponse response =
+    case response of
+        Http.GoodStatus_ _ body ->
+            case D.decodeString (D.field "status" D.string) body of
+                Ok "success" ->
+                    Ok "success"
+
+                _ ->
+                    Err "Unexpected server response."
+
+        Http.BadStatus_ _ body ->
+            D.decodeString
+                (D.oneOf
+                    [ D.map2
+                        (\err fields -> err ++ ": " ++ String.join ", " fields)
+                        (D.field "error" D.string)
+                        (D.field "fields" (D.list D.string))
+                    , D.field "message" D.string
+                    , D.field "error" D.string
+                    ]
+                )
+                body
+                |> Result.withDefault "Unable to save observation."
+                |> Err
+
+        Http.BadUrl_ _ ->
+            Err "Invalid upload URL."
+
+        Http.Timeout_ ->
+            Err "Request timed out. Check whether the observation was saved."
+
+        Http.NetworkError_ ->
+            Err "Network error. Check whether the observation was saved."
 
 
 
