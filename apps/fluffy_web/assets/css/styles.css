@@ -2018,6 +2018,54 @@ textarea.contact-field {
 }
 
 
+/* Admin-only access to the existing CBC workbook migration page */
+
+.records-migration {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding: 2rem 2.5rem;
+  background: #f4faf6;
+  border: 1px solid #cfe5d5;
+  border-radius: 12px;
+}
+
+.records-migration-title {
+  margin: 0 0 0.5rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #17324d;
+}
+
+.records-migration-description {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.5;
+  color: #59687a;
+}
+
+.records-migration-link {
+  display: inline-block;
+  padding: 1rem 1.6rem;
+  background: #26813b;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.records-migration-link:hover,
+.records-migration-link:focus-visible {
+  background: #1d642e;
+  color: #fff;
+  text-decoration: none;
+}
+
 /* Records catalogue panel */
 
 .records-grid-panel {

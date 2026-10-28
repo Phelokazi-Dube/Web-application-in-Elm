@@ -63,6 +63,24 @@ view model =
                 [ text "Browse survey records and supporting reference data used across FluffyWeb." ]
             ]
 
+        , if model.isAdmin then
+            section [ class "records-migration" ]
+                [ div []
+                    [ h2 [ class "records-migration-title" ]
+                        [ text "CBC Data Migration" ]
+                    , p [ class "records-migration-description" ]
+                        [ text "Import historical records from the CBC Excel workbook." ]
+                    ]
+                , a
+                    [ href "/admin/migration"
+                    , class "records-migration-link"
+                    ]
+                    [ text "Open Migration" ]
+                ]
+
+          else
+            text ""
+
         , div [ class "records-grid-panel" ]
             [ div [ class "records-grid" ]
                 (referenceDataItems
