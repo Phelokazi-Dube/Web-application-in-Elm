@@ -90,16 +90,22 @@ defmodule WaterWeeds.Migration.Workbook do
 
     documents =
       data_rows
-      |> Enum.reject(&empty_row?/1)
-      |> Enum.map(fn row ->
-        Map.new(valid_headers, fn {index, header} ->
-          {header, Enum.at(row, index)}
-        end)
+      |> Enum.with_index(2)
+      |> Enum.reject(fn {row, _row_number} -> empty_row?(row) end)
+      |> Enum.map(fn {row, row_number} ->
+        document =
+          Map.new(valid_headers, fn {index, header} ->
+            {header, Enum.at(row, index)}
+          end)
+
+        {row_number, document}
+      end)
+      |> Enum.reject(fn {_row_number, document} ->
+        average_reading?(collection, document)
       end)
 
     documents
-    |> Enum.with_index(2)
-    |> Enum.reduce_while({:ok, []}, fn {document, row_number}, {:ok, acc} ->
+    |> Enum.reduce_while({:ok, []}, fn {row_number, document}, {:ok, acc} ->
       case DataNormalizer.normalize_ids(document, collection) do
         {:ok, normalized} ->
           {:cont, {:ok, [normalized | acc]}}
@@ -116,6 +122,15 @@ defmodule WaterWeeds.Migration.Workbook do
         error
     end
   end
+
+  # Previous worksheet includes one summary row per WHMID.
+  # It is not an individual plant reading and has no numeric PlantNumber.
+  defp average_reading?("WHMeasurementsReadings", %{"plantNumber" => plant_number})
+       when is_binary(plant_number) do
+    String.downcase(String.trim(plant_number)) == "average"
+  end
+
+  defp average_reading?(_collection, _document), do: false
 
   defp empty_row?(row) do
     Enum.all?(row, &blank?/1)
