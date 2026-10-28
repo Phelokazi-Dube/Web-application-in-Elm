@@ -69,7 +69,7 @@ view model =
                     [ h2 [ class "records-migration-title" ]
                         [ text "CBC Data Migration" ]
                     , p [ class "records-migration-description" ]
-                        [ text "Import historical records from the CBC Excel workbook." ]
+                        [ text "Import historical records from the CBC Excel spreadsheet." ]
                     ]
                 , a
                     [ href "/admin/migration"
