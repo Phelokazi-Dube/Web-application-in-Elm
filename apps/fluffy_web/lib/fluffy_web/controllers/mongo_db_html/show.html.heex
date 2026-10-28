@@ -194,6 +194,10 @@
               value={@collection}
             />
 
+            <%= if @back_url do %>
+              <input type="hidden" name="return" value={@back_url} />
+            <% end %>
+
             <button
               type="submit"
               class="document-delete-confirm-button"

@@ -1029,7 +1029,14 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
-  def delete_document(conn, %{"id" => id, "collection" => collection}) do
+  def delete_document(conn, %{"id" => id, "collection" => collection} = params) do
+    back_url = collection_return_url(collection, params)
+
+    # Preserve the document's original listing when a delete fails.
+    show_url =
+      "/documents/#{id}?collection=#{URI.encode_www_form(collection)}" <>
+        if(back_url, do: "&return=" <> URI.encode_www_form(back_url), else: "")
+
     role = get_session(conn, :role)
     profile = get_session(conn, :profile)
 
@@ -1048,7 +1055,7 @@ defmodule FluffyWeb.MongoDBController do
               nil ->
                 conn
                 |> put_flash(:error, "Document not found.")
-                |> redirect(to: "/records")
+                |> redirect(to: back_url || "/records")
 
               %{} = existing_document ->
                 owner_email = Map.get(existing_document, "userLogin")
@@ -1063,7 +1070,7 @@ defmodule FluffyWeb.MongoDBController do
                     {:ok, _result} ->
                       conn
                       |> put_flash(:info, "Document deleted successfully.")
-                      |> redirect(to: "/records")
+                      |> redirect(to: back_url || "/records")
 
                     {:error, reason} ->
                       Logger.error(
@@ -1072,7 +1079,7 @@ defmodule FluffyWeb.MongoDBController do
 
                       conn
                       |> put_flash(:error, "Failed to delete document.")
-                      |> redirect(to: "/documents/#{id}?collection=#{collection}")
+                      |> redirect(to: show_url)
                   end
                 else
                   conn
@@ -1081,14 +1088,14 @@ defmodule FluffyWeb.MongoDBController do
                     :error,
                     "You are not authorised to delete this document."
                   )
-                  |> redirect(to: "/documents/#{id}?collection=#{collection}")
+                  |> redirect(to: show_url)
                 end
             end
 
           :error ->
             conn
             |> put_flash(:error, "Invalid document ID.")
-            |> redirect(to: "/records")
+            |> redirect(to: back_url || "/records")
         end
 
       {:error, reason} ->
