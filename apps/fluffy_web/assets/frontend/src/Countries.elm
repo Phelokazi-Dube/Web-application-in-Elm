@@ -13,6 +13,10 @@ import Url
 port downloadCsvPort : String -> Cmd msg
 
 
+-- Keep the submitted database search and the current page in the URL.
+port rememberCountriesUrl : String -> Cmd msg
+
+
 
 -- MODEL
 
@@ -21,6 +25,8 @@ type alias Flags =
     { baseUrl : String
     , csrfToken : String
     , collection : String
+    , search : String
+    , page : Int
     }
 
 
@@ -40,6 +46,7 @@ type alias Document =
 type alias Model =
     { documents : List Document
     , searchText : String
+    , activeSearch : String
     , isAdmin : Bool
     , error : Maybe String
     , currentPage : Int
@@ -55,18 +62,34 @@ init flags =
     let
         model =
             { documents = []
-            , searchText = ""
+            , searchText = flags.search
+            , activeSearch = String.trim flags.search
             , isAdmin = False
             , error = Nothing
-            , currentPage = 1
+            , currentPage = Basics.max 1 flags.page
             , itemsPerPage = 12
             , baseUrl = flags.baseUrl
             , csrfToken = flags.csrfToken
             , isLoading = True
             }
     in
-    ( model, fetchDocuments model.baseUrl )
+    ( model, searchDocuments model.baseUrl model.activeSearch )
 
+
+
+-- SEARCH AND PAGE URL
+
+
+countriesUrl : String -> Int -> String
+countriesUrl search page =
+    if String.isEmpty search then
+        "/records/countries?page=" ++ String.fromInt page
+
+    else
+        "/records/countries?search="
+            ++ Url.percentEncode search
+            ++ "&page="
+            ++ String.fromInt page
 
 
 -- MESSAGES
@@ -92,22 +115,46 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         FetchDocuments ->
+            let
+                search =
+                    String.trim model.searchText
+            in
             ( { model
-                | currentPage = 1
+                | searchText = search
+                , activeSearch = search
+                , currentPage = 1
                 , isLoading = True
                 , error = Nothing
               }
-            , searchDocuments model.baseUrl model.searchText
+            , Cmd.batch
+                [ rememberCountriesUrl (countriesUrl search 1)
+                , searchDocuments model.baseUrl search
+                ]
             )
 
         GotDocuments (Ok response) ->
+            let
+                totalPages =
+                    Basics.max 1
+                        ((List.length response.documents + model.itemsPerPage - 1)
+                            // model.itemsPerPage
+                        )
+
+                page =
+                    Basics.min model.currentPage totalPages
+            in
             ( { model
                 | documents = response.documents
+                , currentPage = page
                 , isAdmin = response.isAdmin
                 , error = Nothing
                 , isLoading = False
               }
-            , Cmd.none
+            , if page == model.currentPage then
+                Cmd.none
+
+              else
+                rememberCountriesUrl (countriesUrl model.activeSearch page)
             )
 
         GotDocuments (Err err) ->
@@ -126,11 +173,15 @@ update msg model =
         ClearSearch ->
             ( { model
                 | searchText = ""
+                , activeSearch = ""
                 , currentPage = 1
                 , isLoading = True
                 , error = Nothing
               }
-            , fetchDocuments model.baseUrl
+            , Cmd.batch
+                [ rememberCountriesUrl (countriesUrl "" 1)
+                , fetchDocuments model.baseUrl
+                ]
             )
 
         NextPage ->
@@ -150,7 +201,7 @@ update msg model =
                         totalPages
             in
             ( { model | currentPage = nextPage }
-            , Cmd.none
+            , rememberCountriesUrl (countriesUrl model.activeSearch nextPage)
             )
 
         PrevPage ->
@@ -161,7 +212,7 @@ update msg model =
                         1
             in
             ( { model | currentPage = previousPage }
-            , Cmd.none
+            , rememberCountriesUrl (countriesUrl model.activeSearch previousPage)
             )
 
         ApproveDocument docId ->
@@ -171,7 +222,7 @@ update msg model =
 
         DocumentApproved (Ok _) ->
             ( { model | isLoading = True }
-            , searchDocuments model.baseUrl model.searchText
+            , searchDocuments model.baseUrl model.activeSearch
             )
 
         DocumentApproved (Err err) ->
@@ -187,9 +238,9 @@ update msg model =
             , downloadCsvPort
                 (model.baseUrl
                     ++ "/api/Mongodb/document/search/export?collection=Countries"
-                    ++ (if String.trim model.searchText /= "" then
+                    ++ (if model.activeSearch /= "" then
                             "&search="
-                                ++ Url.percentEncode model.searchText
+                                ++ Url.percentEncode model.activeSearch
 
                         else
                             ""
@@ -231,7 +282,9 @@ view model =
                     [ text "Browse and manage country reference data." ]
                 ]
             , a
-                [ href "/csvupload?collection=Countries"
+                [ href ("/csvupload?collection=Countries&return="
+                    ++ Url.percentEncode (countriesUrl model.activeSearch model.currentPage)
+                  )
                 , class "collection-import-button"
                 ]
                 [ text "Import using CSV" ]
@@ -286,7 +339,7 @@ view model =
                   else
                     div [ class "collection-grid" ]
                         (List.map
-                            (documentCard model.isAdmin)
+                            (documentCard model)
                             paginatedDocuments
                         )
 
@@ -324,8 +377,8 @@ view model =
 -- DOCUMENT CARD
 
 
-documentCard : Bool -> Document -> Html Msg
-documentCard isAdmin doc =
+documentCard : Model -> Document -> Html Msg
+documentCard model doc =
     div [ class "collection-card" ]
         [ div [ class "collection-card-heading" ]
             [ h2 [ class "collection-card-title" ]
@@ -384,13 +437,15 @@ documentCard isAdmin doc =
                 [ href
                     ("/documents/"
                         ++ doc.id
-                        ++ "?collection=Countries"
+                        ++ "?collection=Countries&return="
+                        ++ Url.percentEncode
+                            (countriesUrl model.activeSearch model.currentPage)
                     )
                 , class "collection-view-button"
                 ]
                 [ text "View Document" ]
 
-            , case ( doc.approved, isAdmin ) of
+            , case ( doc.approved, model.isAdmin ) of
                 ( False, True ) ->
                     button
                         [ onClick (ApproveDocument doc.id)

@@ -2796,6 +2796,13 @@ textarea.contact-field {
   margin-bottom: 3rem;
 }
 
+/* Align the document viewer's Back button without affecting Edit/Delete. */
+.document-back-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
 .document-details-title {
   margin: 0 0 0.8rem 0;
   color: #17324d;

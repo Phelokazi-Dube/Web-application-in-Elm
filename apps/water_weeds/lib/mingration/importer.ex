@@ -10,6 +10,8 @@ defmodule WaterWeeds.Migration.Importer do
   alias WaterWeeds.MongoDBClient
   alias WaterWeeds.DataNormalizer
 
+  # Sites are excluded until CBC verifies conflicting site identifiers/coordinates.
+  # WHMCounter and empty/unconfigured sheets are not imported.
   @import_config %{
     "Surveys" => %{collection: "Surveys", identity: ["surveyId"]},
     "SurveyImages" => %{collection: "SurveyImages",identity: ["surveyImageId"]},
@@ -26,6 +28,8 @@ defmodule WaterWeeds.Migration.Importer do
     "ControlAgents" => %{collection: "ControlAgents",identity: ["controlAgentId"]},
     "SurveyControlAgents" => %{collection: "SurveyControlAgents",identity: ["id"]},
     "WHMeasurements" => %{collection: "WHMeasurements",identity: ["whmid"]},
+    # CBC confirmed WHMID + PlantNumber as the identity of each reading.
+    "WHMeasurementsReadings" => %{collection: "WHMeasurementsReadings", identity: ["whmid", "plantNumber"]},
     "BAR" => %{collection: "BAR",identity: ["barId"]},
     "Implementers" => %{collection: "Implementers",identity: ["implementerId"]}
   }

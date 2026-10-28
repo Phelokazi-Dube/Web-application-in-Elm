@@ -60,7 +60,7 @@ view _ =
                     "CSV Upload"
                     "Best for importing multiple survey records from an existing CSV file."
                     "Upload CSV File"
-                    "/csvupload?collection=Surveys"
+                    "/csvupload?collection=Surveys&return=%2Fuploadpage"
                 ]
             ]
         ]

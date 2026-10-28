@@ -3,24 +3,44 @@ module Records exposing (main)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Http
+import Json.Decode as Decode
+
+
+type alias Flags =
+    { baseUrl : String
+    }
 
 
 type alias Model =
-    ()
+    { isAdmin : Bool
+    }
 
 
 type Msg
-    = NoOp
+    = AdminStatusFetched (Result Http.Error Bool)
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( (), Cmd.none )
+init : Flags -> ( Model, Cmd Msg )
+init flags =
+    ( { isAdmin = False }
+    , Http.get
+        { url = flags.baseUrl ++ "/api/Mongodb/document?collection=Continents"
+        , expect =
+            Http.expectJson AdminStatusFetched
+                (Decode.field "isAdmin" Decode.bool)
+        }
+    )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        AdminStatusFetched (Ok isAdmin) ->
+            ( { model | isAdmin = isAdmin }, Cmd.none )
+
+        AdminStatusFetched (Err _) ->
+            ( { model | isAdmin = False }, Cmd.none )
 
 
 
@@ -28,7 +48,7 @@ update msg model =
 
 
 view : Model -> Html Msg
-view _ =
+view model =
     div [ class "records-page site-content-width animate-fade-in" ]
         [ Html.node "link"
             [ attribute "rel" "stylesheet"
@@ -45,7 +65,10 @@ view _ =
 
         , div [ class "records-grid-panel" ]
             [ div [ class "records-grid" ]
-                (List.map referenceCard referenceDataItems)
+                (referenceDataItems
+                    |> List.filter (\( _, label ) -> model.isAdmin || label /= "Implementers")
+                    |> List.map referenceCard
+                )
             ]
         ]
 
@@ -85,17 +108,21 @@ referenceCard ( iconClass, label ) =
             label == "Surveys"
                 || label == "Continents"
                 || label == "Countries"
+                || label == "Implementers"
 
         path =
             case label of
                 "Surveys" ->
-                    "/survey"
+                    "/surveys"
 
                 "Continents" ->
                     "/records/continents"
 
                 "Countries" ->
                     "/records/countries"
+
+                "Implementers" ->
+                    "/records/implementers"
 
                 _ ->
                     "#"
@@ -139,7 +166,7 @@ subscriptions _ =
 -- MAIN
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.element
         { init = init

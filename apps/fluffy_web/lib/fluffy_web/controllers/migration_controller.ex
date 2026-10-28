@@ -121,7 +121,8 @@ defmodule FluffyWeb.MigrationController do
     directory =
       Path.join(System.tmp_dir!(), "fluffy_web_migrations")
 
-    with :ok <- File.mkdir_p(directory) do
+    with :ok <- File.mkdir_p(directory),
+         :ok <- File.chmod(directory, 0o700) do
       token =
         24
         |> :crypto.strong_rand_bytes()
@@ -130,8 +131,16 @@ defmodule FluffyWeb.MigrationController do
       destination = Path.join(directory, "#{token}.xlsx")
 
       case File.cp(upload.path, destination) do
-        :ok -> {:ok, destination}
-        {:error, reason} -> {:error, {:copy_failed, reason}}
+        :ok ->
+          case File.chmod(destination, 0o600) do
+            :ok -> {:ok, destination}
+            {:error, reason} ->
+              File.rm(destination)
+              {:error, {:copy_failed, reason}}
+          end
+
+        {:error, reason} ->
+          {:error, {:copy_failed, reason}}
       end
     end
   end

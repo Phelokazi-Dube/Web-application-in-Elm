@@ -110,7 +110,7 @@ view model =
                     ]
                     [ text "Export CSV" ]
                 , a
-                    [ href "/csvupload?collection=Continents"
+                    [ href "/csvupload?collection=Continents&return=%2Frecords%2Fcontinents"
                     , class "collection-import-button"
                     ]
                     [ text "Import using CSV" ]
@@ -170,7 +170,7 @@ viewDocument doc =
             [ href
                 ("/documents/"
                     ++ doc.id
-                    ++ "?collection=Continents"
+                    ++ "?collection=Continents&return=%2Frecords%2Fcontinents"
                 )
             , class "collection-view-button"
             ]

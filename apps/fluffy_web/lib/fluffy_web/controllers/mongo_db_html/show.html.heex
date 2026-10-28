@@ -5,6 +5,12 @@
       View the record information and any associated attachments.
     </p>
   </div>
+  <%= if @back_url do %>
+    <div class="document-back-actions">
+      <a href={@back_url} class="collection-view-button"> Back</a>
+    </div>
+  <% end %>
+
   <!-- Tabs -->
   <div class="document-tabs" id="tabs">
     <button type="button" class="document-tab active" data-tab="general">
@@ -119,7 +125,8 @@
   <%= if @collection && @collection != "" && @can_edit do %>
     <div class="document-edit-actions">
       <a
-        href={"?collection=#{@collection}&edit=true"}
+        href={"?collection=#{@collection}&edit=true" <>
+          if(@back_url, do: "&return=" <> URI.encode_www_form(@back_url), else: "")}
         class="document-edit-button"
       >
         ✏️ Edit Document

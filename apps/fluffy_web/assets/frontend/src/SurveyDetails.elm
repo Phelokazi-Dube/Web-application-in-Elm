@@ -1,4 +1,3 @@
-
 module SurveyDetails exposing (main)
 
 import Browser
@@ -6,6 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Http
 import Json.Decode as Decode
+import Json.Decode.Pipeline as Pipeline
 
 
 -- FLAGS
@@ -16,20 +16,37 @@ type alias Flags =
     , csrfToken : String
     , collection : String
     , surveyId : String
+    , backUrl : String
     }
 
 
--- DATA
+-- Imported records use a numeric surveyId. Online submissions use only the
+-- MongoDB id; both are first-class survey records.
 
 
 type alias Survey =
-    { surveyId : Int
+    { id : String
+    , surveyId : Maybe String
     , siteId : Maybe String
-    , year : Maybe Float
-    , assessor : String
-    , percentCover : String
-    , percentDamage : String
-    , remarks : String
+    , year : Maybe String
+    , assessor : Maybe String
+    , percentCover : Maybe String
+    , percentDamage : Maybe String
+    , remarks : Maybe String
+    , surveyType : Maybe String
+    , date : Maybe String
+    , weed : Maybe String
+    , controlAgent : Maybe String
+    , weather : Maybe String
+    , province : Maybe String
+    , country : Maybe String
+    , siteName : Maybe String
+    , notes : Maybe String
+    , description : Maybe String
+    , coordinates : Maybe String
+    , weeds : Maybe String
+    , otherWeeds : Maybe String
+    , approved : Bool
     }
 
 
@@ -43,8 +60,14 @@ type alias Site =
 
 
 type alias ControlAgent =
-    { controlAgentId : Int
+    { controlAgentId : Maybe String
     , controlAgent : String
+    }
+
+
+type alias SurveyFile =
+    { id : String
+    , url : String
     }
 
 
@@ -56,75 +79,41 @@ type alias SurveyDetails =
     , publications : List SurveyFile
     }
 
-type alias SurveyFile =
-    { id : String
-    , url : String
-    }
-
-
--- MODEL
-
 
 type alias Model =
     { details : Maybe SurveyDetails
     , isLoading : Bool
     , error : Maybe String
+    , backUrl : String
     }
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( { details = Nothing
-      , isLoading = True
-      , error = Nothing
-      }
-    , fetchSurvey flags.baseUrl flags.surveyId
+    ( { details = Nothing, isLoading = True, error = Nothing, backUrl = flags.backUrl }
+    , Http.get
+        { url = flags.baseUrl ++ "/api/query/surveys/" ++ flags.surveyId
+        , expect = Http.expectJson GotSurvey surveyDetailsDecoder
+        }
     )
-
-
--- MESSAGES
 
 
 type Msg
     = GotSurvey (Result Http.Error SurveyDetails)
 
 
--- UPDATE
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotSurvey (Ok details) ->
-            ( { model
-                | details = Just details
-                , isLoading = False
-                , error = Nothing
-              }
-            , Cmd.none
-            )
+            ( { model | details = Just details, isLoading = False, error = Nothing }, Cmd.none )
 
         GotSurvey (Err err) ->
-            ( { model
-                | isLoading = False
-                , error = Just (httpErrorToString err)
-              }
-            , Cmd.none
-            )
+            ( { model | isLoading = False, error = Just (httpErrorToString err) }, Cmd.none )
 
 
--- HTTP
-
-
-fetchSurvey : String -> String -> Cmd Msg
-fetchSurvey baseUrl surveyId =
-    Http.get
-        { url = baseUrl ++ "/api/query/surveys/" ++ surveyId
-        , expect = Http.expectJson GotSurvey surveyDetailsDecoder
-        }
-
-
--- DECODERS
+-- The API returns the same envelope for imported and form-created surveys.
+-- Optional fields are decoded as Maybe, because their schemas differ.
 
 
 surveyDetailsDecoder : Decode.Decoder SurveyDetails
@@ -136,48 +125,79 @@ surveyDetailsDecoder =
         (Decode.field "images" (Decode.list surveyFileDecoder))
         (Decode.field "publications" (Decode.list surveyFileDecoder))
 
-surveyFileDecoder : Decode.Decoder SurveyFile
-surveyFileDecoder =
-    Decode.map2 SurveyFile
-        (Decode.field "id" Decode.string)
-        (Decode.field "url" Decode.string)
+
+textValue : Decode.Decoder String
+textValue =
+    Decode.oneOf
+        [ Decode.string
+        , Decode.int |> Decode.map String.fromInt
+        , Decode.float |> Decode.map String.fromFloat
+        ]
+
+
+optionalText : String -> Decode.Decoder (Maybe String)
+optionalText fieldName =
+    Decode.oneOf
+        [ Decode.field fieldName (Decode.nullable textValue)
+        , Decode.succeed Nothing
+        ]
 
 
 surveyDecoder : Decode.Decoder Survey
 surveyDecoder =
-    Decode.map7 Survey
-        (Decode.field "surveyId" Decode.int)
-        (Decode.field "siteId" (Decode.nullable Decode.string))
-        (Decode.field "year" (Decode.nullable Decode.float))
-        (Decode.field "assessor" (nullableString ""))
-        (Decode.field "percentCover" (nullableString ""))
-        (Decode.field "percentDamage" (nullableString ""))
-        (Decode.field "remarks" (nullableString ""))
+    Decode.succeed Survey
+        |> Pipeline.required "id" Decode.string
+        |> Pipeline.custom (optionalText "surveyId")
+        |> Pipeline.custom (optionalText "siteId")
+        |> Pipeline.custom (optionalText "year")
+        |> Pipeline.custom (optionalText "assessor")
+        |> Pipeline.custom (optionalText "percentCover")
+        |> Pipeline.custom (optionalText "percentDamage")
+        |> Pipeline.custom (optionalText "remarks")
+        |> Pipeline.custom (optionalText "surveyType")
+        |> Pipeline.custom (optionalText "date")
+        |> Pipeline.custom (optionalText "weed")
+        |> Pipeline.custom (optionalText "controlAgent")
+        |> Pipeline.custom (optionalText "weather")
+        |> Pipeline.custom (optionalText "province")
+        |> Pipeline.custom (optionalText "country")
+        |> Pipeline.custom
+            (Decode.oneOf
+                [ Decode.field "sitename" (Decode.nullable textValue)
+                , Decode.field "site" (Decode.nullable textValue)
+                , Decode.succeed Nothing
+                ]
+            )
+        |> Pipeline.custom (optionalText "notes")
+        |> Pipeline.custom (optionalText "description")
+        |> Pipeline.custom (optionalText "coordinatesDisplay")
+        |> Pipeline.custom (optionalText "weeds")
+        |> Pipeline.custom (optionalText "otherWeeds")
+        |> Pipeline.optional "approved" Decode.bool False
 
 
 siteDecoder : Decode.Decoder Site
 siteDecoder =
-    Decode.map5 Site
-        (Decode.field "siteName" Decode.string)
-        (Decode.field "province" (Decode.nullable Decode.string))
-        (Decode.field "waterBody" (Decode.nullable Decode.string))
-        (Decode.field "latitude" (Decode.nullable Decode.string))
-        (Decode.field "longitude" (Decode.nullable Decode.string))
+    Decode.succeed Site
+        |> Pipeline.optional "siteName" textValue "Unknown site"
+        |> Pipeline.custom (optionalText "province")
+        |> Pipeline.custom (optionalText "waterBody")
+        |> Pipeline.custom (optionalText "latitude")
+        |> Pipeline.custom (optionalText "longitude")
 
 
 controlAgentDecoder : Decode.Decoder ControlAgent
 controlAgentDecoder =
     Decode.map2 ControlAgent
-        (Decode.field "controlAgentId" Decode.int)
-        (Decode.field "controlAgent" Decode.string)
+        (optionalText "controlAgentId")
+        (Decode.oneOf [ Decode.field "controlAgent" textValue, Decode.succeed "Unnamed agent" ])
 
 
-nullableString : String -> Decode.Decoder String
-nullableString fallback =
-    Decode.oneOf
-        [ Decode.string
-        , Decode.null fallback
-        ]
+surveyFileDecoder : Decode.Decoder SurveyFile
+surveyFileDecoder =
+    Decode.map2 SurveyFile
+        (Decode.field "id" Decode.string)
+        (Decode.field "url" Decode.string)
 
 
 -- VIEW
@@ -188,26 +208,20 @@ view model =
     div [ class "collection-page site-content-width animate-fade-in" ]
         [ div [ class "collection-header" ]
             [ div []
-                [ h1 [ class "collection-title" ]
-                    [ text "Survey Details" ]
+                [ h1 [ class "collection-title" ] [ text "Survey Details" ]
                 , p [ class "collection-description" ]
                     [ text "Survey information and associated CBC records." ]
                 ]
-            , a
-                [ href "/survey"
-                , class "collection-view-button"
-                ]
-                [ text "Back to Surveys" ]
+            , a [ href model.backUrl, class "collection-view-button" ]
+                [ text "Back to Survey Data" ]
             ]
         , if model.isLoading then
-            div [ class "collection-loading" ]
-                [ text "Loading survey details..." ]
+            div [ class "collection-loading" ] [ text "Loading survey details..." ]
 
           else
             case model.error of
                 Just errorMessage ->
-                    div [ class "collection-error" ]
-                        [ text errorMessage ]
+                    div [ class "collection-error" ] [ text errorMessage ]
 
                 Nothing ->
                     case model.details of
@@ -215,8 +229,7 @@ view model =
                             viewDetails details
 
                         Nothing ->
-                            div [ class "collection-empty" ]
-                                [ text "No survey details available." ]
+                            div [ class "collection-empty" ] [ text "No survey details available." ]
         ]
 
 
@@ -231,211 +244,206 @@ viewDetails details =
         ]
 
 
--- SURVEY INFORMATION
-
-
 viewSurvey : Survey -> Html Msg
 viewSurvey survey =
-    div [ class "collection-grid-panel" ]
-        [ h2 [ class "collection-title" ]
-            [ text "Survey Information" ]
-        , div [ class "collection-card" ]
-            [ div [ class "collection-card-details" ]
-                [ detailRow "Survey ID" (String.fromInt survey.surveyId)
-                , detailRow "Site ID" (displayMaybe survey.siteId)
-                , detailRow "Year" (displayYear survey.year)
-                , detailRow "Assessor" (displayValue survey.assessor)
-                , detailRow "Percent Cover" (displayValue survey.percentCover)
-                , detailRow "Percent Damage" (displayValue survey.percentDamage)
-                , detailRow "Remarks" (displayValue survey.remarks)
-                ]
+    let
+        rows =
+            [ detailRow "Document ID" survey.id
+            , detailRow "Status" (if survey.approved then "Approved" else "Pending")
             ]
+                ++ optionalRow "Survey ID" survey.surveyId
+                ++ optionalRow "Survey Type" survey.surveyType
+                ++ optionalRow "Date" survey.date
+                ++ optionalRow "Year" survey.year
+                ++ optionalRow "Site ID" survey.siteId
+                ++ optionalRow "Site" survey.siteName
+                ++ optionalRow "Province" survey.province
+                ++ optionalRow "Country" survey.country
+                ++ optionalRow "Coordinates (latitude, longitude)" survey.coordinates
+                ++ optionalRow "Assessor" survey.assessor
+                ++ optionalRow "Weed" survey.weed
+                ++ optionalRow "Control Agent" survey.controlAgent
+                ++ optionalRow "Weather" survey.weather
+                ++ optionalRow "Percent Cover" survey.percentCover
+                ++ optionalRow "Percent Damage" survey.percentDamage
+                ++ optionalRow "Remarks" survey.remarks
+                ++ optionalRow "Notes" survey.notes
+                ++ optionalRow "Description" survey.description
+                ++ optionalWeedsRow "Weeds" survey.weeds
+                ++ optionalWeedsRow "Other Weeds" survey.otherWeeds
+    in
+    div [ class "collection-grid-panel" ]
+        [ h2 [ class "collection-title" ] [ text "Survey Information" ]
+        , div [ class "collection-card" ]
+            [ div [ class "collection-card-details" ] rows ]
         ]
-
-
--- SITE INFORMATION
 
 
 viewSite : Maybe Site -> Html Msg
 viewSite maybeSite =
-    div [ class "collection-grid-panel" ]
-        [ h2 [ class "collection-title" ]
-            [ text "Site Information" ]
-        , case maybeSite of
-            Just site ->
-                div [ class "collection-card" ]
+    case maybeSite of
+        Nothing ->
+            text ""
+
+        Just site ->
+            div [ class "collection-grid-panel" ]
+                [ h2 [ class "collection-title" ] [ text "Associated Site" ]
+                , div [ class "collection-card" ]
                     [ div [ class "collection-card-details" ]
-                        [ detailRow "Site Name" site.siteName
-                        , detailRow "Province" (displayMaybe site.province)
-                        , detailRow "Water Body" (displayMaybe site.waterBody)
-                        , detailRow "Coordinates" (displayCoordinates site)
-                        ]
+                        ([ detailRow "Site Name" site.siteName ]
+                            ++ optionalRow "Province" site.province
+                            ++ optionalRow "Water Body" site.waterBody
+                            ++ optionalRow "Latitude" site.latitude
+                            ++ optionalRow "Longitude" site.longitude
+                        )
                     ]
-
-            Nothing ->
-                div [ class "collection-empty" ]
-                    [ text "No associated site information available." ]
-        ]
-
-
--- CONTROL AGENTS
+                ]
 
 
 viewControlAgents : List ControlAgent -> Html Msg
 viewControlAgents agents =
-    div [ class "collection-grid-panel" ]
-        [ h2 [ class "collection-title" ]
-            [ text
-                ("Control Agents ("
-                    ++ String.fromInt (List.length agents)
-                    ++ ")"
-                )
-            ]
-        , if List.isEmpty agents then
-            div [ class "collection-empty" ]
-                [ text "No control agents associated with this survey." ]
+    if List.isEmpty agents then
+        text ""
 
-          else
-            div [ class "collection-grid" ]
-                (List.map viewControlAgent agents)
-        ]
+    else
+        div [ class "collection-grid-panel" ]
+            [ h2 [ class "collection-title" ]
+                [ text ("Linked Control Agents (" ++ String.fromInt (List.length agents) ++ ")") ]
+            , div [ class "collection-grid" ] (List.map viewControlAgent agents)
+            ]
 
 
 viewControlAgent : ControlAgent -> Html Msg
 viewControlAgent agent =
     div [ class "collection-card" ]
         [ div [ class "collection-card-heading" ]
-            [ h2 [ class "collection-card-title" ]
-                [ text agent.controlAgent ]
-            ]
+            [ h2 [ class "collection-card-title" ] [ text agent.controlAgent ] ]
         , div [ class "collection-card-details" ]
-            [ detailRow
-                "Control Agent ID"
-                (String.fromInt agent.controlAgentId)
-            ]
+            (optionalRow "Control Agent ID" agent.controlAgentId)
         ]
+
 
 viewImages : List SurveyFile -> Html Msg
 viewImages images =
-    div [ class "collection-grid-panel" ]
-        [ h2 [ class "collection-title" ]
-            [ text ("Survey Images (" ++ String.fromInt (List.length images) ++ ")") ]
-        , if List.isEmpty images then
-            div [ class "collection-empty" ]
-                [ text "No images associated with this survey." ]
+    if List.isEmpty images then
+        text ""
 
-          else
-            div [ class "collection-grid" ]
-                (List.map viewImage images)
-        ]
+    else
+        div [ class "collection-grid-panel" ]
+            [ h2 [ class "collection-title" ]
+                [ text ("Survey Images (" ++ String.fromInt (List.length images) ++ ")") ]
+            , div [ class "collection-grid" ] (List.map viewImage images)
+            ]
 
 
 viewImage : SurveyFile -> Html Msg
 viewImage image =
     div [ class "collection-card" ]
-        [ a [ href image.url, target "_blank" ]
-            [ img
-                [ src image.url
-                , alt "Survey photograph"
-                , class "survey-detail-image"
-                ]
-                []
-            ]
+        [ a [ href image.url, target "_blank", rel "noopener noreferrer" ]
+            [ img [ src image.url, alt "Survey photograph", class "survey-detail-image" ] [] ]
         ]
 
 
 viewPublications : List SurveyFile -> Html Msg
 viewPublications publications =
-    div [ class "collection-grid-panel" ]
-        [ h2 [ class "collection-title" ]
-            [ text ("Publications (" ++ String.fromInt (List.length publications) ++ ")") ]
-        , if List.isEmpty publications then
-            div [ class "collection-empty" ]
-                [ text "No publications associated with this survey." ]
+    if List.isEmpty publications then
+        text ""
 
-          else
-            div [ class "collection-grid" ]
-                (List.map viewPublication publications)
-        ]
+    else
+        div [ class "collection-grid-panel" ]
+            [ h2 [ class "collection-title" ]
+                [ text ("Publications (" ++ String.fromInt (List.length publications) ++ ")") ]
+            , div [ class "collection-grid" ] (List.map viewPublication publications)
+            ]
 
 
 viewPublication : SurveyFile -> Html Msg
 viewPublication publication =
     div [ class "collection-card" ]
-        [ div [ class "collection-card-details" ]
-            [ a
-                [ href publication.url
-                , target "_blank"
-                , class "collection-view-button"
-                ]
-                [ text "Open Publication" ]
+        [ a
+            [ href publication.url
+            , target "_blank"
+            , rel "noopener noreferrer"
+            , class "collection-view-button"
             ]
+            [ text "Open Publication" ]
         ]
 
 
--- DISPLAY HELPERS
+-- HELPERS
 
 
 detailRow : String -> String -> Html msg
 detailRow label value =
     p []
-        [ span [ class "collection-field-label" ]
-            [ text (label ++ ": ") ]
+        [ span [ class "collection-field-label" ] [ text (label ++ ": ") ]
         , text value
         ]
 
 
-displayValue : String -> String
-displayValue value =
-    if String.trim value == "" then
-        "Not recorded"
-
-    else
-        value
-
-
-displayMaybe : Maybe String -> String
-displayMaybe maybeValue =
+optionalRow : String -> Maybe String -> List (Html msg)
+optionalRow label maybeValue =
     case maybeValue of
         Just value ->
-            displayValue value
-
-        Nothing ->
-            "Not recorded"
-
-
-displayYear : Maybe Float -> String
-displayYear maybeYear =
-    case maybeYear of
-        Just year ->
-            String.fromInt (round year)
-
-        Nothing ->
-            "Not recorded"
-
-
-displayCoordinates : Site -> String
-displayCoordinates site =
-    case ( site.latitude, site.longitude ) of
-        ( Just latitude, Just longitude ) ->
-            if String.trim latitude == "" || String.trim longitude == "" then
-                "Coordinates unavailable"
+            if String.trim value == "" then
+                []
 
             else
-                latitude ++ ", " ++ longitude
+                [ detailRow label value ]
 
-        _ ->
-            "Coordinates unavailable"
+        Nothing ->
+            []
 
 
--- ERROR HANDLING
+optionalWeedsRow : String -> Maybe String -> List (Html msg)
+optionalWeedsRow label maybeValue =
+    maybeValue
+        |> Maybe.andThen formatWeeds
+        |> optionalRow label
+
+
+formatWeeds : String -> Maybe String
+formatWeeds raw =
+    let
+        entryDecoder =
+            Decode.map3
+                (\name present absent ->
+                    name
+                        ++ (if present then
+                                " (present)"
+
+                            else if absent then
+                                " (absent)"
+
+                            else
+                                ""
+                           )
+                )
+                (Decode.field "name" Decode.string)
+                (Decode.oneOf [ Decode.field "present" Decode.bool, Decode.succeed False ])
+                (Decode.oneOf [ Decode.field "absent" Decode.bool, Decode.succeed False ])
+    in
+    case Decode.decodeString (Decode.list entryDecoder) raw of
+        Ok entries ->
+            if List.isEmpty entries then
+                Nothing
+
+            else
+                Just (String.join ", " entries)
+
+        Err _ ->
+            if String.trim raw == "" then
+                Nothing
+
+            else
+                Just raw
 
 
 httpErrorToString : Http.Error -> String
 httpErrorToString err =
     case err of
-        Http.BadUrl url ->
-            "Invalid URL: " ++ url
+        Http.BadUrl _ ->
+            "Invalid survey URL."
 
         Http.Timeout ->
             "The request timed out."
@@ -448,22 +456,15 @@ httpErrorToString err =
                 "Survey not found."
 
             else
-                "Unable to load survey. HTTP status: "
-                    ++ String.fromInt status
+                "Unable to load survey. HTTP status: " ++ String.fromInt status
 
         Http.BadBody body ->
             "Unable to decode survey data: " ++ body
 
 
--- SUBSCRIPTIONS
-
-
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
-
-
--- MAIN
 
 
 main : Program Flags Model Msg

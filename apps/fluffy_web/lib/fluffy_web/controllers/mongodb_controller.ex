@@ -9,7 +9,7 @@ defmodule FluffyWeb.MongoDBController do
   @allowed_collections ~w(
     Surveys SurveyWeedAgent Sites SiteInspections SiteInspectionWeeds Locations
     Districts Regions Continents Countries Implementers Programs WeedNames Users
-    ControlAgents SurveyControlAgents WHMCounter WHMeasurements WHMeasurementReadings BAR
+    ControlAgents SurveyControlAgents WHMCounter WHMeasurements WHMeasurementsReadings BAR
   )
 
   # Collections that must not be exposed through public API endpoints
@@ -36,6 +36,7 @@ defmodule FluffyWeb.MongoDBController do
     "ControlAgents" => ["controlAgentId"],
     "SurveyControlAgents" => ["id"],
     "WHMeasurements" => ["whmid"],
+    "WHMeasurementsReadings" => ["whmid", "plantNumber"],
     "BAR" => ["barId"]
   }
 
@@ -80,7 +81,7 @@ defmodule FluffyWeb.MongoDBController do
     protected_fields =
       @protected_fields ++
         identity_fields ++
-        ["_csrf_token", "_method"]
+        ["_csrf_token", "_method", "return"]
 
     params
     |> Map.drop(protected_fields)
@@ -462,7 +463,10 @@ defmodule FluffyWeb.MongoDBController do
           conn
           |> put_status(:ok)
           |> json(%{isAdmin: isAdmin, documents: documents})
-      end
+
+      {:error, reason} ->
+        collection_access_error(conn, reason)
+    end
   end
 
   def all(conn, _params) do
@@ -524,9 +528,42 @@ defmodule FluffyWeb.MongoDBController do
     end
   end
 
+  # Permit returning only to the listing associated with this collection.
+  # Reject external and cross-collection return URLs.
+  @collection_listing_paths %{
+    "Countries" => "/records/countries",
+    "Continents" => "/records/continents",
+    "Surveys" => "/surveys",
+    "Implementers" => "/records/implementers"
+  }
+
+  defp collection_return_url(collection, %{"return" => return_url})
+       when is_binary(return_url) do
+    uri = URI.parse(return_url)
+    expected_path = Map.get(@collection_listing_paths, collection)
+
+    if expected_path && uri.path == expected_path && is_nil(uri.scheme) &&
+         is_nil(uri.host) && is_nil(uri.fragment) do
+      return_url
+    else
+      nil
+    end
+  end
+
+  defp collection_return_url(_, _), do: nil
+
   # Fetch a document as HTML
   def show_html(conn, %{"id" => id} = params) do
     collection = Map.get(params, "collection", "Surveys")
+
+    case validate_collection_access(conn, collection) do
+      :ok -> show_html_document(conn, id, params, collection)
+      {:error, reason} -> collection_access_error(conn, reason)
+    end
+  end
+
+  defp show_html_document(conn, id, params, collection) do
+    back_url = collection_return_url(collection, params)
 
     case BSON.ObjectId.decode(id) do
       {:ok, bson_id} ->
@@ -572,7 +609,8 @@ defmodule FluffyWeb.MongoDBController do
               editing and is_nil(current_user_email) ->
                 conn
                 |> put_flash(:error, "You must be logged in to edit a document.")
-                |> redirect(to: "/documents/#{id}?collection=#{collection}")
+                |> redirect(to: "/documents/#{id}?collection=#{collection}" <>
+                     if(back_url, do: "&return=" <> URI.encode_www_form(back_url), else: ""))
 
               editing and not can_edit ->
                 conn
@@ -581,7 +619,8 @@ defmodule FluffyWeb.MongoDBController do
                   :error,
                   "You are not authorised to edit this document."
                 )
-                |> redirect(to: "/documents/#{id}?collection=#{collection}")
+                |> redirect(to: "/documents/#{id}?collection=#{collection}" <>
+                     if(back_url, do: "&return=" <> URI.encode_www_form(back_url), else: ""))
 
               true ->
                 template =
@@ -599,7 +638,8 @@ defmodule FluffyWeb.MongoDBController do
                   collection: collection,
                   profile: profile,
                   oauth_url: oauth_url,
-                  can_edit: can_edit
+                  can_edit: can_edit,
+                  back_url: back_url
                 )
             end
 
@@ -697,6 +737,9 @@ defmodule FluffyWeb.MongoDBController do
         conn
         |> put_status(:unprocessable_entity)
         |> json(%{error: "Invalid collection"})
+
+      collection in @private_collections and get_session(conn, :role) != "admin" ->
+        collection_access_error(conn, :forbidden)
 
       is_nil(email) ->
         conn
@@ -1175,7 +1218,12 @@ defmodule FluffyWeb.MongoDBController do
     current_user_email =
       if profile, do: Map.get(profile, :email), else: nil
 
-    show_path = ~p"/documents/#{id}?collection=#{collection}"
+    back_url = collection_return_url(collection, params)
+
+    show_path =
+      ~p"/documents/#{id}?collection=#{collection}" <>
+        if(back_url, do: "&return=" <> URI.encode_www_form(back_url), else: "")
+
     edit_path = show_path <> "&edit=true"
 
     cond do

@@ -10,6 +10,7 @@ defmodule FluffyWeb.PageController do
       layout: false,
       conn: conn,
       js_file: conn.private[:javascript],
+      is_admin: get_session(conn, :role) == "admin",
       profile: get_session(conn, :profile),
       oauth_url: ElixirAuthGoogle.generate_oauth_url(conn)
     )
@@ -211,7 +212,7 @@ defmodule FluffyWeb.PageController do
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
 
-  def survey(conn, _params) do
+  def surveys(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
@@ -271,7 +272,12 @@ defmodule FluffyWeb.PageController do
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end
 
-  def surveys(conn, _params) do
+  def combined(conn, _params) do
+    # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
+    render(conn, :home, layout: false, js_file: conn.private[:javascript])
+  end
+
+   def implementers(conn, _params) do
     # This skips the "app" layout (and in fact, that layout has been removed from the layouts folder)
     render(conn, :home, layout: false, js_file: conn.private[:javascript])
   end

@@ -63,6 +63,10 @@
         value={@collection}
       />
 
+      <%= if @back_url do %>
+        <input type="hidden" name="return" value={@back_url} />
+      <% end %>
+
       <%= for {key, value} <- @document do %>
         <%= if key not in excluded_fields do %>
           <div class="edit-field">
@@ -179,7 +183,8 @@
         </button>
 
         <a
-          href={~p"/documents/#{@document["id"]}?collection=#{@collection}"}
+          href={~p"/documents/#{@document["id"]}?collection=#{@collection}" <>
+            if(@back_url, do: "&return=" <> URI.encode_www_form(@back_url), else: "")}
           class="cancel-button"
         >
           Cancel

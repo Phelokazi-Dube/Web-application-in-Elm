@@ -8,7 +8,7 @@ defmodule WaterWeeds.DataNormalizer do
     surveyId surveyImageId swaid
     siteInspectionId siteInspectionWeedId
     weedId controlAgentId
-    whmid barId implementerId
+    whmid plantNumber barId implementerId
     dataSourceId dataStatusId dataAccessId
   )
 

@@ -19,6 +19,7 @@ type alias Flags =
     { csrfToken : String
     , collection : String
     , baseUrl : String
+    , returnUrl : String
     }
 
 
@@ -27,6 +28,7 @@ type alias Model =
     , topicId : String
     , csrfToken : String
     , collection : String
+    , returnUrl : String
     , isSubmitting : Bool
     }
 
@@ -41,6 +43,7 @@ init flags =
       , topicId = "some_topic_id"
       , csrfToken = flags.csrfToken
       , collection = flags.collection
+      , returnUrl = flags.returnUrl
       , isSubmitting = False
       }
     , Cmd.none
@@ -166,7 +169,7 @@ view model =
 
                 , div [ class "csv-upload-actions" ]
                     [ a
-                        [ href "/uploadpage"
+                        [ href model.returnUrl
                         , class "csv-upload-cancel-button"
                         ]
                         [ text "Cancel" ]

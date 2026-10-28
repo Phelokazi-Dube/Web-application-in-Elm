@@ -95,7 +95,7 @@ init flags url navKey =
 
 searchParser : Parser.Parser (QueryParams -> a) a
 searchParser =
-    Parser.s "survey"
+    Parser.s "surveys"
         <?> Query.map2 QueryParams
                 (Query.string "search")
                 (Query.int "page")
@@ -125,7 +125,7 @@ update msg model =
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    case Parser.parse (Parser.s "survey") url of
+                    case Parser.parse (Parser.s "surveys") url of
                         Just _ ->
                             ( model, Nav.pushUrl model.key (Url.toString url) )
 
@@ -215,10 +215,10 @@ update msg model =
 
                 newUrl =
                     if String.isEmpty text then
-                        "/survey?page=1"
+                        "/surveys?page=1"
 
                     else
-                        "/survey?search=" ++ Url.percentEncode text ++ "&page=1"
+                        "/surveys?search=" ++ Url.percentEncode text ++ "&page=1"
             in
             ( { model | searchText = text, filteredDocuments = filteredDocs, currentPage = 1 }
             , Nav.replaceUrl model.key newUrl
@@ -226,7 +226,7 @@ update msg model =
 
         ClearSearch ->
             ( { model | searchText = "", filteredDocuments = model.documents, currentPage = 1 } 
-            , Nav.replaceUrl model.key "/survey?page=1" )
+            , Nav.replaceUrl model.key "/surveys?page=1" )
 
         NextPage ->
             let
@@ -238,10 +238,10 @@ update msg model =
 
                 newUrl =
                     if String.isEmpty model.searchText then
-                        "/survey?page=" ++ String.fromInt newPage
+                        "/surveys?page=" ++ String.fromInt newPage
 
                     else
-                        "/survey?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
+                        "/surveys?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
             in
             ( { model | currentPage = newPage }, Nav.replaceUrl model.key newUrl )
 
@@ -252,10 +252,10 @@ update msg model =
 
                 newUrl =
                     if String.isEmpty model.searchText then
-                        "/survey?page=" ++ String.fromInt newPage
+                        "/surveys?page=" ++ String.fromInt newPage
 
                     else
-                        "/survey?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
+                        "/surveys?search=" ++ Url.percentEncode model.searchText ++ "&page=" ++ String.fromInt newPage
             in
             ( { model | currentPage = newPage }, Nav.replaceUrl model.key newUrl )
 
@@ -323,7 +323,7 @@ viewContent model =
                         [ a [ href "#", class "nav-link" ] [ text "DATA" ]
                         , ul [ class "dropdown" ]
                             [ li []
-                                [ a [ href "/survey", class "dropdown-link" ]
+                                [ a [ href "/combined", class "dropdown-link" ]
                                     [ text "Survey Data" ]
                                 ]
                             , li []
@@ -392,7 +392,7 @@ viewContent model =
                   else
                     div [ class "collection-grid" ]
                         (List.map
-                            (documentCard model.adminUser)
+                            (documentCard model.adminUser model.searchText model.currentPage)
                             paginatedDocuments
                         )
                 , div [ class "collection-pagination" ]
@@ -502,8 +502,8 @@ view model =
 -- RENDER DOCUMENT CARD
 
 
-documentCard : Bool -> Document -> Html Msg
-documentCard isAdmin doc =
+documentCard : Bool -> String -> Int -> Document -> Html Msg
+documentCard isAdmin searchText currentPage doc =
     div [ class "collection-card animate-fade-in" ]
         [ div [ class "collection-card-heading" ]
             [ div []
@@ -526,7 +526,7 @@ documentCard isAdmin doc =
         , div [ class "collection-card-details" ]
             [ p []
                 [ span [ class "collection-field-label" ]
-                    [ text "Created" ]
+                    [ text "Survey Date" ]
                 , span []
                     [ text (Maybe.withDefault "No Date" doc.date) ]
                 ]
@@ -564,7 +564,17 @@ documentCard isAdmin doc =
                 [ href
                     ("/documents/"
                         ++ Maybe.withDefault "Unknown" doc.id
-                        ++ "?collection=Surveys"
+                        ++ "?collection=Surveys&return="
+                        ++ Url.percentEncode
+                            (if String.isEmpty (String.trim searchText) then
+                                "/surveys?page=" ++ String.fromInt currentPage
+
+                             else
+                                "/surveys?search="
+                                    ++ Url.percentEncode (String.trim searchText)
+                                    ++ "&page="
+                                    ++ String.fromInt currentPage
+                            )
                     )
                 , class "collection-view-button"
                 ]
@@ -613,12 +623,12 @@ fetchDocuments : Model -> String -> Cmd Msg
 fetchDocuments model searchString =
     let
         url =
-            if String.isEmpty searchString then
+            if String.isEmpty (String.trim searchString) then
                 model.baseUrl ++ "/api/Mongodb/document?collection=Surveys"
                 -- Fetch all documents initially
 
             else
-                model.baseUrl ++ "/api/Mongodb/document/search?search=" ++ searchString
+                model.baseUrl ++ "/api/Mongodb/document/search?search=" ++ Url.percentEncode (String.trim searchString)
 
         -- Fetch documents based on search
     in
@@ -626,7 +636,7 @@ fetchDocuments model searchString =
         { url = url
         , expect =
             Http.expectJson DocumentsFetched
-                (Decode.map2 (\a b -> ( a, b ))
+                (Decode.map2 Tuple.pair
                     (Decode.field "documents" (Decode.list documentDecoder))
                     (Decode.field "isAdmin" Decode.bool)
                 )

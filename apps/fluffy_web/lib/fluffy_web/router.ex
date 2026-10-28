@@ -49,8 +49,10 @@ defmodule FluffyWeb.Router do
     get("/documents/:id", MongoDBController, :show_html)
     get("/image/:id", MongoDBController, :get_image)
     get("/publication/:id", MongoDBController, :get_publication)
-    get("/survey", PageController, :home, private: %{:javascript => "surveys"})
+    get("/surveys", PageController, :home, private: %{:javascript => "surveys"})
     get "/surveys/:survey_id", PageController, :home, private: %{javascript: "survey_details"}
+    # Separate combined survey listing; cards open the enriched SurveyDetails view.
+    get("/combined", PageController, :home, private: %{:javascript => "combined_surveys"})
   end
 
   scope "/", FluffyWeb do
@@ -74,6 +76,7 @@ defmodule FluffyWeb.Router do
     pipe_through([:browser, :admin_only])
     post("/api/Mongodb/approve_document/:id", MongoDBController, :approve)
     get("/admin/migration", MigrationController, :index)
+    get("/records/implementers", PageController, :home, private: %{javascript: "implementers"})
     post("/admin/migration/validate", MigrationController, :validate)
     post("/admin/migration/import", MigrationController, :import)
   end
