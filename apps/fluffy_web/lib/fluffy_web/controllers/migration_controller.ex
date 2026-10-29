@@ -2,9 +2,50 @@ defmodule FluffyWeb.MigrationController do
   use FluffyWeb, :controller
 
   alias WaterWeeds.Migration.Importer
+  alias FluffyWeb.{DriveAuth, HistoricalPhotoImporter, MigrationJobs}
+  require Logger
 
   def index(conn, _params) do
     render(conn, :index, auth_assigns(conn))
+  end
+
+  def review(conn, _params) do
+    case get_session(conn, :migration_workbook_path) do
+      path when is_binary(path) ->
+        if File.regular?(path) do
+          case Importer.validate(path) do
+            {:ok, validation} ->
+              render(conn, :validation, auth_assigns(conn) ++ [
+                filename: get_session(conn, :migration_workbook_name) || "CBC workbook",
+                validation: validation
+              ])
+            {:error, _} -> redirect(conn, to: ~p"/admin/migration")
+          end
+        else
+          redirect(conn, to: ~p"/admin/migration")
+        end
+      _ -> redirect(conn, to: ~p"/admin/migration")
+    end
+  end
+
+  def job(conn, %{"id" => id}) do
+    case MigrationJobs.get(id, admin_email(conn)) do
+      {:ok, %{status: :running} = job} ->
+        render(conn, :processing, auth_assigns(conn) ++ [job: job, job_id: id])
+
+      {:ok, %{status: :completed, result: result} = job} ->
+        render(conn, :success, auth_assigns(conn) ++ [
+          result: result,
+          filename: job.filename
+        ])
+
+      {:ok, %{status: :failed} = job} ->
+        conn
+        |> put_flash(:error, "Migration did not finish: #{inspect(job.reason)}. Already imported records remain unchanged. Revalidate and retry to resume.")
+        |> redirect(to: ~p"/admin/migration")
+
+      _ -> send_resp(conn, 404, "Migration job not found")
+    end
   end
 
   def validate(conn, %{"workbook" => %Plug.Upload{} = upload}) do
@@ -41,57 +82,57 @@ defmodule FluffyWeb.MigrationController do
   end
 
   defp import_workbook(conn, workbook_path) do
-    if File.regular?(workbook_path) do
-      case Importer.import(workbook_path) do
-        {:ok, result} ->
-          filename =
-            get_session(conn, :migration_workbook_name) ||
-              "CBC workbook"
+    email = admin_email(conn)
+    credential_id = get_session(conn, :drive_migration_token_id)
 
-          File.rm(workbook_path)
+    cond do
+      not File.regular?(workbook_path) ->
+        conn
+        |> delete_session(:migration_workbook_path)
+        |> delete_session(:migration_workbook_name)
+        |> put_flash(:error, "The validated workbook is no longer available. Please upload it again.")
+        |> redirect(to: ~p"/admin/migration")
 
-          conn
-          |> delete_session(:migration_workbook_path)
-          |> delete_session(:migration_workbook_name)
-          |> render(
-            :success,
-            auth_assigns(conn) ++
-              [
-                filename: filename,
-                result: result
-              ]
-          )
+      not DriveAuth.connected?(credential_id, email) ->
+        conn
+        |> put_flash(:error, "Connect your Google Drive account before starting CBC migration.")
+        |> redirect(to: ~p"/admin/migration/review")
 
-        {:error, {:validation_failed, validation}} ->
-          render(
-            conn,
-            :validation,
-            auth_assigns(conn) ++
-              [
-                filename:
-                  get_session(conn, :migration_workbook_name) ||
-                    "CBC workbook",
-                validation: validation
-              ]
-          )
+      true ->
+        filename = get_session(conn, :migration_workbook_name) || "CBC workbook"
+        job_id = MigrationJobs.create(email, filename)
 
-        {:error, reason} ->
-          conn
-          |> put_flash(
-            :error,
-            "The migration could not be completed: #{inspect(reason)}"
-          )
-          |> redirect(to: ~p"/admin/migration")
-      end
-    else
-      conn
-      |> delete_session(:migration_workbook_path)
-      |> delete_session(:migration_workbook_name)
-      |> put_flash(
-        :error,
-        "The validated workbook is no longer available. Please upload it again."
-      )
-      |> redirect(to: ~p"/admin/migration")
+        case Task.Supervisor.start_child(FluffyWeb.MigrationTaskSupervisor, fn ->
+               try do
+                 result =
+                   with {:ok, base} <- Importer.import(workbook_path),
+                        {:ok, photo_counts} <- HistoricalPhotoImporter.run(workbook_path, credential_id, email) do
+                     {:ok, Map.put(base, :photos, photo_counts)}
+                   end
+
+                 case result do
+                   {:ok, data} -> MigrationJobs.finish(job_id, %{status: :completed, result: data})
+                   {:error, reason} -> MigrationJobs.finish(job_id, %{status: :failed, reason: reason})
+                 end
+               rescue
+                 exception ->
+                   Logger.error("CBC migration job failed: #{Exception.message(exception)}")
+                   MigrationJobs.finish(job_id, %{status: :failed, reason: :unexpected_error})
+               after
+                 File.rm(workbook_path)
+               end
+             end) do
+          {:ok, _pid} ->
+            conn
+            |> delete_session(:migration_workbook_path)
+            |> delete_session(:migration_workbook_name)
+            |> redirect(to: ~p"/admin/migration/jobs/#{job_id}")
+          {:error, _reason} ->
+            File.rm(workbook_path)
+            conn
+            |> put_flash(:error, "Unable to start migration task.")
+            |> redirect(to: ~p"/admin/migration")
+        end
     end
   end
 
@@ -157,8 +198,14 @@ defmodule FluffyWeb.MigrationController do
     "Workbook validation failed: #{inspect(reason)}"
   end
 
+  defp admin_email(conn) do
+    profile = get_session(conn, :profile) || %{}
+    profile[:email] || profile["email"] || ""
+  end
+
   defp auth_assigns(conn) do
     [
+      drive_connected: DriveAuth.connected?(get_session(conn, :drive_migration_token_id), admin_email(conn)),
       profile: get_session(conn, :profile),
       role: get_session(conn, :role),
       oauth_url: ElixirAuthGoogle.generate_oauth_url(FluffyWeb.Endpoint.url())

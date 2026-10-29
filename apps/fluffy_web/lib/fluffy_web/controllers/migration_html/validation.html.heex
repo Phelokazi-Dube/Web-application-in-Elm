@@ -104,6 +104,26 @@
     </div>
     <% end %>
 
+  <%= if @validation.valid? do %>
+    <%= if @drive_connected do %>
+      <div class="migration-status migration-status-success">
+        <h2>✓ Google Drive connected</h2>
+        <p>Accessible historical photographs will be downloaded into GridFS during import.</p>
+      </div>
+    <% else %>
+      <div class="migration-status migration-status-warning migration-drive-connect">
+        <h2>Connect Google Drive</h2>
+        <p>Connect using your CBC-authorised admin account before importing.</p>
+        <a href={~p"/admin/migration/drive/connect"} class="migration-primary-button">Connect Google Drive</a>
+      </div>
+    <% end %>
+
+    <div class="migration-status migration-status-warning">
+      <h2>Historical photograph references</h2>
+      <p>Historical Windows paths will be preserved as unresolved references.</p>
+    </div>
+  <% end %>
+
   <div class="migration-actions">
     <a
       href={~p"/admin/migration"}
@@ -112,7 +132,7 @@
       Choose Another Workbook
     </a>
 
-    <%= if @validation.valid? do %>
+    <%= if @validation.valid? and @drive_connected do %>
       <button
         type="button"
         id="open-import-confirmation"
@@ -125,7 +145,7 @@
 </div>
 
 <!-- Import confirmation modal -->
-<%= if @validation.valid? do %>
+<%= if @validation.valid? and @drive_connected do %>
   <div
     id="import-confirmation-modal"
     class="migration-modal hidden"

@@ -667,11 +667,12 @@ defmodule FluffyWeb.MongoDBController do
            %{bucket: bucket} <- :sys.get_state(WaterWeeds.MongoDBClient),
            {{:ok, stream}, file_doc} <- Mongo.GridFs.Download.find_and_stream(bucket, bson_id) do
         content_type =
-          case Path.extname(file_doc["filename"]) do
+          case String.downcase(Path.extname(file_doc["filename"] || "")) do
             ".jpg" -> "image/jpeg"
             ".jpeg" -> "image/jpeg"
             ".png" -> "image/png"
             ".gif" -> "image/gif"
+            ".webp" -> "image/webp"
             _ -> "application/octet-stream"
           end
 

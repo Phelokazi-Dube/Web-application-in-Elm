@@ -136,8 +136,17 @@ defmodule WaterWeeds.Migration.Importer do
 
   defp import_sheet(file_path, sheet_name, config) do
     with {:ok, documents} <- Workbook.prepare_documents(file_path, sheet_name, config.collection) do
+      # URLs are consumed only by the authorised photo-import phase. Do not
+      # publish private Drive URLs through generic MongoDB collection APIs.
+      stored_documents =
+        if config.collection == "SurveyImages" do
+          Enum.map(documents, &Map.delete(&1, "driveUrl"))
+        else
+          documents
+        end
+
       upsert_documents(
-        documents,
+        stored_documents,
         config.collection,
         config.identity,
         sheet_name

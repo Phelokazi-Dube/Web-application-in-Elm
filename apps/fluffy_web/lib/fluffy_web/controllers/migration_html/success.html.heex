@@ -37,6 +37,27 @@
     </div>
   </div>
 
+  <%= if Map.has_key?(@result, :photos) do %>
+    <div class="migration-status">
+      <h2>Historical photographs</h2>
+      <p>Drive-linked records: <%= @result.photos.linked_records %></p>
+      <p>New GridFS uploads: <%= @result.photos.imported %></p>
+      <p>Existing GridFS files reused: <%= @result.photos.reused %></p>
+      <p>Windows paths or unresolved references: <%= @result.photos.unresolved %></p>
+      <p>Download or storage failures: <%= @result.photos.failed %></p>
+      <%= if @result.photos.errors != [] do %>
+        <details>
+          <summary>Review photograph failures</summary>
+          <ul>
+            <%= for failure <- @result.photos.errors do %>
+              <li>SurveyImageID <%= failure.surveyImageId %>: <%= inspect(failure.reason) %></li>
+            <% end %>
+          </ul>
+        </details>
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="migration-table-wrapper">
     <table class="migration-table">
       <thead>

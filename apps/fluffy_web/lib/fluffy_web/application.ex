@@ -9,6 +9,9 @@ defmodule FluffyWeb.Application do
   def start(_type, _args) do
     children = [
       FluffyWeb.Telemetry,
+      FluffyWeb.DriveAuth,
+      FluffyWeb.MigrationJobs,
+      {Task.Supervisor, name: FluffyWeb.MigrationTaskSupervisor},
       # Start the PubSub system
       {Phoenix.PubSub, name: FluffyWeb.PubSub},
       # Start Finch

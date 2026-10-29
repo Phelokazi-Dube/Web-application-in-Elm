@@ -1,0 +1,15 @@
+<div class="migration-page site-content-width">
+  <div class="migration-header">
+    <h1>CBC Data Migration</h1>
+    <p><strong><%= @job.filename %></strong></p>
+  </div>
+  <div class="migration-status">
+    <h2>Migration is running</h2>
+    <p>FluffyWeb is importing data and downloading accessible historical photographs into GridFS. This page will check for completion automatically.</p>
+    <p>You can leave this page and return to this URL to see the result while the server is running.</p>
+  </div>
+  <div class="migration-actions migration-refresh-actions">
+    <a href={~p"/admin/migration/jobs/#{@job_id}"} class="migration-secondary-button">Refresh migration status</a>
+  </div>
+  <script>setTimeout(function () { window.location.reload(); }, 5000);</script>
+</div>

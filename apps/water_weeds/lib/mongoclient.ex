@@ -154,6 +154,25 @@ defmodule WaterWeeds.MongoDBClient do
     GenServer.call(__MODULE__, {:upload_file, filename, binary_data, metadata, file_id})
   end
 
+  @doc "Upload a local image in chunks without blocking the MongoDBClient GenServer."
+  def upload_image_from_path(filename, path, metadata \\ nil) do
+    bucket = GenServer.call(__MODULE__, :get_bucket)
+
+    try do
+      upload_stream = Mongo.GridFs.Upload.open_upload_stream(bucket, filename, metadata, nil)
+
+      File.stream!(path, [], 65_536)
+      |> Stream.into(upload_stream)
+      |> Stream.run()
+
+      {:ok, upload_stream.id}
+    rescue
+      exception ->
+        Logger.error("GridFS historical photo upload failed: #{Exception.message(exception)}")
+        {:error, :gridfs_upload_failed}
+    end
+  end
+
   def export(collection, search) do
     docs =
       if String.trim(search) == "" do
@@ -260,6 +279,10 @@ defmodule WaterWeeds.MongoDBClient do
     |> Stream.run()
 
     {:reply, {:ok, upload_stream.id}, state}
+  end
+
+  def handle_call(:get_bucket, _from, %{bucket: bucket} = state) do
+    {:reply, bucket, state}
   end
 
   def handle_call({:get_image, file_id}, _from, %{bucket: bucket} = state) do

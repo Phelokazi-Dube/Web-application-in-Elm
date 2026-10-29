@@ -3579,6 +3579,16 @@ body {
   color: #725500;
 }
 
+/* Google Drive guidance and migration progress use existing panel/button styles. */
+.migration-drive-connect .migration-primary-button {
+  margin-top: 1.4rem;
+}
+
+.migration-refresh-actions {
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+}
+
 /* ==========================================================
    TABLES
    ========================================================== */
