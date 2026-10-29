@@ -4245,3 +4245,69 @@ body {
     object-fit: contain;
     border-radius: 8px;
 }
+/* Survey-linked historical plant readings — match the Survey Details cards. */
+.survey-measurements-scroll {
+  margin-top: 2rem;
+  padding: 2.5rem;
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.survey-measurements-scroll h3 {
+  margin: 0 0 1.8rem;
+  color: #172b43;
+  font-size: 2.3rem;
+  font-weight: 700;
+}
+
+.survey-measurements-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  font-size: 1.45rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.survey-measurements-table th,
+.survey-measurements-table td {
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.survey-measurements-table th {
+  background: #f5f7fa;
+  color: #17324d;
+  font-weight: 700;
+}
+
+.survey-measurements-table td {
+  color: #374151;
+}
+
+.survey-measurements-table td:first-child {
+  font-weight: 600;
+}
+
+.survey-measurements-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.survey-measurements-table tbody tr:hover {
+  background: #f0f5f8;
+}
+
+.survey-measurements-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .survey-measurements-scroll {
+    padding: 1.5rem;
+  }
+}

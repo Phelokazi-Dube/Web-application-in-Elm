@@ -657,27 +657,38 @@ defmodule FluffyWeb.MongoDBController do
   end
 
   def get_image(conn, %{"id" => id}) do
-    with {:ok, bson_id} <- BSON.ObjectId.decode(id),
-         %{bucket: bucket} <- :sys.get_state(WaterWeeds.MongoDBClient),
-         {{:ok, stream}, file_doc} <- Mongo.GridFs.Download.find_and_stream(bucket, bson_id) do
-      content_type =
-        case Path.extname(file_doc["filename"]) do
-          ".jpg" -> "image/jpeg"
-          ".jpeg" -> "image/jpeg"
-          ".png" -> "image/png"
-          ".gif" -> "image/gif"
-          _ -> "application/octet-stream"
-        end
-
-      conn =
-        conn
-        |> put_resp_content_type(content_type)
-        |> send_chunked(200)
-
-      stream_chunks(conn, stream)
+    # Historical CBC pictures were sourced from a restricted Drive. Their
+    # GridFS IDs are stored in SurveyImages.gridfsId during photo migration.
+    # Do not let the legacy public image endpoint bypass FluffyWeb login.
+    if historical_gridfs_id?(id) and not is_map(get_session(conn, :profile)) do
+      send_resp(conn, 403, "Please sign in to view this photograph")
     else
-      _ -> send_resp(conn, 404, "Image not found")
+      with {:ok, bson_id} <- BSON.ObjectId.decode(id),
+           %{bucket: bucket} <- :sys.get_state(WaterWeeds.MongoDBClient),
+           {{:ok, stream}, file_doc} <- Mongo.GridFs.Download.find_and_stream(bucket, bson_id) do
+        content_type =
+          case Path.extname(file_doc["filename"]) do
+            ".jpg" -> "image/jpeg"
+            ".jpeg" -> "image/jpeg"
+            ".png" -> "image/png"
+            ".gif" -> "image/gif"
+            _ -> "application/octet-stream"
+          end
+
+        conn =
+          conn
+          |> put_resp_content_type(content_type)
+          |> send_chunked(200)
+
+        stream_chunks(conn, stream)
+      else
+        _ -> send_resp(conn, 404, "Image not found")
+      end
     end
+  end
+
+  defp historical_gridfs_id?(id) do
+    MongoDBClient.get_all_documents("SurveyImages", %{"gridfsId" => id}) != []
   end
 
   def get_publication(conn, %{"id" => id}) do
